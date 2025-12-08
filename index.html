@@ -118,6 +118,68 @@
             padding: 20px;
         }
 
+        /* Dynamic Navigation Bar */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
         /* Header */
         .header {
             text-align: center;
@@ -156,22 +218,66 @@
             border-radius: var(--radius);
             overflow: hidden;
             box-shadow: var(--shadow);
+            display: none;
         }
 
-        #videoElement {
+        /* Camera Preview - Professional Fixed Position */
+        .camera-preview {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 240px;
+            height: 180px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 4px solid var(--accent-blue);
+            box-shadow: 0 0 30px rgba(116, 185, 255, 0.6);
+            z-index: 100;
+            background: #000;
+        }
+
+        .camera-preview video {
             width: 100%;
-            height: auto;
-            display: block;
+            height: 100%;
+            object-fit: cover;
             transform: scaleX(-1);
+            display: block;
         }
 
-        #canvasOverlay {
+        .camera-preview canvas {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
             transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.active {
+            background: #2ecc71;
         }
 
         .hand-cursor {
@@ -199,40 +305,56 @@
 
         /* Instructions Panel */
         .instructions-panel {
-            flex: 0 0 300px;
-            background: white;
+            flex: 0 0 auto;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 232, 196, 0.95) 100%);
             border-radius: var(--radius);
-            padding: 25px;
+            padding: 20px;
             box-shadow: var(--shadow);
+            max-width: 380px;
         }
 
         .instructions-panel h3 {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             color: var(--text-primary);
             margin-bottom: 15px;
             display: flex;
             align-items: center;
             gap: 10px;
+            font-weight: bold;
         }
 
         .instructions-panel ul {
             list-style: none;
             padding: 0;
-        }
-
-        .instructions-panel li {
-            padding: 12px 15px;
-            margin-bottom: 10px;
-            background: var(--bg-secondary);
-            border-radius: 12px;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
 
+        .instructions-panel li {
+            padding: 10px 12px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            text-align: center;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(116, 185, 255, 0.3);
+        }
+
+        .instructions-panel li:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(116, 185, 255, 0.5);
+        }
+
         .instructions-panel li span {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
+            display: block;
         }
 
         /* Status Indicator */
@@ -335,19 +457,27 @@
         }
 
         .draggable-item {
+            min-width: 90px;
+            min-height: 90px;
             width: 120px;
             height: 120px;
             border-radius: var(--radius);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
+            font-size: 2.5rem;
             font-weight: bold;
             cursor: grab;
             transition: all 0.2s ease;
             box-shadow: var(--shadow);
             user-select: none;
             position: relative;
+            flex-wrap: wrap;
+            padding: 8px;
+            word-break: break-word;
+            overflow: hidden;
+            text-align: center;
+            line-height: 1.2;
         }
 
         .draggable-item:hover {
@@ -376,6 +506,8 @@
         }
 
         .drop-zone {
+            min-width: 100px;
+            min-height: 100px;
             width: 140px;
             height: 140px;
             border: 4px dashed var(--text-secondary);
@@ -387,6 +519,12 @@
             color: var(--text-secondary);
             transition: all 0.3s ease;
             position: relative;
+            flex-wrap: wrap;
+            padding: 10px;
+            word-break: break-word;
+            text-align: center;
+            overflow: hidden;
+            line-height: 1.2;
         }
 
         .drop-zone.highlight {
@@ -628,26 +766,45 @@
 
             .camera-section {
                 flex-direction: column;
+                gap: 15px;
+            }
+
+            .camera-preview {
+                width: 180px;
+                height: 135px;
+                bottom: 90px;
+                right: 15px;
             }
 
             .instructions-panel {
-                flex: auto;
+                max-width: 100%;
+            }
+
+            .instructions-panel ul {
+                grid-template-columns: repeat(3, 1fr);
             }
 
             .draggable-item {
-                width: 70px;
-                height: 70px;
-                font-size: 1.5rem;
+                width: 80px;
+                height: 80px;
+                min-width: 70px;
+                min-height: 70px;
+                font-size: 2rem;
+                padding: 8px;
             }
 
             .drop-zone {
-                width: 80px;
-                height: 80px;
+                width: 90px;
+                height: 90px;
+                min-width: 85px;
+                min-height: 85px;
                 font-size: 1rem;
+                padding: 8px;
             }
 
             .game-area {
                 padding: 15px;
+                min-height: 400px;
             }
 
             .score-display {
@@ -684,6 +841,20 @@
                 min-width: 100px;
                 font-size: 1.2rem;
                 height: 70px;
+                width: 120px;
+            }
+
+            .items-container {
+                gap: 15px;
+            }
+
+            .drop-zones {
+                gap: 15px;
+            }
+
+            .game-title {
+                font-size: 1.5rem;
+                margin-bottom: 20px;
             }
         }
 
@@ -692,16 +863,59 @@
                 font-size: 1.2rem;
             }
 
+            .instructions-panel {
+                padding: 15px;
+                max-width: 100%;
+            }
+
+            .instructions-panel h3 {
+                font-size: 1.1rem;
+                margin-bottom: 12px;
+            }
+
+            .instructions-panel ul {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .instructions-panel li {
+                padding: 8px 10px;
+                font-size: 0.85rem;
+            }
+
+            .instructions-panel li span {
+                font-size: 1.5rem;
+            }
+
+            .camera-preview {
+                width: 140px;
+                height: 105px;
+                bottom: 80px;
+                right: 10px;
+                border: 3px solid var(--accent-blue);
+            }
+
+            .camera-status {
+                font-size: 0.7rem;
+                padding: 4px 8px;
+            }
+
             .draggable-item {
-                width: 60px;
-                height: 60px;
-                font-size: 1.2rem;
+                width: 70px;
+                height: 70px;
+                min-width: 60px;
+                min-height: 60px;
+                font-size: 1.8rem;
+                padding: 6px;
             }
 
             .drop-zone {
-                width: 65px;
-                height: 65px;
-                font-size: 0.8rem;
+                width: 75px;
+                height: 75px;
+                min-width: 65px;
+                min-height: 65px;
+                font-size: 0.9rem;
+                padding: 6px;
             }
 
             .game-selection {
@@ -709,11 +923,37 @@
             }
 
             .items-container {
-                gap: 10px;
+                gap: 8px;
             }
 
             .drop-zones {
+                gap: 8px;
+            }
+
+            .game-area {
+                padding: 10px;
+                min-height: 350px;
+            }
+
+            .game-title {
+                font-size: 1.3rem;
+                margin-bottom: 15px;
+            }
+
+            .level-selector {
                 gap: 10px;
+            }
+
+            .level-btn {
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+
+            .word-item {
+                min-width: 70px;
+                font-size: 1rem;
+                height: 60px;
+                width: 90px;
             }
         }
 
@@ -807,6 +1047,14 @@
     </style>
 </head>
 <body>
+    <!-- Dynamic Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-title">📚 Learning Games</div>
+            <div class="nav-menu" id="navMenu"></div>
+        </div>
+    </div>
+
     <!-- Background Shapes -->
     <div class="bg-shapes">
         <div class="bg-shape"></div>
@@ -850,18 +1098,25 @@
             <div class="instructions-panel">
                 <h3>📋 How to Play</h3>
                 <ul>
-                    <li><span>✋</span> Show your hand to the camera</li>
-                    <li><span>👆</span> Point with your finger to move</li>
-                    <li><span>✊</span> Pinch thumb and finger to grab</li>
-                    <li><span>🎯</span> Drag items to matching boxes</li>
-                    <li><span>🔊</span> Tap items to hear sounds</li>
+                    <li><span>✋</span> Show Hand</li>
+                    <li><span>👆</span> Point Move</li>
+                    <li><span>✊</span> Pinch Grab</li>
+                    <li><span>🎯</span> Drag Match</li>
+                    <li><span>🔊</span> Tap Sound</li>
+                    <li><span>⭐</span> Complete Level</li>
                 </ul>
-                <div class="status-indicator">
-                    <div class="status-dot" id="statusDot"></div>
-                    <span id="statusText">Waiting for camera...</span>
-                </div>
             </div>
         </section>
+
+        <!-- Camera Preview (Professional Fixed Position) -->
+        <div class="camera-preview" id="cameraPreview">
+            <video id="previewVideoElement" autoplay playsinline></video>
+            <canvas id="previewCanvasOverlay"></canvas>
+            <div class="camera-status">
+                <div class="status-dot active" id="cameraStatusDot"></div>
+                <span>Camera Active</span>
+            </div>
+        </div>
 
         <!-- Game Selection -->
         <section class="game-selection">
@@ -942,6 +1197,48 @@
     </div>
 
     <script>
+        // ==================== DYNAMIC NAVIGATION SYSTEM ====================
+        // Configuration for available games
+        const GAMES_CONFIG = {
+            'index.html': { name: '🔤 Alphabet & Colors', description: 'Learn letters and colors with drag & drop' },
+            'planets.html': { name: '🪐 Planets', description: 'Explore our solar system' },
+            'exploring_body.html': { name: '🧬 Body Explorer', description: 'Learn about human body parts' },
+            'frost_discovery.html': { name: '❄️ Frost Discovery', description: 'Reveal and learn hidden items' },
+            'hand_music.html': { name: '🎵 Music Hands', description: 'Learn music with hand gestures' },
+            'melt_the_ice.html': { name: '🌈 Melt the Ice', description: 'Melt ice to discover pictures' },
+            'science-lab.html': { name: '🧪 Science Lab', description: 'Perform fun experiments' }
+        };
+
+        // Initialize navigation
+        function initializeNavigation() {
+            const navMenu = document.getElementById('navMenu');
+            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
+
+            // Clear existing menu
+            navMenu.innerHTML = '';
+
+            // Create links for each game
+            for (const [file, config] of Object.entries(GAMES_CONFIG)) {
+                const link = document.createElement('a');
+                link.className = 'nav-link';
+                link.href = file;
+                link.textContent = config.name;
+                link.title = config.description;
+
+                // Mark current page as active
+                if (currentFile === file || (currentFile === '' && file === 'index.html')) {
+                    link.classList.add('active');
+                }
+
+                navMenu.appendChild(link);
+            }
+        }
+
+        // Initialize navigation when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeNavigation();
+        });
+
         // ==================== CONFIGURATION ====================
         const CONFIG = {
             pinchThreshold: 0.08,
@@ -1044,13 +1341,13 @@
                     { letter: 'I', sound: 'I says ih, like Ice Cream' },
                     { letter: 'J', sound: 'J says juh, like Jelly' },
                     { letter: 'K', sound: 'K says kuh, like King' },
-                    { letter: 'L', sound: 'L says luh, like Lamp' }
-                ],
-                medium: [
+                    { letter: 'L', sound: 'L says luh, like Lamp' },
                     { letter: 'M', sound: 'M says mmm, like Monkey' },
                     { letter: 'N', sound: 'N says nnn, like Nest' },
                     { letter: 'O', sound: 'O says oh, like Orange' },
-                    { letter: 'P', sound: 'P says puh, like Pig' },
+                    { letter: 'P', sound: 'P says puh, like Pig' }
+                ],
+                medium: [
                     { letter: 'Q', sound: 'Q says kwuh, like Queen' },
                     { letter: 'R', sound: 'R says ruh, like Rabbit' },
                     { letter: 'S', sound: 'S says sss, like Sun' },
@@ -1058,21 +1355,31 @@
                     { letter: 'U', sound: 'U says uh, like Umbrella' },
                     { letter: 'V', sound: 'V says vvv, like Violin' },
                     { letter: 'W', sound: 'W says wuh, like Water' },
-                    { letter: 'X', sound: 'X says ks, like Fox' }
-                ],
-                hard: [
+                    { letter: 'X', sound: 'X says ks, like Fox' },
                     { letter: 'Y', sound: 'Y says yuh, like Yellow' },
                     { letter: 'Z', sound: 'Z says zzz, like Zebra' },
                     { letter: 'A', sound: 'A says ah, like Ant' },
                     { letter: 'B', sound: 'B says buh, like Bear' },
                     { letter: 'C', sound: 'C says kuh, like Car' },
-                    { letter: 'D', sound: 'D says duh, like Duck' },
+                    { letter: 'D', sound: 'D says duh, like Duck' }
+                ],
+                hard: [
                     { letter: 'E', sound: 'E says eh, like Elephant' },
                     { letter: 'F', sound: 'F says fff, like Frog' },
                     { letter: 'G', sound: 'G says guh, like Giraffe' },
                     { letter: 'H', sound: 'H says huh, like Horse' },
                     { letter: 'I', sound: 'I says ih, like Igloo' },
-                    { letter: 'J', sound: 'J says juh, like Jump' }
+                    { letter: 'J', sound: 'J says juh, like Jump' },
+                    { letter: 'K', sound: 'K says kuh, like Kite' },
+                    { letter: 'L', sound: 'L says luh, like Lion' },
+                    { letter: 'M', sound: 'M says mmm, like Moon' },
+                    { letter: 'N', sound: 'N says nnn, like Nose' },
+                    { letter: 'O', sound: 'O says oh, like Owl' },
+                    { letter: 'P', sound: 'P says puh, like Penguin' },
+                    { letter: 'Q', sound: 'Q says kwuh, like Quest' },
+                    { letter: 'R', sound: 'R says ruh, like Rainbow' },
+                    { letter: 'S', sound: 'S says sss, like Star' },
+                    { letter: 'T', sound: 'T says tuh, like Tiger' }
                 ]
             },
             colors: {
@@ -1160,50 +1467,49 @@
             numbers: {
                 easy: [
                     { number: '1', dots: '●' },
-                    { number: '2', dots: '●●' },
-                    { number: '3', dots: '●●●' },
-                    { number: '4', dots: '●●●●' },
-                    { number: '1', dots: '●' },
-                    { number: '2', dots: '●●' },
-                    { number: '3', dots: '●●●' },
-                    { number: '5', dots: '●●●●●' }
+                    { number: '2', dots: '● ●' },
+                    { number: '3', dots: '● ● ●' },
+                    { number: '4', dots: '● ●<br>● ●' },
+                    { number: '5', dots: '● ●<br>●<br>● ●' },
+                    { number: '6', dots: '● ●<br>● ●<br>● ●' },
+                    { number: '7', dots: '● ●<br>● ●<br>● ● ●' },
+                    { number: '8', dots: '● ●<br>● ●<br>● ●<br>● ●' }
                 ],
                 medium: [
-                    { number: '5', dots: '●●●●●' },
-                    { number: '6', dots: '●●●●●●' },
-                    { number: '7', dots: '●●●●●●●' },
-                    { number: '8', dots: '●●●●●●●●' },
-                    { number: '9', dots: '●●●●●●●●●' },
-                    { number: '10', dots: '●●●●●●●●●●' },
-                    { number: '6', dots: '●●●●●●' },
-                    { number: '7', dots: '●●●●●●●' },
-                    { number: '8', dots: '●●●●●●●●' },
-                    { number: '9', dots: '●●●●●●●●●' }
+                    { number: '5', dots: '● ●<br>●<br>● ●' },
+                    { number: '6', dots: '● ●<br>● ●<br>● ●' },
+                    { number: '7', dots: '● ●<br>● ●<br>● ● ●' },
+                    { number: '8', dots: '● ●<br>● ●<br>● ●<br>● ●' },
+                    { number: '9', dots: '● ● ●<br>● ● ●<br>● ● ●' },
+                    { number: '10', dots: '● ● ● ●<br>● ● ● ●<br>●   ●' },
+                    { number: '6', dots: '● ●<br>● ●<br>● ●' },
+                    { number: '7', dots: '● ●<br>● ●<br>● ● ●' },
+                    { number: '8', dots: '● ●<br>● ●<br>● ●<br>● ●' },
+                    { number: '9', dots: '● ● ●<br>● ● ●<br>● ● ●' }
                 ],
                 hard: [
-                    { number: '11', dots: '●●●●●●●●●●●' },
-                    { number: '12', dots: '●●●●●●●●●●●●' },
-                    { number: '13', dots: '●●●●●●●●●●●●●' },
-                    { number: '14', dots: '●●●●●●●●●●●●●●' },
-                    { number: '15', dots: '●●●●●●●●●●●●●●●' },
-                    { number: '16', dots: '●●●●●●●●●●●●●●●●' },
-                    { number: '17', dots: '●●●●●●●●●●●●●●●●●' },
-                    { number: '18', dots: '●●●●●●●●●●●●●●●●●●' },
-                    { number: '19', dots: '●●●●●●●●●●●●●●●●●●●' },
-                    { number: '20', dots: '●●●●●●●●●●●●●●●●●●●●' },
-                    { number: '12', dots: '●●●●●●●●●●●●' },
-                    { number: '15', dots: '●●●●●●●●●●●●●●●' }
+                    { number: '11', dots: '● ●<br>● ●<br>● ●<br>● ●<br>● ●<br>●' },
+                    { number: '12', dots: '● ●<br>● ●<br>● ●<br>● ●<br>● ●<br>● ●' },
+                    { number: '13', dots: '● ●<br>● ●<br>● ●<br>● ●<br>● ●<br>● ● ●' },
+                    { number: '14', dots: '● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>● ●' },
+                    { number: '15', dots: '● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>● ● ●' },
+                    { number: '16', dots: '● ●<br>● ●<br>● ●<br>● ●<br>● ●<br>● ●<br>● ●<br>● ●' },
+                    { number: '17', dots: '● ●<br>● ●<br>● ●<br>● ●<br>● ●<br>● ●<br>● ●<br>● ● ●' },
+                    { number: '18', dots: '● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>● ● ●' },
+                    { number: '19', dots: '● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>●' },
+                    { number: '20', dots: '● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>● ● ●' },
+                    { number: '11', dots: '● ●<br>● ●<br>● ●<br>● ●<br>● ●<br>●' },
+                    { number: '15', dots: '● ● ●<br>● ● ●<br>● ● ●<br>● ● ●<br>● ● ●' }
                 ]
             }
         };
 
         // ==================== MEDIAPIPE SETUP ====================
-        const videoElement = document.getElementById('videoElement');
-        const canvasElement = document.getElementById('canvasOverlay');
+        const videoElement = document.getElementById('previewVideoElement');
+        const canvasElement = document.getElementById('previewCanvasOverlay');
         const canvasCtx = canvasElement.getContext('2d');
         const handCursor = document.getElementById('handCursor');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
+        const cameraStatusDot = document.getElementById('cameraStatusDot');
 
         // Initialize Holistic
         const holistic = new Holistic({
@@ -1240,15 +1546,14 @@
                     canvasElement.width = videoElement.videoWidth;
                     canvasElement.height = videoElement.videoHeight;
 
-                    statusDot.classList.add('active');
-                    statusText.textContent = 'Camera ready! Show your hand';
+                    cameraStatusDot.classList.add('active');
 
                     // Start detection loop
                     detectLoop();
                 };
             } catch (err) {
                 console.error('Camera error:', err);
-                statusText.textContent = 'Camera not available';
+                cameraStatusDot.classList.remove('active');
             }
         }
 
@@ -1747,7 +2052,7 @@
             shuffle([...items]).forEach(item => {
                 const zone = document.createElement('div');
                 zone.className = 'drop-zone';
-                zone.innerHTML = `<span style="font-size: 1.5rem; letter-spacing: 5px;">${item.dots}</span>`;
+                zone.innerHTML = `<span style="font-size: 1.2rem; letter-spacing: 3px; line-height: 1.4;">${item.dots}</span>`;
                 zone.dataset.match = item.number;
                 zonesContainer.appendChild(zone);
             });

@@ -1,0 +1,2458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Science Lab - Learn Science with Experiments!</title>
+
+    <!-- OpenDyslexic Font -->
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+    <!-- MediaPipe Hands -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-lab: #1a1a2e;
+            --bg-panel: #16213e;
+            --bg-card: #1f4068;
+            --text-primary: #ffffff;
+            --text-secondary: #a8d8ea;
+            --accent-green: #00ff88;
+            --accent-blue: #00d4ff;
+            --accent-purple: #bf00ff;
+            --accent-pink: #ff00aa;
+            --accent-yellow: #ffee00;
+            --accent-orange: #ff8800;
+            --accent-red: #ff4444;
+            --glow-green: 0 0 30px rgba(0, 255, 136, 0.5);
+            --glow-blue: 0 0 30px rgba(0, 212, 255, 0.5);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', cursive, sans-serif;
+            background: var(--bg-lab);
+            min-height: 100vh;
+            overflow: hidden;
+            color: var(--text-primary);
+            line-height: 1.8;
+            letter-spacing: 0.05em;
+        }
+
+        /* Animated Lab Background */
+        .lab-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse at 20% 80%, rgba(0, 255, 136, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(191, 0, 255, 0.05) 0%, transparent 50%),
+                linear-gradient(180deg, var(--bg-lab) 0%, #0f0f23 100%);
+        }
+
+        .bubbles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -50px;
+            border-radius: 50%;
+            opacity: 0.6;
+            animation: rise linear infinite;
+        }
+
+        @keyframes rise {
+            0% { transform: translateY(0) scale(1); opacity: 0.6; }
+            100% { transform: translateY(-100vh) scale(0.5); opacity: 0; }
+        }
+
+        /* Main Layout */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 300px 1fr 320px;
+            gap: 15px;
+            height: 100vh;
+            padding: 15px;
+        }
+
+        /* Left Panel - Controls */
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+
+        /* Center - Lab Workspace */
+        .lab-workspace {
+            position: relative;
+            background: linear-gradient(180deg, rgba(31, 64, 104, 0.8) 0%, rgba(22, 33, 62, 0.9) 100%);
+            border-radius: var(--radius);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            box-shadow: var(--shadow), inset 0 0 100px rgba(0, 212, 255, 0.05);
+            overflow: hidden;
+        }
+
+        /* Right Panel - Info */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow-y: auto;
+        }
+
+        /* Cards */
+        .info-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: var(--shadow);
+        }
+
+        .info-card h3 {
+            font-size: 1rem;
+            color: var(--accent-blue);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-card h3 span {
+            font-size: 1.3rem;
+        }
+
+        /* Header */
+        .header-card {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            text-align: center;
+            padding: 15px;
+        }
+
+        .header-card h1 {
+            font-size: 1.2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 3px;
+        }
+
+        .header-card p {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        /* Subject Selection */
+        .subject-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .subject-btn {
+            padding: 12px 8px;
+            font-size: 0.8rem;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .subject-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .subject-btn.active {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.15);
+            box-shadow: var(--glow-green);
+        }
+
+        .subject-btn .icon {
+            font-size: 1.6rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        /* Experiment Selection */
+        .experiment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .experiment-btn {
+            padding: 12px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 2px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .experiment-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .experiment-btn.active {
+            border-color: var(--accent-blue);
+            background: rgba(0, 212, 255, 0.15);
+        }
+
+        .experiment-btn.completed::after {
+            content: '✓';
+            margin-left: auto;
+            color: var(--accent-green);
+            font-size: 1.2rem;
+        }
+
+        .experiment-btn .emoji {
+            font-size: 1.4rem;
+        }
+
+        /* Lab Table */
+        .lab-table {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: linear-gradient(180deg, #2d4a6f 0%, #1d3557 100%);
+            border-top: 4px solid #4a6fa5;
+        }
+
+        .lab-table::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.1), transparent);
+        }
+
+        /* Beakers & Equipment */
+        .equipment-area {
+            position: absolute;
+            bottom: 220px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 20px;
+        }
+
+        .beaker {
+            position: relative;
+            width: 100px;
+            height: 140px;
+            cursor: grab;
+            transition: transform 0.2s ease;
+        }
+
+        .beaker:hover {
+            transform: scale(1.05);
+        }
+
+        .beaker.dragging {
+            cursor: grabbing;
+            z-index: 100;
+            position: fixed;
+            pointer-events: none;
+        }
+
+        .beaker-glass {
+            position: absolute;
+            bottom: 0;
+            left: 10px;
+            right: 10px;
+            height: 120px;
+            background: rgba(200, 230, 255, 0.2);
+            border: 3px solid rgba(200, 230, 255, 0.4);
+            border-radius: 0 0 15px 15px;
+            border-top: none;
+            overflow: hidden;
+        }
+
+        .beaker-liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transition: height 0.5s ease, background 0.5s ease;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .beaker-label {
+            position: absolute;
+            bottom: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .beaker-bubbles {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .liquid-bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: liquidBubble 2s infinite;
+        }
+
+        @keyframes liquidBubble {
+            0% { transform: translateY(0) scale(1); opacity: 0.5; }
+            100% { transform: translateY(-100px) scale(0); opacity: 0; }
+        }
+
+        /* Mixing Bowl */
+        .mixing-area {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            height: 120px;
+        }
+
+        .mixing-bowl {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .bowl-container {
+            position: absolute;
+            bottom: 0;
+            left: 10%;
+            right: 10%;
+            height: 90px;
+            background: rgba(150, 180, 200, 0.3);
+            border: 4px solid rgba(150, 180, 200, 0.5);
+            border-radius: 0 0 50% 50%;
+            border-top: none;
+            overflow: hidden;
+        }
+
+        .bowl-liquid {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 0;
+            transition: all 0.5s ease;
+            border-radius: 0 0 50% 50%;
+        }
+
+        .bowl-label {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            color: var(--accent-yellow);
+            text-shadow: 0 0 10px var(--accent-yellow);
+        }
+
+        /* Reaction Effects */
+        .reaction-effect {
+            position: absolute;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        .smoke {
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: smokeRise 2s ease-out forwards;
+        }
+
+        @keyframes smokeRise {
+            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            100% { transform: translateY(-150px) scale(3); opacity: 0; }
+        }
+
+        .spark {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-yellow);
+            border-radius: 50%;
+            animation: sparkFly 1s ease-out forwards;
+        }
+
+        @keyframes sparkFly {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+        }
+
+        .explosion {
+            width: 100px;
+            height: 100px;
+            background: radial-gradient(circle, var(--accent-orange) 0%, var(--accent-red) 50%, transparent 70%);
+            border-radius: 50%;
+            animation: explode 0.5s ease-out forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+        }
+
+        /* Hand Cursor */
+        .hand-cursor {
+            position: fixed;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease;
+        }
+
+        .hand-cursor.open {
+            background: radial-gradient(circle, rgba(0, 255, 136, 0.4) 0%, transparent 70%);
+            border: 3px solid var(--accent-green);
+            box-shadow: var(--glow-green);
+        }
+
+        .hand-cursor.closed {
+            background: radial-gradient(circle, rgba(255, 136, 0, 0.6) 0%, transparent 70%);
+            border: 3px solid var(--accent-orange);
+            box-shadow: 0 0 30px rgba(255, 136, 0, 0.5);
+            transform: translate(-50%, -50%) scale(0.8);
+        }
+
+        /* Camera Preview */
+        .camera-preview {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 160px;
+            height: 120px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--accent-blue);
+            box-shadow: var(--glow-blue);
+            background: #000;
+            z-index: 10;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .camera-preview canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            bottom: 5px;
+            left: 5px;
+            padding: 2px 8px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 8px;
+            font-size: 0.65rem;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.active {
+            background: var(--accent-green);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Experiment Info Display */
+        .experiment-display {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 2px solid var(--accent-purple);
+            max-width: 350px;
+            z-index: 10;
+        }
+
+        .experiment-display h4 {
+            font-size: 1.1rem;
+            color: var(--accent-yellow);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .experiment-display p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Step Indicator */
+        .step-indicator {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .step-dot.completed {
+            background: var(--accent-green);
+            box-shadow: 0 0 10px var(--accent-green);
+        }
+
+        .step-dot.current {
+            background: var(--accent-yellow);
+            box-shadow: 0 0 10px var(--accent-yellow);
+            animation: pulse 1s infinite;
+        }
+
+        /* Result Panel */
+        .result-panel {
+            position: absolute;
+            bottom: 230px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 30px;
+            border-radius: 15px;
+            border: 2px solid var(--accent-green);
+            text-align: center;
+            display: none;
+            z-index: 20;
+        }
+
+        .result-panel.active {
+            display: block;
+            animation: popIn 0.4s ease;
+        }
+
+        .result-panel h4 {
+            font-size: 1.2rem;
+            color: var(--accent-green);
+            margin-bottom: 10px;
+        }
+
+        .result-panel p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        @keyframes popIn {
+            0% { transform: translateX(-50%) scale(0); }
+            50% { transform: translateX(-50%) scale(1.1); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        /* Quiz Mode */
+        .quiz-panel {
+            background: linear-gradient(135deg, var(--bg-card), var(--bg-panel));
+            border: 2px solid var(--accent-purple);
+        }
+
+        .quiz-question {
+            font-size: 1rem;
+            color: var(--accent-yellow);
+            margin-bottom: 12px;
+            text-align: center;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .quiz-option {
+            padding: 12px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .quiz-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-blue);
+        }
+
+        .quiz-option.correct {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: var(--accent-green);
+        }
+
+        .quiz-option.wrong {
+            background: rgba(255, 68, 68, 0.2);
+            border-color: var(--accent-red);
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+
+        .stat-box .label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+        }
+
+        /* Science Facts */
+        .science-fact {
+            background: linear-gradient(135deg, rgba(0, 255, 136, 0.1), rgba(0, 212, 255, 0.1));
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .science-fact strong {
+            color: var(--accent-green);
+        }
+
+        /* Level Buttons */
+        .level-selector {
+            display: flex;
+            gap: 6px;
+        }
+
+        .level-btn {
+            flex: 1;
+            padding: 8px;
+            font-size: 0.75rem;
+            font-family: inherit;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-secondary);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .level-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .level-btn.easy.active {
+            background: var(--accent-green);
+            color: #000;
+        }
+
+        .level-btn.medium.active {
+            background: var(--accent-yellow);
+            color: #000;
+        }
+
+        .level-btn.hard.active {
+            background: var(--accent-red);
+            color: #fff;
+        }
+
+        /* Instructions */
+        .instructions-box {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        .instructions-box p {
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+        }
+
+        .instructions-box p:last-child {
+            margin-bottom: 0;
+        }
+
+        .instructions-box span {
+            font-size: 1.1rem;
+        }
+
+        /* Control Button */
+        .control-btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            color: #000;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-green);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: 40px;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 2px solid var(--accent-purple);
+            box-shadow: 0 0 50px var(--accent-purple);
+            max-width: 90%;
+            animation: modalPop 0.5s ease;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0) rotate(-10deg); }
+            50% { transform: scale(1.05) rotate(3deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .modal-content h2 {
+            font-size: 1.8rem;
+            color: var(--accent-yellow);
+            margin-bottom: 10px;
+        }
+
+        .modal-stars {
+            font-size: 3rem;
+            margin: 15px 0;
+        }
+
+        .modal-text {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .modal-btn {
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            color: #000;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Sound Toggle */
+        .sound-btn {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sound-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Game Message */
+        .game-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 25px 40px;
+            border-radius: 15px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            z-index: 1500;
+            display: none;
+            text-align: center;
+        }
+
+        .game-message.success {
+            background: linear-gradient(135deg, var(--accent-green), #00cc6a);
+            color: #000;
+            box-shadow: 0 0 50px var(--accent-green);
+        }
+
+        .game-message.error {
+            background: linear-gradient(135deg, var(--accent-red), #cc0000);
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-red);
+        }
+
+        .game-message.info {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-blue);
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -20px;
+            animation: confettiFall 3s linear forwards;
+            z-index: 3000;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .app-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+
+            .left-panel, .right-panel {
+                flex-direction: row;
+                overflow-x: auto;
+                gap: 10px;
+            }
+
+            .left-panel .info-card, .right-panel .info-card {
+                min-width: 250px;
+                flex-shrink: 0;
+            }
+
+            .lab-workspace {
+                min-height: 500px;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--accent-blue);
+            border-radius: 3px;
+        }
+
+        /* Dynamic Navigation Bar */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: white;
+            color: var(--accent-green);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-title">📚 Learning Games</div>
+            <div class="nav-menu" id="navMenu"></div>
+        </div>
+    </div>
+
+    <!-- Lab Background -->
+    <div class="lab-background">
+        <div class="bubbles" id="bubbles"></div>
+    </div>
+
+    <!-- Hand Cursor -->
+    <div class="hand-cursor" id="handCursor"></div>
+
+    <!-- Game Message -->
+    <div class="game-message" id="gameMessage"></div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <h2 id="modalTitle">🧪 Experiment Complete!</h2>
+            <div class="modal-stars" id="modalStars">⭐⭐⭐</div>
+            <div class="modal-text" id="modalText">You're a science superstar!</div>
+            <button class="modal-btn" onclick="nextExperiment()">Next Experiment →</button>
+            <button class="modal-btn" onclick="closeModal()">Keep Exploring</button>
+        </div>
+    </div>
+
+    <!-- Sound Toggle -->
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+
+    <div class="app-container">
+        <!-- Left Panel -->
+        <aside class="left-panel">
+            <!-- Header -->
+            <div class="info-card header-card">
+                <h1>🧪 Magic Science Lab 🔬</h1>
+                <p>Mix, experiment & discover!</p>
+            </div>
+
+            <!-- Subject Selection -->
+            <div class="info-card">
+                <h3><span>📚</span> Science Subject</h3>
+                <div class="subject-grid">
+                    <button class="subject-btn active" data-subject="chemistry" onclick="setSubject('chemistry')">
+                        <span class="icon">⚗️</span>
+                        Chemistry
+                    </button>
+                    <button class="subject-btn" data-subject="physics" onclick="setSubject('physics')">
+                        <span class="icon">⚡</span>
+                        Physics
+                    </button>
+                    <button class="subject-btn" data-subject="biology" onclick="setSubject('biology')">
+                        <span class="icon">🧬</span>
+                        Biology
+                    </button>
+                    <button class="subject-btn" data-subject="earth" onclick="setSubject('earth')">
+                        <span class="icon">🌍</span>
+                        Earth
+                    </button>
+                </div>
+            </div>
+
+            <!-- Experiment Selection -->
+            <div class="info-card">
+                <h3><span>🧫</span> Experiments</h3>
+                <div class="experiment-list" id="experimentList"></div>
+            </div>
+
+            <!-- Level Selection -->
+            <div class="info-card">
+                <h3><span>📊</span> Difficulty</h3>
+                <div class="level-selector">
+                    <button class="level-btn easy active" onclick="setLevel('easy')">🟢 Easy</button>
+                    <button class="level-btn medium" onclick="setLevel('medium')">🟡 Medium</button>
+                    <button class="level-btn hard" onclick="setLevel('hard')">🔴 Hard</button>
+                </div>
+            </div>
+
+            <!-- Instructions -->
+            <div class="info-card">
+                <h3><span>📖</span> How to Play</h3>
+                <div class="instructions-box">
+                    <p><span>👆</span> Point to select items</p>
+                    <p><span>✊</span> Pinch to grab beakers</p>
+                    <p><span>🫗</span> Pour into mixing bowl</p>
+                    <p><span>👀</span> Watch the reaction!</p>
+                    <p><span>⌨️</span> Press M for mouse</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Lab Workspace -->
+        <main class="lab-workspace" id="labWorkspace">
+            <!-- Camera Preview -->
+            <div class="camera-preview">
+                <video id="videoElement" autoplay playsinline></video>
+                <canvas id="previewCanvas"></canvas>
+                <div class="camera-status">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Camera</span>
+                </div>
+            </div>
+
+            <!-- Experiment Display -->
+            <div class="experiment-display" id="experimentDisplay">
+                <h4><span id="expEmoji">⚗️</span> <span id="expTitle">Select an Experiment</span></h4>
+                <p id="expDescription">Choose a subject and experiment from the left panel to begin!</p>
+                <div class="step-indicator" id="stepIndicator"></div>
+            </div>
+
+            <!-- Equipment Area -->
+            <div class="equipment-area" id="equipmentArea"></div>
+
+            <!-- Lab Table -->
+            <div class="lab-table">
+                <!-- Mixing Area -->
+                <div class="mixing-area">
+                    <div class="mixing-bowl" id="mixingBowl">
+                        <div class="bowl-label">🧪 Mixing Bowl</div>
+                        <div class="bowl-container">
+                            <div class="bowl-liquid" id="bowlLiquid"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Panel -->
+            <div class="result-panel" id="resultPanel">
+                <h4 id="resultTitle">🎉 Reaction Complete!</h4>
+                <p id="resultText">You created something amazing!</p>
+            </div>
+        </main>
+
+        <!-- Right Panel -->
+        <aside class="right-panel">
+            <!-- Stats -->
+            <div class="info-card">
+                <h3><span>⭐</span> Lab Progress</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="value" id="scoreValue">0</div>
+                        <div class="label">Points</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="expCompleted">0</div>
+                        <div class="label">Completed</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="streakValue">0</div>
+                        <div class="label">Streak</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="levelValue">1</div>
+                        <div class="label">Level</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Panel -->
+            <div class="info-card quiz-panel" id="quizPanel" style="display: none;">
+                <h3><span>❓</span> Science Quiz</h3>
+                <div class="quiz-question" id="quizQuestion">What happens when you mix baking soda and vinegar?</div>
+                <div class="quiz-options" id="quizOptions"></div>
+            </div>
+
+            <!-- Current Step -->
+            <div class="info-card" id="stepCard">
+                <h3><span>👣</span> Current Step</h3>
+                <p id="currentStepText" style="font-size: 0.9rem; color: var(--text-secondary);">Select an experiment to begin your scientific adventure!</p>
+            </div>
+
+            <!-- Science Fact -->
+            <div class="info-card">
+                <h3><span>💡</span> Science Fact</h3>
+                <div class="science-fact" id="scienceFact">
+                    <strong>Did you know?</strong> Chemistry is the study of matter - everything around you is made of chemicals, even you!
+                </div>
+            </div>
+
+            <!-- New Experiment Button -->
+            <button class="control-btn" onclick="startExperiment()">
+                🚀 Start Experiment
+            </button>
+        </aside>
+    </div>
+
+    <script>
+        // ==================== DYNAMIC NAVIGATION SYSTEM ====================
+        // Configuration for available games
+        const GAMES_CONFIG = {
+            'index.html': { name: '🔤 Alphabet & Colors', description: 'Learn letters and colors with drag & drop' },
+            'planets.html': { name: '🪐 Planets', description: 'Explore our solar system' },
+            'exploring_body.html': { name: '🧬 Body Explorer', description: 'Learn about human body parts' },
+            'frost_discovery.html': { name: '❄️ Frost Discovery', description: 'Reveal and learn hidden items' },
+            'hand_music.html': { name: '🎵 Music Hands', description: 'Learn music with hand gestures' },
+            'melt_the_ice.html': { name: '🌈 Melt the Ice', description: 'Melt ice to discover pictures' },
+            'science-lab.html': { name: '🧪 Science Lab', description: 'Perform fun experiments' }
+        };
+
+        // Initialize navigation
+        function initializeNavigation() {
+            const navMenu = document.getElementById('navMenu');
+            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
+
+            // Clear existing menu
+            navMenu.innerHTML = '';
+
+            // Create links for each game
+            for (const [file, config] of Object.entries(GAMES_CONFIG)) {
+                const link = document.createElement('a');
+                link.className = 'nav-link';
+                link.href = file;
+                link.textContent = config.name;
+                link.title = config.description;
+
+                // Mark current page as active
+                if (currentFile === file || (currentFile === '' && file === 'index.html')) {
+                    link.classList.add('active');
+                }
+
+                navMenu.appendChild(link);
+            }
+        }
+
+        // Initialize navigation when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeNavigation();
+        });
+
+        // ==================== CONFIGURATION ====================
+        const CONFIG = {
+            soundEnabled: true,
+            pinchThreshold: 0.07,
+            smoothing: 0.4
+        };
+
+        // ==================== STATE ====================
+        let currentSubject = 'chemistry';
+        let currentExperiment = null;
+        let currentLevel = 'easy';
+        let currentStep = 0;
+        let score = 0;
+        let experimentsCompleted = 0;
+        let streak = 0;
+        let level = 1;
+        let completedExperiments = new Set();
+
+        // Hand tracking
+        let handPosition = { x: 0, y: 0 };
+        let isPinching = false;
+        let wasPinching = false;
+        let draggedBeaker = null;
+        let isHandDetected = false;
+
+        // Mixing
+        let bowlContents = [];
+        let bowlColor = 'transparent';
+
+        // ==================== EXPERIMENT DATA ====================
+        const experimentsData = {
+            chemistry: [
+                {
+                    id: 'volcano',
+                    name: 'Volcano Eruption',
+                    emoji: '🌋',
+                    description: 'Create a fizzing volcanic eruption by mixing an acid with a base!',
+                    ingredients: [
+                        { name: 'Baking Soda', emoji: '🧂', color: '#ffffff' },
+                        { name: 'Vinegar', emoji: '🫗', color: '#f5f5dc' },
+                        { name: 'Red Dye', emoji: '🔴', color: '#ff4444' }
+                    ],
+                    correctOrder: ['Baking Soda', 'Red Dye', 'Vinegar'],
+                    result: {
+                        title: '🌋 Volcanic Eruption!',
+                        description: 'The baking soda (a base) reacts with vinegar (an acid) to create carbon dioxide gas - that\'s what makes all the bubbles!',
+                        color: '#ff4444',
+                        effect: 'eruption'
+                    },
+                    fact: 'This is called an acid-base reaction. The CO2 gas produced is the same gas you breathe out!',
+                    quiz: {
+                        question: 'What gas is produced when baking soda and vinegar mix?',
+                        options: ['Oxygen', 'Carbon Dioxide', 'Nitrogen', 'Helium'],
+                        correct: 1
+                    }
+                },
+                {
+                    id: 'slime',
+                    name: 'Magic Slime',
+                    emoji: '🟢',
+                    description: 'Create stretchy, gooey slime by making a polymer!',
+                    ingredients: [
+                        { name: 'Glue', emoji: '🩹', color: '#ffffff' },
+                        { name: 'Borax Solution', emoji: '💧', color: '#87ceeb' },
+                        { name: 'Green Color', emoji: '💚', color: '#00ff88' }
+                    ],
+                    correctOrder: ['Glue', 'Green Color', 'Borax Solution'],
+                    result: {
+                        title: '🟢 Slime Created!',
+                        description: 'The glue molecules link together into long chains called polymers, making the slime stretchy!',
+                        color: '#00ff88',
+                        effect: 'goo'
+                    },
+                    fact: 'Polymers are everywhere! Plastic, rubber, and even DNA are made of polymers.',
+                    quiz: {
+                        question: 'What are the long chains of molecules in slime called?',
+                        options: ['Atoms', 'Polymers', 'Electrons', 'Crystals'],
+                        correct: 1
+                    }
+                },
+                {
+                    id: 'rainbow',
+                    name: 'Rainbow Density',
+                    emoji: '🌈',
+                    description: 'Create a rainbow in a glass using liquid density!',
+                    ingredients: [
+                        { name: 'Honey', emoji: '🍯', color: '#ffa500' },
+                        { name: 'Dish Soap', emoji: '🧴', color: '#00ff00' },
+                        { name: 'Water', emoji: '💧', color: '#00bfff' },
+                        { name: 'Oil', emoji: '🛢️', color: '#ffff00' }
+                    ],
+                    correctOrder: ['Honey', 'Dish Soap', 'Water', 'Oil'],
+                    result: {
+                        title: '🌈 Density Rainbow!',
+                        description: 'Each liquid has a different density (how heavy it is for its size), so they stack on top of each other!',
+                        color: 'rainbow',
+                        effect: 'layers'
+                    },
+                    fact: 'Honey is about 1.4 times denser than water, which is why it sinks to the bottom!',
+                    quiz: {
+                        question: 'Why do the liquids form layers?',
+                        options: ['Different colors', 'Different densities', 'Different temperatures', 'Magic'],
+                        correct: 1
+                    }
+                }
+            ],
+            physics: [
+                {
+                    id: 'magnet',
+                    name: 'Magnetic Force',
+                    emoji: '🧲',
+                    description: 'Explore the invisible force of magnetism!',
+                    ingredients: [
+                        { name: 'Iron Filings', emoji: '⚙️', color: '#808080' },
+                        { name: 'Magnet', emoji: '🧲', color: '#ff0000' },
+                        { name: 'Paper', emoji: '📄', color: '#ffffff' }
+                    ],
+                    correctOrder: ['Paper', 'Iron Filings', 'Magnet'],
+                    result: {
+                        title: '🧲 Magnetic Field Revealed!',
+                        description: 'The iron filings show us the invisible magnetic field lines around the magnet!',
+                        color: '#808080',
+                        effect: 'magnetic'
+                    },
+                    fact: 'Earth is like a giant magnet! That\'s why compasses point north.',
+                    quiz: {
+                        question: 'What does a compass needle point to?',
+                        options: ['The Sun', 'Magnetic North', 'The Moon', 'Any direction'],
+                        correct: 1
+                    }
+                },
+                {
+                    id: 'static',
+                    name: 'Static Electricity',
+                    emoji: '⚡',
+                    description: 'Create lightning with static electricity!',
+                    ingredients: [
+                        { name: 'Balloon', emoji: '🎈', color: '#ff69b4' },
+                        { name: 'Wool Cloth', emoji: '🧣', color: '#8b4513' },
+                        { name: 'Paper Bits', emoji: '📝', color: '#f5f5dc' }
+                    ],
+                    correctOrder: ['Balloon', 'Wool Cloth', 'Paper Bits'],
+                    result: {
+                        title: '⚡ Static Electricity!',
+                        description: 'Rubbing transfers electrons from the wool to the balloon, giving it a negative charge that attracts the paper!',
+                        color: '#ffff00',
+                        effect: 'sparks'
+                    },
+                    fact: 'Lightning is static electricity on a massive scale - a single bolt can be 5 times hotter than the sun\'s surface!',
+                    quiz: {
+                        question: 'What tiny particles move during static electricity?',
+                        options: ['Protons', 'Neutrons', 'Electrons', 'Atoms'],
+                        correct: 2
+                    }
+                },
+                {
+                    id: 'light',
+                    name: 'Light Bending',
+                    emoji: '🔦',
+                    description: 'Discover how light bends through different materials!',
+                    ingredients: [
+                        { name: 'Water', emoji: '💧', color: '#00bfff' },
+                        { name: 'Glass', emoji: '🥛', color: '#e0e0e0' },
+                        { name: 'Flashlight', emoji: '🔦', color: '#ffff00' }
+                    ],
+                    correctOrder: ['Glass', 'Water', 'Flashlight'],
+                    result: {
+                        title: '🌈 Light Refraction!',
+                        description: 'Light slows down and bends when it enters water - this is called refraction!',
+                        color: '#ffff00',
+                        effect: 'rainbow'
+                    },
+                    fact: 'Rainbows form when sunlight refracts through millions of tiny water droplets in the sky!',
+                    quiz: {
+                        question: 'What is it called when light bends through water?',
+                        options: ['Reflection', 'Refraction', 'Absorption', 'Diffusion'],
+                        correct: 1
+                    }
+                }
+            ],
+            biology: [
+                {
+                    id: 'plant',
+                    name: 'Plant Growth',
+                    emoji: '🌱',
+                    description: 'Watch what plants need to grow!',
+                    ingredients: [
+                        { name: 'Seed', emoji: '🫘', color: '#8b4513' },
+                        { name: 'Soil', emoji: '🪴', color: '#3d2914' },
+                        { name: 'Water', emoji: '💧', color: '#00bfff' },
+                        { name: 'Sunlight', emoji: '☀️', color: '#ffff00' }
+                    ],
+                    correctOrder: ['Soil', 'Seed', 'Water', 'Sunlight'],
+                    result: {
+                        title: '🌱 Plant Sprouting!',
+                        description: 'Plants use sunlight, water, and nutrients from soil to make their own food through photosynthesis!',
+                        color: '#00ff00',
+                        effect: 'grow'
+                    },
+                    fact: 'Plants produce oxygen as a byproduct of photosynthesis - that\'s the air we breathe!',
+                    quiz: {
+                        question: 'What process do plants use to make food?',
+                        options: ['Digestion', 'Respiration', 'Photosynthesis', 'Fermentation'],
+                        correct: 2
+                    }
+                },
+                {
+                    id: 'cell',
+                    name: 'Cell Discovery',
+                    emoji: '🔬',
+                    description: 'Explore the building blocks of life!',
+                    ingredients: [
+                        { name: 'Microscope', emoji: '🔬', color: '#808080' },
+                        { name: 'Water Drop', emoji: '💧', color: '#00bfff' },
+                        { name: 'Onion Skin', emoji: '🧅', color: '#dda0dd' }
+                    ],
+                    correctOrder: ['Onion Skin', 'Water Drop', 'Microscope'],
+                    result: {
+                        title: '🔬 Cells Revealed!',
+                        description: 'Every living thing is made of tiny cells! Plant cells have walls that give them their shape.',
+                        color: '#dda0dd',
+                        effect: 'zoom'
+                    },
+                    fact: 'Your body contains about 37 trillion cells, and they\'re constantly being replaced!',
+                    quiz: {
+                        question: 'What are all living things made of?',
+                        options: ['Rocks', 'Cells', 'Water only', 'Air'],
+                        correct: 1
+                    }
+                },
+                {
+                    id: 'dna',
+                    name: 'DNA Extraction',
+                    emoji: '🧬',
+                    description: 'Extract real DNA from a strawberry!',
+                    ingredients: [
+                        { name: 'Strawberry', emoji: '🍓', color: '#ff4444' },
+                        { name: 'Soap', emoji: '🧴', color: '#87ceeb' },
+                        { name: 'Salt Water', emoji: '🧂', color: '#f0f0f0' },
+                        { name: 'Alcohol', emoji: '🧪', color: '#e0e0e0' }
+                    ],
+                    correctOrder: ['Strawberry', 'Soap', 'Salt Water', 'Alcohol'],
+                    result: {
+                        title: '🧬 DNA Extracted!',
+                        description: 'The white stringy stuff is real DNA! It contains the instructions for making a strawberry.',
+                        color: '#ffffff',
+                        effect: 'dna'
+                    },
+                    fact: 'If you uncoiled all the DNA in your body, it would stretch to the sun and back 600 times!',
+                    quiz: {
+                        question: 'What does DNA contain?',
+                        options: ['Food', 'Genetic instructions', 'Water', 'Energy'],
+                        correct: 1
+                    }
+                }
+            ],
+            earth: [
+                {
+                    id: 'erosion',
+                    name: 'Water Erosion',
+                    emoji: '🏔️',
+                    description: 'See how water shapes the land over time!',
+                    ingredients: [
+                        { name: 'Sand', emoji: '🏖️', color: '#f4a460' },
+                        { name: 'Rocks', emoji: '🪨', color: '#808080' },
+                        { name: 'Water', emoji: '💧', color: '#00bfff' }
+                    ],
+                    correctOrder: ['Sand', 'Rocks', 'Water'],
+                    result: {
+                        title: '🏔️ Erosion in Action!',
+                        description: 'Water slowly wears away rock and carries soil - this is how valleys and canyons form!',
+                        color: '#f4a460',
+                        effect: 'erosion'
+                    },
+                    fact: 'The Grand Canyon was carved by the Colorado River over 5-6 million years!',
+                    quiz: {
+                        question: 'What carved the Grand Canyon?',
+                        options: ['Earthquakes', 'Volcanoes', 'A river', 'Wind'],
+                        correct: 2
+                    }
+                },
+                {
+                    id: 'fossil',
+                    name: 'Fossil Formation',
+                    emoji: '🦴',
+                    description: 'Discover how fossils are made!',
+                    ingredients: [
+                        { name: 'Shell', emoji: '🐚', color: '#ffd700' },
+                        { name: 'Mud', emoji: '🟤', color: '#8b4513' },
+                        { name: 'Pressure', emoji: '⬇️', color: '#808080' },
+                        { name: 'Time', emoji: '⏰', color: '#c0c0c0' }
+                    ],
+                    correctOrder: ['Shell', 'Mud', 'Pressure', 'Time'],
+                    result: {
+                        title: '🦴 Fossil Created!',
+                        description: 'Over millions of years, mud turns to rock and preserves the shape of ancient creatures!',
+                        color: '#d2b48c',
+                        effect: 'fossil'
+                    },
+                    fact: 'The oldest fossils ever found are over 3.5 billion years old!',
+                    quiz: {
+                        question: 'How long does it take for fossils to form?',
+                        options: ['Days', 'Years', 'Millions of years', 'Seconds'],
+                        correct: 2
+                    }
+                },
+                {
+                    id: 'weather',
+                    name: 'Rain Cycle',
+                    emoji: '🌧️',
+                    description: 'Create your own water cycle!',
+                    ingredients: [
+                        { name: 'Water', emoji: '💧', color: '#00bfff' },
+                        { name: 'Heat', emoji: '🔥', color: '#ff4500' },
+                        { name: 'Cold Air', emoji: '❄️', color: '#add8e6' }
+                    ],
+                    correctOrder: ['Water', 'Heat', 'Cold Air'],
+                    result: {
+                        title: '🌧️ Rain Created!',
+                        description: 'Heat evaporates water, it rises and cools to form clouds, then falls as rain!',
+                        color: '#00bfff',
+                        effect: 'rain'
+                    },
+                    fact: 'The same water has been cycling on Earth for over 4 billion years - you might drink the same water a dinosaur did!',
+                    quiz: {
+                        question: 'What makes water rise into the sky?',
+                        options: ['Wind', 'Heat (evaporation)', 'Gravity', 'The moon'],
+                        correct: 1
+                    }
+                }
+            ]
+        };
+
+        const scienceFacts = {
+            chemistry: [
+                'Everything is made of atoms - they\'re so tiny that a million of them could fit on the tip of a pin!',
+                'Your body is about 60% water - that\'s chemistry in action!',
+                'Gold is so soft you can shape it with your hands, but diamonds are the hardest natural substance!',
+                'The smell of rain has a name - it\'s called "petrichor" and it\'s caused by chemical reactions!'
+            ],
+            physics: [
+                'Light travels at 186,000 miles per second - fast enough to go around Earth 7.5 times in one second!',
+                'Sound cannot travel through space because there\'s no air for the vibrations!',
+                'A neutron star is so dense that a teaspoon of it would weigh 6 billion tons!',
+                'Time actually moves slower for objects that are moving fast - Einstein proved it!'
+            ],
+            biology: [
+                'Your heart beats about 100,000 times every day!',
+                'Octopuses have three hearts and blue blood!',
+                'A single human hair can support up to 100 grams of weight!',
+                'Butterflies taste with their feet!'
+            ],
+            earth: [
+                'Earth\'s core is as hot as the surface of the sun - about 10,800°F!',
+                'There\'s more water in the atmosphere than in all the rivers on Earth combined!',
+                'The deepest point in the ocean is almost 7 miles down - that\'s deeper than Mount Everest is tall!',
+                'Earthquakes can make the day slightly shorter by changing Earth\'s rotation!'
+            ]
+        };
+
+        // ==================== AUDIO SYSTEM ====================
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTone(freq, duration = 0.2, type = 'sine') {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = type;
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playBubbleSound() {
+            playTone(600 + Math.random() * 400, 0.1);
+        }
+
+        function playPourSound() {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => playTone(300 + Math.random() * 200, 0.1), i * 50);
+            }
+        }
+
+        function playReactionSound() {
+            playTone(400, 0.1);
+            setTimeout(() => playTone(500, 0.1), 100);
+            setTimeout(() => playTone(600, 0.1), 200);
+            setTimeout(() => playTone(800, 0.3), 300);
+        }
+
+        function playSuccessSound() {
+            playTone(523, 0.15);
+            setTimeout(() => playTone(659, 0.15), 100);
+            setTimeout(() => playTone(784, 0.15), 200);
+            setTimeout(() => playTone(1047, 0.3), 300);
+        }
+
+        function playErrorSound() {
+            playTone(200, 0.3, 'square');
+        }
+
+        function playPickupSound() {
+            playTone(500, 0.1);
+        }
+
+        function speak(text, rate = 0.85) {
+            if (!CONFIG.soundEnabled) return;
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = rate;
+            utterance.pitch = 1.1;
+            utterance.lang = 'en-US';
+            speechSynthesis.speak(utterance);
+        }
+
+        function toggleSound() {
+            CONFIG.soundEnabled = !CONFIG.soundEnabled;
+            document.getElementById('soundBtn').textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+        }
+
+        // ==================== GAME SETUP ====================
+        function init() {
+            createBubbles();
+            updateExperimentList();
+            updateScienceFact();
+            updateStats();
+        }
+
+        function createBubbles() {
+            const container = document.getElementById('bubbles');
+            const colors = ['#00ff88', '#00d4ff', '#bf00ff', '#ff00aa'];
+
+            for (let i = 0; i < 20; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.style.left = Math.random() * 100 + '%';
+                bubble.style.width = (Math.random() * 20 + 10) + 'px';
+                bubble.style.height = bubble.style.width;
+                bubble.style.background = colors[Math.floor(Math.random() * colors.length)];
+                bubble.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                bubble.style.animationDelay = Math.random() * 10 + 's';
+                container.appendChild(bubble);
+            }
+        }
+
+        function updateExperimentList() {
+            const list = document.getElementById('experimentList');
+            list.innerHTML = '';
+
+            const experiments = experimentsData[currentSubject];
+            experiments.forEach(exp => {
+                const btn = document.createElement('button');
+                btn.className = 'experiment-btn' +
+                    (currentExperiment?.id === exp.id ? ' active' : '') +
+                    (completedExperiments.has(exp.id) ? ' completed' : '');
+                btn.innerHTML = `<span class="emoji">${exp.emoji}</span> ${exp.name}`;
+                btn.onclick = () => selectExperiment(exp);
+                list.appendChild(btn);
+            });
+        }
+
+        function selectExperiment(exp) {
+            currentExperiment = exp;
+            currentStep = 0;
+            bowlContents = [];
+            bowlColor = 'transparent';
+
+            updateExperimentList();
+            updateExperimentDisplay();
+            setupBeakers();
+            updateBowl();
+            hideResult();
+
+            speak(`${exp.name}. ${exp.description}`);
+        }
+
+        function updateExperimentDisplay() {
+            if (!currentExperiment) return;
+
+            document.getElementById('expEmoji').textContent = currentExperiment.emoji;
+            document.getElementById('expTitle').textContent = currentExperiment.name;
+            document.getElementById('expDescription').textContent = currentExperiment.description;
+
+            // Update step indicator
+            const indicator = document.getElementById('stepIndicator');
+            indicator.innerHTML = '';
+            currentExperiment.correctOrder.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'step-dot' +
+                    (i < currentStep ? ' completed' : '') +
+                    (i === currentStep ? ' current' : '');
+                indicator.appendChild(dot);
+            });
+
+            // Update current step text
+            if (currentStep < currentExperiment.correctOrder.length) {
+                const nextIngredient = currentExperiment.correctOrder[currentStep];
+                document.getElementById('currentStepText').textContent =
+                    `Step ${currentStep + 1}: Add ${nextIngredient} to the mixing bowl`;
+            } else {
+                document.getElementById('currentStepText').textContent =
+                    'All ingredients added! Watch the reaction!';
+            }
+        }
+
+        function setupBeakers() {
+            const area = document.getElementById('equipmentArea');
+            area.innerHTML = '';
+
+            if (!currentExperiment) return;
+
+            // Shuffle ingredients for harder levels
+            let ingredients = [...currentExperiment.ingredients];
+            if (currentLevel !== 'easy') {
+                ingredients = shuffleArray(ingredients);
+            }
+
+            ingredients.forEach((ing, index) => {
+                const beaker = document.createElement('div');
+                beaker.className = 'beaker';
+                beaker.id = `beaker-${index}`;
+                beaker.dataset.name = ing.name;
+                beaker.dataset.color = ing.color;
+
+                beaker.innerHTML = `
+                    <div class="beaker-glass">
+                        <div class="beaker-liquid" style="height: 80%; background: ${ing.color};"></div>
+                        <div class="beaker-bubbles"></div>
+                    </div>
+                    <div class="beaker-label">${ing.emoji} ${ing.name}</div>
+                `;
+
+                // Add drag events
+                beaker.addEventListener('mousedown', (e) => startDrag(beaker, e));
+                beaker.addEventListener('touchstart', (e) => startDrag(beaker, e.touches[0]));
+
+                area.appendChild(beaker);
+            });
+        }
+
+        function shuffleArray(array) {
+            const newArray = [...array];
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+            }
+            return newArray;
+        }
+
+        // ==================== DRAG AND DROP ====================
+        function startDrag(beaker, event) {
+            if (beaker.classList.contains('used')) return;
+
+            initAudio();
+            playPickupSound();
+
+            draggedBeaker = beaker;
+            beaker.classList.add('dragging');
+
+            const rect = beaker.getBoundingClientRect();
+            beaker.style.left = rect.left + 'px';
+            beaker.style.top = rect.top + 'px';
+
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchmove', onDragTouch);
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function onDrag(e) {
+            if (!draggedBeaker) return;
+            draggedBeaker.style.left = (e.clientX - 50) + 'px';
+            draggedBeaker.style.top = (e.clientY - 70) + 'px';
+        }
+
+        function onDragTouch(e) {
+            if (!draggedBeaker) return;
+            const touch = e.touches[0];
+            draggedBeaker.style.left = (touch.clientX - 50) + 'px';
+            draggedBeaker.style.top = (touch.clientY - 70) + 'px';
+        }
+
+        function endDrag() {
+            if (!draggedBeaker) return;
+
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchmove', onDragTouch);
+            document.removeEventListener('touchend', endDrag);
+
+            // Check if over mixing bowl
+            const bowl = document.getElementById('mixingBowl');
+            const bowlRect = bowl.getBoundingClientRect();
+            const beakerRect = draggedBeaker.getBoundingClientRect();
+
+            const beakerCenterX = beakerRect.left + beakerRect.width / 2;
+            const beakerCenterY = beakerRect.top + beakerRect.height / 2;
+
+            if (beakerCenterX > bowlRect.left && beakerCenterX < bowlRect.right &&
+                beakerCenterY > bowlRect.top && beakerCenterY < bowlRect.bottom) {
+                pourIntoBowl(draggedBeaker);
+            } else {
+                // Return to original position
+                draggedBeaker.classList.remove('dragging');
+                draggedBeaker.style.left = '';
+                draggedBeaker.style.top = '';
+            }
+
+            draggedBeaker = null;
+        }
+
+        function pourIntoBowl(beaker) {
+            const name = beaker.dataset.name;
+            const color = beaker.dataset.color;
+
+            playPourSound();
+
+            // Add to bowl contents
+            bowlContents.push({ name, color });
+
+            // Update bowl appearance
+            updateBowl();
+
+            // Mark beaker as used
+            beaker.classList.add('used');
+            beaker.classList.remove('dragging');
+            beaker.style.left = '';
+            beaker.style.top = '';
+            beaker.style.opacity = '0.4';
+            beaker.style.pointerEvents = 'none';
+
+            // Check if correct order
+            if (currentExperiment) {
+                const expectedIngredient = currentExperiment.correctOrder[currentStep];
+
+                if (name === expectedIngredient) {
+                    currentStep++;
+                    streak++;
+                    score += 10;
+                    showMessage('✓ Correct!', 'success');
+                    updateExperimentDisplay();
+                    updateStats();
+
+                    // Check if experiment complete
+                    if (currentStep >= currentExperiment.correctOrder.length) {
+                        setTimeout(() => completeExperiment(), 1000);
+                    }
+                } else {
+                    streak = 0;
+                    showMessage('✗ Wrong order!', 'error');
+                    playErrorSound();
+                    updateStats();
+
+                    if (currentLevel === 'easy') {
+                        speak(`Try adding ${expectedIngredient} next!`);
+                    }
+                }
+            }
+        }
+
+        function updateBowl() {
+            const liquid = document.getElementById('bowlLiquid');
+
+            if (bowlContents.length === 0) {
+                liquid.style.height = '0';
+                liquid.style.background = 'transparent';
+                return;
+            }
+
+            // Calculate height and color
+            const height = Math.min(bowlContents.length * 25, 80);
+
+            // Mix colors
+            if (bowlContents.length === 1) {
+                bowlColor = bowlContents[0].color;
+            } else {
+                // Simple color mixing for visual effect
+                bowlColor = mixColors(bowlContents.map(c => c.color));
+            }
+
+            liquid.style.height = height + '%';
+            liquid.style.background = bowlColor;
+
+            // Add bubbling animation
+            createBubbleEffect();
+        }
+
+        function mixColors(colors) {
+            // Simple average color mixing
+            let r = 0, g = 0, b = 0;
+            colors.forEach(color => {
+                const hex = color.replace('#', '');
+                r += parseInt(hex.substr(0, 2), 16);
+                g += parseInt(hex.substr(2, 2), 16);
+                b += parseInt(hex.substr(4, 2), 16);
+            });
+            r = Math.floor(r / colors.length);
+            g = Math.floor(g / colors.length);
+            b = Math.floor(b / colors.length);
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        function createBubbleEffect() {
+            const bowl = document.getElementById('bowlLiquid');
+
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'liquid-bubble';
+                    bubble.style.left = (Math.random() * 80 + 10) + '%';
+                    bubble.style.width = (Math.random() * 8 + 4) + 'px';
+                    bubble.style.height = bubble.style.width;
+                    bubble.style.animationDelay = (Math.random() * 0.5) + 's';
+                    bowl.appendChild(bubble);
+
+                    playBubbleSound();
+
+                    setTimeout(() => bubble.remove(), 2000);
+                }, i * 200);
+            }
+        }
+
+        // ==================== EXPERIMENT COMPLETION ====================
+        function completeExperiment() {
+            if (!currentExperiment) return;
+
+            playReactionSound();
+            createReactionEffect(currentExperiment.result.effect);
+
+            // Update bowl to final color
+            const liquid = document.getElementById('bowlLiquid');
+            if (currentExperiment.result.color === 'rainbow') {
+                liquid.style.background = 'linear-gradient(180deg, #ff0000, #ff8800, #ffff00, #00ff00, #00bfff, #0000ff, #8800ff)';
+            } else {
+                liquid.style.background = currentExperiment.result.color;
+            }
+
+            // Show result
+            setTimeout(() => {
+                showResult(currentExperiment.result);
+
+                // Mark as completed
+                completedExperiments.add(currentExperiment.id);
+                experimentsCompleted++;
+                score += 50;
+                level = Math.floor(experimentsCompleted / 3) + 1;
+                updateExperimentList();
+                updateStats();
+
+                // Show quiz after delay
+                setTimeout(() => showQuiz(), 3000);
+            }, 1500);
+        }
+
+        function createReactionEffect(effect) {
+            const workspace = document.getElementById('labWorkspace');
+            const bowl = document.getElementById('mixingBowl');
+            const bowlRect = bowl.getBoundingClientRect();
+            const workspaceRect = workspace.getBoundingClientRect();
+
+            const centerX = bowlRect.left - workspaceRect.left + bowlRect.width / 2;
+            const centerY = bowlRect.top - workspaceRect.top;
+
+            switch (effect) {
+                case 'eruption':
+                    // Create smoke and sparks
+                    for (let i = 0; i < 20; i++) {
+                        setTimeout(() => {
+                            const smoke = document.createElement('div');
+                            smoke.className = 'reaction-effect smoke';
+                            smoke.style.left = (centerX + (Math.random() - 0.5) * 50) + 'px';
+                            smoke.style.top = centerY + 'px';
+                            workspace.appendChild(smoke);
+                            setTimeout(() => smoke.remove(), 2000);
+                        }, i * 100);
+                    }
+                    break;
+
+                case 'sparks':
+                    for (let i = 0; i < 30; i++) {
+                        const spark = document.createElement('div');
+                        spark.className = 'reaction-effect spark';
+                        spark.style.left = centerX + 'px';
+                        spark.style.top = centerY + 'px';
+                        spark.style.setProperty('--dx', (Math.random() - 0.5) * 200 + 'px');
+                        spark.style.setProperty('--dy', -Math.random() * 150 + 'px');
+                        workspace.appendChild(spark);
+                        setTimeout(() => spark.remove(), 1000);
+                    }
+                    break;
+
+                case 'goo':
+                    // Green goo effect
+                    for (let i = 0; i < 10; i++) {
+                        setTimeout(() => {
+                            const goo = document.createElement('div');
+                            goo.className = 'reaction-effect';
+                            goo.style.cssText = `
+                                left: ${centerX + (Math.random() - 0.5) * 60}px;
+                                top: ${centerY}px;
+                                width: 30px;
+                                height: 30px;
+                                background: #00ff88;
+                                border-radius: 50% 50% 50% 50%;
+                                animation: smokeRise 2s ease-out forwards;
+                            `;
+                            workspace.appendChild(goo);
+                            setTimeout(() => goo.remove(), 2000);
+                        }, i * 150);
+                    }
+                    break;
+
+                default:
+                    // Default bubbling effect
+                    for (let i = 0; i < 15; i++) {
+                        setTimeout(() => {
+                            const bubble = document.createElement('div');
+                            bubble.className = 'reaction-effect';
+                            bubble.style.cssText = `
+                                left: ${centerX + (Math.random() - 0.5) * 40}px;
+                                top: ${centerY}px;
+                                width: 15px;
+                                height: 15px;
+                                background: rgba(255,255,255,0.6);
+                                border-radius: 50%;
+                                animation: smokeRise 1.5s ease-out forwards;
+                            `;
+                            workspace.appendChild(bubble);
+                            setTimeout(() => bubble.remove(), 1500);
+                        }, i * 100);
+                    }
+            }
+        }
+
+        function showResult(result) {
+            document.getElementById('resultTitle').textContent = result.title;
+            document.getElementById('resultText').textContent = result.description;
+            document.getElementById('resultPanel').classList.add('active');
+
+            speak(result.description);
+        }
+
+        function hideResult() {
+            document.getElementById('resultPanel').classList.remove('active');
+        }
+
+        // ==================== QUIZ ====================
+        function showQuiz() {
+            if (!currentExperiment || !currentExperiment.quiz) return;
+
+            const quiz = currentExperiment.quiz;
+            document.getElementById('quizQuestion').textContent = quiz.question;
+
+            const optionsContainer = document.getElementById('quizOptions');
+            optionsContainer.innerHTML = '';
+
+            quiz.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.textContent = option;
+                btn.onclick = () => checkQuizAnswer(index, quiz.correct, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            document.getElementById('quizPanel').style.display = 'block';
+            speak(quiz.question);
+        }
+
+        function checkQuizAnswer(selected, correct, button) {
+            const options = document.querySelectorAll('.quiz-option');
+            options.forEach(opt => opt.disabled = true);
+
+            if (selected === correct) {
+                button.classList.add('correct');
+                score += 30;
+                streak++;
+                playSuccessSound();
+                showMessage('🎉 Correct!', 'success');
+                speak('That\'s right! ' + currentExperiment.fact);
+            } else {
+                button.classList.add('wrong');
+                options[correct].classList.add('correct');
+                streak = 0;
+                playErrorSound();
+                showMessage('Not quite!', 'error');
+                speak('The correct answer is: ' + currentExperiment.quiz.options[correct]);
+            }
+
+            updateStats();
+
+            // Show completion modal after delay
+            setTimeout(() => {
+                document.getElementById('quizPanel').style.display = 'none';
+                showCompletionModal();
+            }, 2500);
+        }
+
+        function showCompletionModal() {
+            document.getElementById('modalTitle').textContent = `${currentExperiment.emoji} Experiment Complete!`;
+            document.getElementById('modalStars').textContent = streak >= 3 ? '⭐⭐⭐' : streak >= 2 ? '⭐⭐' : '⭐';
+            document.getElementById('modalText').textContent = currentExperiment.fact;
+            document.getElementById('modalOverlay').style.display = 'flex';
+            createConfetti();
+        }
+
+        function nextExperiment() {
+            closeModal();
+
+            // Find next incomplete experiment
+            const experiments = experimentsData[currentSubject];
+            const next = experiments.find(exp => !completedExperiments.has(exp.id));
+
+            if (next) {
+                selectExperiment(next);
+            } else {
+                // All experiments in subject completed
+                showMessage('🎉 All experiments completed!', 'success');
+                speak('Congratulations! You completed all experiments in this subject!');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
+
+        // ==================== CONTROLS ====================
+        function setSubject(subject) {
+            currentSubject = subject;
+            currentExperiment = null;
+
+            document.querySelectorAll('.subject-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.subject === subject);
+            });
+
+            updateExperimentList();
+            updateScienceFact();
+            document.getElementById('equipmentArea').innerHTML = '';
+
+            document.getElementById('expTitle').textContent = 'Select an Experiment';
+            document.getElementById('expDescription').textContent = 'Choose an experiment from the list to begin!';
+            document.getElementById('stepIndicator').innerHTML = '';
+            document.getElementById('currentStepText').textContent = 'Select an experiment to begin your scientific adventure!';
+
+            // Clear bowl
+            bowlContents = [];
+            updateBowl();
+
+            const subjectNames = {
+                chemistry: 'Chemistry - study of matter and reactions',
+                physics: 'Physics - study of energy and forces',
+                biology: 'Biology - study of living things',
+                earth: 'Earth Science - study of our planet'
+            };
+            speak(subjectNames[subject]);
+        }
+
+        function setLevel(lvl) {
+            currentLevel = lvl;
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.classList.contains(lvl)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            if (currentExperiment) {
+                setupBeakers();
+            }
+        }
+
+        function startExperiment() {
+            if (!currentExperiment) {
+                showMessage('Select an experiment first!', 'info');
+                return;
+            }
+
+            // Reset experiment
+            currentStep = 0;
+            bowlContents = [];
+            updateBowl();
+            setupBeakers();
+            updateExperimentDisplay();
+            hideResult();
+            document.getElementById('quizPanel').style.display = 'none';
+
+            speak(`Starting ${currentExperiment.name}. ${currentExperiment.description}`);
+        }
+
+        function updateScienceFact() {
+            const facts = scienceFacts[currentSubject];
+            const fact = facts[Math.floor(Math.random() * facts.length)];
+            document.getElementById('scienceFact').innerHTML = `<strong>Did you know?</strong> ${fact}`;
+        }
+
+        function updateStats() {
+            document.getElementById('scoreValue').textContent = score;
+            document.getElementById('expCompleted').textContent = experimentsCompleted;
+            document.getElementById('streakValue').textContent = streak;
+            document.getElementById('levelValue').textContent = level;
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('gameMessage');
+            msg.textContent = text;
+            msg.className = `game-message ${type}`;
+            msg.style.display = 'block';
+
+            setTimeout(() => {
+                msg.style.display = 'none';
+            }, 1500);
+        }
+
+        function createConfetti() {
+            const colors = ['#00ff88', '#00d4ff', '#bf00ff', '#ff00aa', '#ffee00'];
+
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+
+                setTimeout(() => confetti.remove(), 4000);
+            }
+        }
+
+        // ==================== HAND TRACKING ====================
+        const videoElement = document.getElementById('videoElement');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const previewCtx = previewCanvas.getContext('2d');
+        const handCursor = document.getElementById('handCursor');
+        const statusDot = document.getElementById('statusDot');
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onHandResults);
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: 'user' }
+                });
+                videoElement.srcObject = stream;
+
+                videoElement.onloadedmetadata = () => {
+                    previewCanvas.width = videoElement.videoWidth;
+                    previewCanvas.height = videoElement.videoHeight;
+                    statusDot.classList.add('active');
+                    document.getElementById('statusText').textContent = 'Ready';
+                    detectLoop();
+                };
+            } catch (err) {
+                console.error('Camera error:', err);
+                document.getElementById('statusText').textContent = 'No cam';
+            }
+        }
+
+        async function detectLoop() {
+            if (videoElement.readyState >= 2) {
+                await hands.send({ image: videoElement });
+            }
+            requestAnimationFrame(detectLoop);
+        }
+
+        function onHandResults(results) {
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+
+                // Draw landmarks
+                drawConnectors(previewCtx, landmarks, HAND_CONNECTIONS, {
+                    color: '#00ff88',
+                    lineWidth: 2
+                });
+                drawLandmarks(previewCtx, landmarks, {
+                    color: '#00d4ff',
+                    lineWidth: 1,
+                    radius: 3
+                });
+
+                // Get positions
+                const indexTip = landmarks[8];
+                const thumbTip = landmarks[4];
+
+                // Calculate screen position
+                const workspace = document.getElementById('labWorkspace');
+                const rect = workspace.getBoundingClientRect();
+
+                const rawX = (1 - indexTip.x) * window.innerWidth;
+                const rawY = indexTip.y * window.innerHeight;
+
+                handPosition.x += (rawX - handPosition.x) * CONFIG.smoothing;
+                handPosition.y += (rawY - handPosition.y) * CONFIG.smoothing;
+
+                // Update cursor
+                handCursor.style.display = 'block';
+                handCursor.style.left = handPosition.x + 'px';
+                handCursor.style.top = handPosition.y + 'px';
+
+                // Detect pinch
+                const pinchDist = Math.sqrt(
+                    Math.pow(indexTip.x - thumbTip.x, 2) +
+                    Math.pow(indexTip.y - thumbTip.y, 2) +
+                    Math.pow(indexTip.z - thumbTip.z, 2)
+                );
+
+                wasPinching = isPinching;
+                isPinching = pinchDist < CONFIG.pinchThreshold;
+
+                handCursor.classList.toggle('open', !isPinching);
+                handCursor.classList.toggle('closed', isPinching);
+
+                isHandDetected = true;
+
+                // Handle pinch gestures for dragging
+                handleHandDrag();
+            } else {
+                handCursor.style.display = 'none';
+                isHandDetected = false;
+            }
+        }
+
+        function handleHandDrag() {
+            // Pinch started - try to grab beaker
+            if (isPinching && !wasPinching && !draggedBeaker) {
+                const elements = document.elementsFromPoint(handPosition.x, handPosition.y);
+                for (const el of elements) {
+                    if (el.classList.contains('beaker') && !el.classList.contains('used')) {
+                        startDrag(el, { clientX: handPosition.x, clientY: handPosition.y });
+                        break;
+                    }
+                }
+            }
+
+            // Dragging
+            if (draggedBeaker && isPinching) {
+                draggedBeaker.style.left = (handPosition.x - 50) + 'px';
+                draggedBeaker.style.top = (handPosition.y - 70) + 'px';
+            }
+
+            // Pinch released - drop
+            if (!isPinching && wasPinching && draggedBeaker) {
+                endDrag();
+            }
+        }
+
+        const HAND_CONNECTIONS = [
+            [0, 1], [1, 2], [2, 3], [3, 4],
+            [0, 5], [5, 6], [6, 7], [7, 8],
+            [0, 9], [9, 10], [10, 11], [11, 12],
+            [0, 13], [13, 14], [14, 15], [15, 16],
+            [0, 17], [17, 18], [18, 19], [19, 20],
+            [5, 9], [9, 13], [13, 17]
+        ];
+
+        // ==================== MOUSE MODE ====================
+        let mouseMode = false;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'm' || e.key === 'M') {
+                mouseMode = !mouseMode;
+                alert('Mouse mode: ' + (mouseMode ? 'ON' : 'OFF'));
+            }
+        });
+
+        // ==================== INITIALIZATION ====================
+        window.addEventListener('load', () => {
+            init();
+            setupCamera();
+        });
+    </script>
+</body>
+</html>

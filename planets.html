@@ -1,0 +1,2035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn Planets with Hands - Dyslexia Friendly Space Learning</title>
+
+    <!-- OpenDyslexic Font for better readability -->
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-primary: #FFF8E7;
+            --bg-secondary: #FFE4C4;
+            --text-primary: #2D3436;
+            --text-secondary: #636E72;
+            --accent-blue: #74B9FF;
+            --accent-green: #55EFC4;
+            --accent-yellow: #FFEAA7;
+            --accent-pink: #FD79A8;
+            --accent-purple: #A29BFE;
+            --accent-orange: #FAB1A0;
+            --accent-red: #FF7675;
+            --shadow: 0 8px 32px rgba(0,0,0,0.1);
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', cursive, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.8;
+            letter-spacing: 0.05em;
+            word-spacing: 0.1em;
+        }
+
+        /* Floating Background Shapes */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .bg-shape:nth-child(1) {
+            width: 320px;
+            height: 320px;
+            background: var(--accent-blue);
+            top: -120px;
+            left: -100px;
+        }
+
+        .bg-shape:nth-child(2) {
+            width: 220px;
+            height: 220px;
+            background: var(--accent-pink);
+            top: 55%;
+            right: -60px;
+            animation-delay: -5s;
+        }
+
+        .bg-shape:nth-child(3) {
+            width: 260px;
+            height: 260px;
+            background: var(--accent-green);
+            bottom: -120px;
+            left: 30%;
+            animation-delay: -10s;
+        }
+
+        .bg-shape:nth-child(4) {
+            width: 190px;
+            height: 190px;
+            background: var(--accent-yellow);
+            top: 18%;
+            left: 60%;
+            animation-delay: -15s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-30px) rotate(5deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(30px) rotate(-5deg); }
+        }
+
+        /* Main Container */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .header h1 {
+            font-size: 2.4rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.9);
+        }
+
+        /* Camera Section */
+        .camera-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .camera-container {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            background: #000;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            display: none; /* hidden big camera, we use preview */
+        }
+
+        /* Camera Preview */
+        .camera-preview {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 240px;
+            height: 180px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 4px solid var(--accent-blue);
+            box-shadow: 0 0 30px rgba(116, 185, 255, 0.6);
+            z-index: 100;
+            background: #000;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            display: block;
+        }
+
+        .camera-preview canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.active {
+            background: #2ecc71;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+
+        /* Hand Cursor */
+        .hand-cursor {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            transition: transform 0.1s ease-out;
+            display: none;
+        }
+
+        .hand-cursor.open {
+            background: radial-gradient(circle, var(--accent-blue) 0%, transparent 70%);
+            border: 4px solid var(--accent-blue);
+            transform: scale(1);
+        }
+
+        .hand-cursor.closed {
+            background: radial-gradient(circle, var(--accent-green) 0%, transparent 70%);
+            border: 4px solid var(--accent-green);
+            transform: scale(0.7);
+        }
+
+        /* Instructions Panel */
+        .instructions-panel {
+            flex: 0 0 auto;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 232, 196, 0.95) 100%);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            max-width: 430px;
+        }
+
+        .instructions-panel h3 {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .instructions-panel ul {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .instructions-panel li {
+            padding: 10px 12px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            text-align: center;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(116, 185, 255, 0.3);
+        }
+
+        .instructions-panel li span {
+            font-size: 1.8rem;
+            display: block;
+        }
+
+        .instructions-panel li:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(116, 185, 255, 0.5);
+        }
+
+        /* Solar System Diagram */
+        .solar-system-section {
+            background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 100%);
+            border-radius: var(--radius);
+            padding: 40px 20px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: visible;
+        }
+
+        .solar-system-title {
+            text-align: center;
+            color: white;
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            position: relative;
+            z-index: 5;
+        }
+
+        .solar-system-container {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .solar-system-sun {
+            position: absolute;
+            z-index: 100;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .sun {
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle at 30% 30%, #FFF9E6, #FFD700);
+            border-radius: 50%;
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), inset -2px -2px 6px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            animation: sunGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes sunGlow {
+            0%, 100% { box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), inset -2px -2px 6px rgba(0,0,0,0.2); }
+            50% { box-shadow: 0 0 60px rgba(255, 215, 0, 1), inset -2px -2px 6px rgba(0,0,0,0.2); }
+        }
+
+        /* Orbital rings */
+        .orbital-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px dashed rgba(255, 255, 255, 0.15);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .planet-info-card {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 10px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid transparent;
+            width: 90px;
+        }
+
+        .planet-info-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: var(--accent-blue);
+            z-index: 102;
+        }
+
+        .planet-orbit {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            position: relative;
+        }
+
+        .planet-orbit.mercury { background: linear-gradient(135deg,#B0BEC5,#ECEFF1); }
+        .planet-orbit.venus   { background: linear-gradient(135deg,#FFCC80,#FFE0B2); }
+        .planet-orbit.earth   { background: linear-gradient(135deg,#4FC3F7,#81C784); }
+        .planet-orbit.mars    { background: linear-gradient(135deg,#FF8A65,#FFAB91); }
+        .planet-orbit.jupiter { background: linear-gradient(135deg,#FFCC80,#BCAAA4); }
+        .planet-orbit.saturn  { background: linear-gradient(135deg,#FFE082,#FFCC80); }
+        .planet-orbit.uranus  { background: linear-gradient(135deg,#80DEEA,#B3E5FC); }
+        .planet-orbit.neptune { background: linear-gradient(135deg,#7986CB,#3949AB); }
+
+        .planet-info-card:hover .planet-orbit {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px rgba(116, 185, 255, 0.8);
+        }
+
+        .planet-name {
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: white;
+            text-align: center;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+        }
+
+        .planet-order {
+            font-size: 0.75rem;
+            color: var(--accent-yellow);
+            background: rgba(0,0,0,0.4);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        .planet-info-card:hover .planet-name {
+            color: var(--accent-blue);
+        }
+
+        .planet-fact {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.8);
+            text-align: center;
+            max-width: 140px;
+            line-height: 1.3;
+            display: none;
+        }
+
+        .planet-info-card:hover .planet-fact {
+            display: block;
+        }
+
+        .solar-system-legend {
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.95rem;
+            margin-top: 20px;
+            font-style: italic;
+            position: relative;
+            z-index: 5;
+        }
+
+        /* Orbit animations for each planet */
+        @keyframes orbit-mercury { 0% { transform: rotate(0deg) translateX(100px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(100px) rotate(-360deg); } }
+        @keyframes orbit-venus { 0% { transform: rotate(0deg) translateX(150px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(150px) rotate(-360deg); } }
+        @keyframes orbit-earth { 0% { transform: rotate(0deg) translateX(200px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(200px) rotate(-360deg); } }
+        @keyframes orbit-mars { 0% { transform: rotate(0deg) translateX(250px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(250px) rotate(-360deg); } }
+        @keyframes orbit-jupiter { 0% { transform: rotate(0deg) translateX(300px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(300px) rotate(-360deg); } }
+        @keyframes orbit-saturn { 0% { transform: rotate(0deg) translateX(350px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(350px) rotate(-360deg); } }
+        @keyframes orbit-uranus { 0% { transform: rotate(0deg) translateX(400px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(400px) rotate(-360deg); } }
+        @keyframes orbit-neptune { 0% { transform: rotate(0deg) translateX(450px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(450px) rotate(-360deg); } }
+
+        .planet-info-card.mercury { animation: orbit-mercury 8s linear infinite; }
+        .planet-info-card.venus { animation: orbit-venus 11s linear infinite; }
+        .planet-info-card.earth { animation: orbit-earth 14s linear infinite; }
+        .planet-info-card.mars { animation: orbit-mars 17s linear infinite; }
+        .planet-info-card.jupiter { animation: orbit-jupiter 20s linear infinite; }
+        .planet-info-card.saturn { animation: orbit-saturn 23s linear infinite; }
+        .planet-info-card.uranus { animation: orbit-uranus 26s linear infinite; }
+        .planet-info-card.neptune { animation: orbit-neptune 29s linear infinite; }
+
+        /* Game Selection */
+        .game-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            border: 4px solid transparent;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+        }
+
+        .game-card.active {
+            border-color: var(--accent-green);
+            background: linear-gradient(135deg, white 0%, var(--accent-green) 100%);
+        }
+
+        .game-card-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        .game-card h3 {
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .game-card p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Game Area */
+        .game-area {
+            background: white;
+            border-radius: var(--radius);
+            padding: 40px;
+            min-height: 500px;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .game-title {
+            text-align: center;
+            font-size: 1.8rem;
+            color: var(--text-primary);
+            margin-bottom: 25px;
+        }
+
+        /* Level Selection */
+        .level-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .level-btn {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            background: white;
+            color: var(--text-primary);
+            border: 3px solid var(--text-secondary);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .level-btn.easy { border-color: var(--accent-green); }
+        .level-btn.medium { border-color: var(--accent-yellow); }
+        .level-btn.hard { border-color: var(--accent-red); }
+
+        .level-btn.active.easy {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: white;
+        }
+
+        .level-btn.active.medium {
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+            color: white;
+        }
+
+        .level-btn.active.hard {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            color: white;
+        }
+
+        .level-btn.completed::after {
+            content: ' ✓';
+            font-size: 1.1rem;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        /* Draggable Items */
+        .items-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .draggable-item {
+            min-width: 90px;
+            min-height: 90px;
+            width: 130px;
+            height: 130px;
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            cursor: grab;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow);
+            user-select: none;
+            position: relative;
+            padding: 8px;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .draggable-item span.planet-emoji {
+            font-size: 2.3rem;
+            margin-bottom: 6px;
+        }
+
+        .draggable-item:hover {
+            transform: scale(1.05);
+        }
+
+        .draggable-item.dragging {
+            opacity: 0.7;
+            cursor: grabbing;
+            z-index: 100;
+            position: fixed;
+            pointer-events: none;
+        }
+
+        .draggable-item.matched {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* Drop Zones */
+        .drop-zones {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .drop-zone {
+            min-width: 100px;
+            min-height: 100px;
+            width: 140px;
+            height: 140px;
+            border: 4px dashed var(--text-secondary);
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .drop-zone-label {
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+
+        .drop-zone.highlight {
+            border-color: var(--accent-blue);
+            background: rgba(116, 185, 255, 0.15);
+            transform: scale(1.05);
+        }
+
+        .drop-zone.correct {
+            border-color: var(--accent-green);
+            background: var(--accent-green);
+            color: white;
+            animation: celebrate 0.5s ease;
+        }
+
+        .drop-zone.incorrect {
+            border-color: var(--accent-red);
+            background: rgba(255,118,117,0.3);
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes celebrate {
+            0%,100% { transform: scale(1); }
+            25% { transform: scale(1.1) rotate(4deg); }
+            75% { transform: scale(1.1) rotate(-4deg); }
+        }
+
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        /* Score */
+        .score-display {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: var(--accent-yellow);
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            box-shadow: var(--shadow);
+        }
+
+        /* Hint Button */
+        .hint-btn {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            padding: 10px 22px;
+            font-size: 1.05rem;
+            font-family: inherit;
+            background: var(--accent-orange);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .hint-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Feedback Message */
+        .feedback-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 28px 45px;
+            border-radius: var(--radius);
+            font-size: 1.8rem;
+            font-weight: bold;
+            z-index: 1000;
+            animation: popIn 0.5s ease;
+            display: none;
+        }
+
+        .feedback-message.success {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .feedback-message.error {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Level Complete */
+        .level-complete {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .level-complete-content {
+            background: white;
+            padding: 45px 35px;
+            border-radius: var(--radius);
+            text-align: center;
+            animation: bounceIn 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0) rotate(-10deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .level-complete h2 {
+            font-size: 2.4rem;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+        }
+
+        .level-complete .stars {
+            font-size: 3.6rem;
+            margin-bottom: 15px;
+        }
+
+        .next-level-btn {
+            padding: 16px 35px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .next-level-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Sound Button */
+        .sound-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sound-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Quiz Area */
+        .quiz-container {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .quiz-question {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--text-primary);
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: stretch;
+        }
+
+        .quiz-option {
+            padding: 12px 15px;
+            border-radius: 15px;
+            border: 3px solid var(--accent-blue);
+            background: #fdfdfd;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .quiz-option:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+            background: #f0f6ff;
+        }
+
+        .quiz-progress-text {
+            margin-top: 10px;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            animation: confettiFall 3s linear infinite;
+            z-index: 3000;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Hide initially */
+        .game-content {
+            display: none;
+        }
+
+        .game-content.active {
+            display: block;
+        }
+
+        /* Responsive tweaks */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.7rem; }
+            .header p { font-size: 1rem; }
+
+            .camera-preview {
+                width: 180px;
+                height: 135px;
+                bottom: 90px;
+                right: 15px;
+            }
+
+            .game-area {
+                padding: 18px;
+                min-height: 430px;
+            }
+
+            .draggable-item {
+                width: 95px;
+                height: 95px;
+                font-size: 1.1rem;
+            }
+
+            .draggable-item span.planet-emoji {
+                font-size: 1.9rem;
+            }
+
+            .drop-zone {
+                width: 110px;
+                height: 110px;
+            }
+
+            .score-display {
+                font-size: 1rem;
+                padding: 8px 14px;
+                right: 10px;
+                top: 10px;
+            }
+
+            .hint-btn {
+                font-size: 0.9rem;
+                padding: 7px 14px;
+                left: 10px;
+                top: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1.3rem; }
+            .instructions-panel ul {
+                grid-template-columns: repeat(2,1fr);
+            }
+            .camera-preview {
+                width: 140px;
+                height: 105px;
+                bottom: 80px;
+                right: 10px;
+            }
+            .draggable-item {
+                width: 80px;
+                height: 80px;
+                font-size: 1rem;
+            }
+            .drop-zone {
+                width: 90px;
+                height: 90px;
+            }
+            .game-selection {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Planet-specific colors for fun */
+        .planet-mercury { background: linear-gradient(135deg,#B0BEC5,#ECEFF1); }
+        .planet-venus   { background: linear-gradient(135deg,#FFCC80,#FFE0B2); }
+        .planet-earth   { background: linear-gradient(135deg,#4FC3F7,#81C784); }
+        .planet-mars    { background: linear-gradient(135deg,#FF8A65,#FFAB91); }
+        .planet-jupiter { background: linear-gradient(135deg,#FFCC80,#BCAAA4); }
+        .planet-saturn  { background: linear-gradient(135deg,#FFE082,#FFCC80); }
+        .planet-uranus  { background: linear-gradient(135deg,#80DEEA,#B3E5FC); }
+        .planet-neptune { background: linear-gradient(135deg,#7986CB,#3949AB); color:white; }
+
+        /* Dynamic Navigation Bar */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-title">📚 Learning Games</div>
+            <div class="nav-menu" id="navMenu"></div>
+        </div>
+    </div>
+
+    <!-- Background Shapes -->
+    <div class="bg-shapes">
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+    </div>
+
+    <!-- Hand Cursor -->
+    <div class="hand-cursor" id="handCursor"></div>
+
+    <!-- Feedback Message -->
+    <div class="feedback-message" id="feedbackMessage"></div>
+
+    <!-- Level Complete Modal -->
+    <div class="level-complete" id="levelComplete">
+        <div class="level-complete-content">
+            <h2>🎉 Great Job! 🎉</h2>
+            <div class="stars">⭐⭐⭐</div>
+            <p style="font-size: 1.3rem; margin-bottom: 20px;">You completed this level!</p>
+            <button class="next-level-btn" onclick="nextLevel()">Next →</button>
+        </div>
+    </div>
+
+    <!-- Sound Toggle Button -->
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+
+    <!-- Camera Preview -->
+    <div class="camera-preview" id="cameraPreview">
+        <video id="previewVideoElement" autoplay playsinline></video>
+        <canvas id="previewCanvasOverlay"></canvas>
+        <div class="camera-status">
+            <div class="status-dot" id="cameraStatusDot"></div>
+            <span>Camera</span>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🚀 Learn Planets with Your Hands!</h1>
+            <p>For kids and learners with reading difficulties – move planets, listen to names, and play space quizzes.</p>
+        </header>
+
+        <!-- Camera / Instructions -->
+        <section class="camera-section">
+            <div class="camera-container">
+                <video id="videoElement" autoplay playsinline></video>
+                <canvas id="canvasOverlay"></canvas>
+            </div>
+            <div class="instructions-panel">
+                <h3>📋 How to Play</h3>
+                <ul>
+                    <li><span>✋</span> Show your hand</li>
+                    <li><span>👆</span> Move finger to move</li>
+                    <li><span>🤏</span> Pinch to pick a planet</li>
+                    <li><span>🎯</span> Drag and drop to match</li>
+                    <li><span>🗣️</span> Tap planets to hear names</li>
+                    <li><span>🧠</span> Try the quiz at the end</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Solar System Diagram -->
+        <section class="solar-system-section">
+            <h2 class="solar-system-title">🌌 Our Solar System - Planets in Motion</h2>
+            <div class="solar-system-container" id="solarSystemContainer">
+                <!-- Orbital rings will be added here -->
+                <div class="solar-system-sun">
+                    <div class="sun">☀️</div>
+                </div>
+                <!-- Planets will be animated here -->
+            </div>
+            <p class="solar-system-legend">👆 Tap or hover on each planet to learn more! Planets orbit at different speeds like in real life.</p>
+        </section>
+
+        <!-- Game Selection -->
+        <section class="game-selection">
+            <div class="game-card active" data-game="order" onclick="selectGame('order')">
+                <div class="game-card-icon">🪐</div>
+                <h3>Order from the Sun</h3>
+                <p>Drag planets into the correct order from the Sun.</p>
+            </div>
+            <div class="game-card" data-game="match" onclick="selectGame('match')">
+                <div class="game-card-icon">🌈</div>
+                <h3>Planet & Fact Match</h3>
+                <p>Match each planet with a simple fun fact.</p>
+            </div>
+            <div class="game-card" data-game="quiz" onclick="selectGame('quiz')">
+                <div class="game-card-icon">❓</div>
+                <h3>Space Quiz</h3>
+                <p>Answer easy, spoken questions about planets.</p>
+            </div>
+        </section>
+
+        <!-- Game Area -->
+        <section class="game-area" id="gameArea">
+            <button class="hint-btn" onclick="giveHint()">💡 Hint</button>
+            <div class="score-display">⭐ Score: <span id="scoreValue">0</span></div>
+
+            <!-- Level Selector -->
+            <div class="level-selector">
+                <button class="level-btn easy active" onclick="selectLevel('easy')">🟢 Easy</button>
+                <button class="level-btn medium" onclick="selectLevel('medium')">🟡 Medium</button>
+                <button class="level-btn hard" onclick="selectLevel('hard')">🔴 Hard</button>
+            </div>
+
+            <!-- Order Game -->
+            <div class="game-content active" id="orderGame">
+                <h2 class="game-title">🪐 Put Planets in Order from the Sun</h2>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBarOrder" style="width:0%"></div>
+                </div>
+                <div class="items-container" id="orderItems"></div>
+                <div class="drop-zones" id="orderZones"></div>
+            </div>
+
+            <!-- Match Game -->
+            <div class="game-content" id="matchGame">
+                <h2 class="game-title">🌈 Match Planet Name to Fun Fact</h2>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBarMatch" style="width:0%"></div>
+                </div>
+                <div class="items-container" id="matchItems"></div>
+                <div class="drop-zones" id="matchZones"></div>
+            </div>
+
+            <!-- Quiz Game -->
+            <div class="game-content" id="quizGame">
+                <h2 class="game-title">❓ Planet Quiz Time</h2>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBarQuiz" style="width:0%"></div>
+                </div>
+                <div class="quiz-container">
+                    <div class="quiz-question" id="quizQuestion">Click "Start Quiz" to begin!</div>
+                    <div class="quiz-options" id="quizOptions"></div>
+                    <p class="quiz-progress-text" id="quizProgress">Question 0 / 0</p>
+                    <button class="next-level-btn" style="margin-top:15px;" onclick="startQuiz()">▶️ Start / Next</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // ==================== DYNAMIC NAVIGATION SYSTEM ====================
+        // Configuration for available games
+        const GAMES_CONFIG = {
+            'index.html': { name: '🔤 Alphabet & Colors', description: 'Learn letters and colors with drag & drop' },
+            'planets.html': { name: '🪐 Planets', description: 'Explore our solar system' },
+            'exploring_body.html': { name: '🧬 Body Explorer', description: 'Learn about human body parts' },
+            'frost_discovery.html': { name: '❄️ Frost Discovery', description: 'Reveal and learn hidden items' },
+            'hand_music.html': { name: '🎵 Music Hands', description: 'Learn music with hand gestures' },
+            'melt_the_ice.html': { name: '🌈 Melt the Ice', description: 'Melt ice to discover pictures' },
+            'science-lab.html': { name: '🧪 Science Lab', description: 'Perform fun experiments' }
+        };
+
+        // Initialize navigation
+        function initializeNavigation() {
+            const navMenu = document.getElementById('navMenu');
+            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
+
+            // Clear existing menu
+            navMenu.innerHTML = '';
+
+            // Create links for each game
+            for (const [file, config] of Object.entries(GAMES_CONFIG)) {
+                const link = document.createElement('a');
+                link.className = 'nav-link';
+                link.href = file;
+                link.textContent = config.name;
+                link.title = config.description;
+
+                // Mark current page as active
+                if (currentFile === file || (currentFile === '' && file === 'index.html')) {
+                    link.classList.add('active');
+                }
+
+                navMenu.appendChild(link);
+            }
+        }
+
+        // Initialize navigation when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeNavigation();
+        });
+
+        // ==================== CONFIG ====================
+        const CONFIG = {
+            pinchThreshold: 0.08,
+            smoothingFactor: 0.3,
+            soundEnabled: true
+        };
+
+        // ==================== STATE ====================
+        let currentGame = 'order';
+        let currentLevel = 'easy';
+        let score = 0;
+        let matchesCompleted = 0;
+        let totalMatches = 0;
+
+        let draggedItem = null;
+        let isDragging = false;
+        let handPosition = { x: 0, y: 0 };
+        let isPinching = false;
+        let previousPinchState = false;
+
+        const levelsCompleted = {
+            order: { easy:false, medium:false, hard:false },
+            match: { easy:false, medium:false, hard:false },
+            quiz:  { easy:false, medium:false, hard:false }
+        };
+
+        // Quiz state
+        let currentQuizSet = [];
+        let quizIndex = 0;
+        let quizCorrect = 0;
+        const questionsPerLevel = 5;
+
+        // ==================== AUDIO & TTS ====================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playTone(freq, duration = 0.25, type='sine') {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = type;
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSuccessSound() {
+            playTone(520,0.12);
+            setTimeout(()=>playTone(660,0.12),100);
+            setTimeout(()=>playTone(790,0.25),200);
+        }
+
+        function playErrorSound() {
+            playTone(200,0.3,'square');
+        }
+
+        function playPickupSound() {
+            playTone(420,0.1);
+        }
+
+        function playDropSound() {
+            playTone(320,0.1);
+        }
+
+        function speak(text, rate = 0.85) {
+            if (!CONFIG.soundEnabled) return;
+            const u = new SpeechSynthesisUtterance(text);
+            u.rate = rate;
+            u.pitch = 1.1;
+            u.lang = 'en-US';
+            speechSynthesis.speak(u);
+        }
+
+        function toggleSound() {
+            CONFIG.soundEnabled = !CONFIG.soundEnabled;
+            document.getElementById('soundBtn').textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+        }
+
+        // ==================== PLANET DATA ====================
+        const planetsOrdered = [
+            { name: 'Mercury', emoji:'☿️', order:1, fact:'Closest planet to the Sun.', short:'First from the Sun.' },
+            { name: 'Venus',   emoji:'♀️', order:2, fact:'Very hot with thick clouds.', short:'Second from the Sun.' },
+            { name: 'Earth',   emoji:'🌍', order:3, fact:'Our home planet with life.', short:'Third from the Sun.' },
+            { name: 'Mars',    emoji:'🔴', order:4, fact:'Red planet with big mountains.', short:'Fourth from the Sun.' },
+            { name: 'Jupiter', emoji:'🟤', order:5, fact:'Biggest planet with many moons.', short:'Fifth from the Sun.' },
+            { name: 'Saturn',  emoji:'💍', order:6, fact:'Has beautiful rings.', short:'Sixth from the Sun.' },
+            { name: 'Uranus',  emoji:'🌀', order:7, fact:'Blue-green and rolls on its side.', short:'Seventh from the Sun.' },
+            { name: 'Neptune', emoji:'🔵', order:8, fact:'Dark blue and very windy.', short:'Eighth from the Sun.' }
+        ];
+
+        const quizQuestions = [
+            {
+                question:'Which planet do we live on?',
+                options:['Mars','Earth','Jupiter'],
+                answer:'Earth'
+            },
+            {
+                question:'Which planet has big rings?',
+                options:['Saturn','Mercury','Venus'],
+                answer:'Saturn'
+            },
+            {
+                question:'Which is the red planet?',
+                options:['Mars','Neptune','Uranus'],
+                answer:'Mars'
+            },
+            {
+                question:'Which planet is closest to the Sun?',
+                options:['Mercury','Earth','Saturn'],
+                answer:'Mercury'
+            },
+            {
+                question:'Which planet is the biggest?',
+                options:['Jupiter','Mars','Venus'],
+                answer:'Jupiter'
+            },
+            {
+                question:'Which planet is blue and very windy?',
+                options:['Neptune','Venus','Mars'],
+                answer:'Neptune'
+            },
+            {
+                question:'Which planet has life and water that we know?',
+                options:['Earth','Saturn','Mercury'],
+                answer:'Earth'
+            },
+            {
+                question:'Which planet rolls on its side?',
+                options:['Uranus','Mars','Jupiter'],
+                answer:'Uranus'
+            },
+            {
+                question:'Which planet is second from the Sun?',
+                options:['Venus','Earth','Neptune'],
+                answer:'Venus'
+            },
+            {
+                question:'How many planets are we using in this game (without Pluto)?',
+                options:['8','5','10'],
+                answer:'8'
+            }
+        ];
+
+        // ==================== MEDIAPIPE SETUP ====================
+        const videoElement = document.getElementById('previewVideoElement');
+        const canvasElement = document.getElementById('previewCanvasOverlay');
+        const canvasCtx = canvasElement.getContext('2d');
+        const handCursor = document.getElementById('handCursor');
+        const cameraStatusDot = document.getElementById('cameraStatusDot');
+
+        const holistic = new Holistic({
+            locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
+        });
+
+        holistic.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            enableSegmentation: false,
+            smoothSegmentation: false,
+            refineFaceLandmarks: false,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        holistic.onResults(onResults);
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width:640, height:480, facingMode:'user' }
+                });
+                videoElement.srcObject = stream;
+                videoElement.onloadedmetadata = () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    cameraStatusDot.classList.add('active');
+                    detectLoop();
+                };
+            } catch (e) {
+                console.error('Camera error',e);
+                cameraStatusDot.classList.remove('active');
+            }
+        }
+
+        async function detectLoop() {
+            if (videoElement.readyState >= 2) {
+                await holistic.send({ image: videoElement });
+            }
+            requestAnimationFrame(detectLoop);
+        }
+
+        function onResults(results) {
+            canvasCtx.clearRect(0,0,canvasElement.width,canvasElement.height);
+            let handLandmarks = null;
+            if (results.rightHandLandmarks) handLandmarks = results.rightHandLandmarks;
+            else if (results.leftHandLandmarks) handLandmarks = results.leftHandLandmarks;
+
+            if (handLandmarks) {
+                drawConnectors(canvasCtx, handLandmarks, HAND_CONNECTIONS, {color:'#74B9FF', lineWidth:3});
+                drawLandmarks(canvasCtx, handLandmarks, {color:'#55EFC4', lineWidth:2, radius:4});
+                processHand(handLandmarks);
+            } else {
+                handCursor.style.display = 'none';
+            }
+        }
+
+        function processHand(landmarks) {
+            const indexTip = landmarks[8];
+            const thumbTip = landmarks[4];
+
+            const rawX = (1 - indexTip.x) * window.innerWidth;
+            const rawY = indexTip.y * window.innerHeight;
+
+            handPosition.x = handPosition.x + (rawX - handPosition.x)*CONFIG.smoothingFactor;
+            handPosition.y = handPosition.y + (rawY - handPosition.y)*CONFIG.smoothingFactor;
+
+            handCursor.style.display = 'block';
+            handCursor.style.left = (handPosition.x - 30) + 'px';
+            handCursor.style.top = (handPosition.y - 30) + 'px';
+
+            const pinchDistance = Math.sqrt(
+                (indexTip.x - thumbTip.x)**2 +
+                (indexTip.y - thumbTip.y)**2 +
+                (indexTip.z - thumbTip.z)**2
+            );
+            isPinching = pinchDistance < CONFIG.pinchThreshold;
+
+            if (isPinching) {
+                handCursor.classList.remove('open');
+                handCursor.classList.add('closed');
+            } else {
+                handCursor.classList.remove('closed');
+                handCursor.classList.add('open');
+            }
+
+            handleDragDrop();
+            previousPinchState = isPinching;
+        }
+
+        // ==================== DRAG & DROP ====================
+        function handleDragDrop() {
+            const elements = document.elementsFromPoint(handPosition.x, handPosition.y);
+
+            // pinch start
+            if (isPinching && !previousPinchState && !isDragging) {
+                for (const el of elements) {
+                    if (el.classList && el.classList.contains('draggable-item') && !el.classList.contains('matched')) {
+                        startDrag(el);
+                        break;
+                    }
+                }
+            }
+
+            if (isDragging && draggedItem) {
+                draggedItem.style.left = (handPosition.x - 60)+'px';
+                draggedItem.style.top  = (handPosition.y - 60)+'px';
+                highlightDropZones(elements);
+            }
+
+            // pinch release
+            if (!isPinching && previousPinchState && isDragging) {
+                endDrag(elements);
+            }
+        }
+
+        function startDrag(el) {
+            isDragging = true;
+            draggedItem = el;
+            draggedItem.classList.add('dragging');
+            playPickupSound();
+            initAudio();
+            if (draggedItem.dataset.speak) {
+                speak(draggedItem.dataset.speak);
+            } else if (draggedItem.dataset.value) {
+                speak(draggedItem.dataset.value);
+            }
+        }
+
+        function highlightDropZones(elements) {
+            document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('highlight'));
+            for (const el of elements) {
+                if (el.classList && el.classList.contains('drop-zone') && !el.classList.contains('correct')) {
+                    el.classList.add('highlight');
+                    break;
+                }
+            }
+        }
+
+        function endDrag(elements) {
+            if (!draggedItem) return;
+            playDropSound();
+
+            let dropped = false;
+            for (const el of elements) {
+                if (el.classList && el.classList.contains('drop-zone') && !el.classList.contains('correct')) {
+                    const dragVal = draggedItem.dataset.match;
+                    const dropVal = el.dataset.match;
+                    if (dragVal === dropVal) {
+                        handleCorrectMatch(el);
+                    } else {
+                        handleWrongMatch(el);
+                    }
+                    dropped = true;
+                    break;
+                }
+            }
+
+            if (!dropped || !draggedItem.classList.contains('matched')) {
+                draggedItem.classList.remove('dragging');
+                draggedItem.style.position = '';
+                draggedItem.style.left = '';
+                draggedItem.style.top  = '';
+            }
+
+            isDragging = false;
+            draggedItem = null;
+        }
+
+        function handleCorrectMatch(dropZone) {
+            playSuccessSound();
+            speak('Great job!');
+            showFeedback('🎉 Correct!', 'success');
+
+            dropZone.classList.add('correct');
+            dropZone.innerHTML = dropZone.innerHTML +
+                `<div style="margin-top:6px;font-weight:bold;">${draggedItem.innerHTML}</div>`;
+
+            draggedItem.classList.add('matched');
+            draggedItem.classList.remove('dragging');
+            draggedItem.style.display = 'none';
+
+            score += 10;
+            matchesCompleted++;
+            updateScore();
+            updateProgress();
+
+            if (matchesCompleted >= totalMatches && currentGame !== 'quiz') {
+                setTimeout(showLevelComplete, 800);
+            }
+        }
+
+        function handleWrongMatch(dropZone) {
+            playErrorSound();
+            speak('Try again!');
+            showFeedback('❌ Try again', 'error');
+
+            dropZone.classList.add('incorrect');
+            setTimeout(()=>dropZone.classList.remove('incorrect'),400);
+
+            draggedItem.classList.remove('dragging');
+            draggedItem.style.position = '';
+            draggedItem.style.left = '';
+            draggedItem.style.top  = '';
+        }
+
+        function showFeedback(msg, type) {
+            const el = document.getElementById('feedbackMessage');
+            el.textContent = msg;
+            el.className = 'feedback-message ' + type;
+            el.style.display = 'block';
+            setTimeout(()=>{ el.style.display='none'; }, 1500);
+        }
+
+        function updateScore() {
+            document.getElementById('scoreValue').textContent = score;
+        }
+
+        function updateProgress() {
+            const ratio = totalMatches === 0 ? 0 : (matchesCompleted / totalMatches);
+            const pct = ratio * 100;
+            if (currentGame === 'order') {
+                document.getElementById('progressBarOrder').style.width = pct + '%';
+            } else if (currentGame === 'match') {
+                document.getElementById('progressBarMatch').style.width = pct + '%';
+            } else if (currentGame === 'quiz') {
+                document.getElementById('progressBarQuiz').style.width = pct + '%';
+            }
+        }
+
+        function showLevelComplete() {
+            levelsCompleted[currentGame][currentLevel] = true;
+            updateLevelButtons();
+
+            const modal = document.getElementById('levelComplete');
+            const content = modal.querySelector('.level-complete-content');
+
+            let nextText = '';
+            if (currentLevel === 'easy') nextText = 'Go to Medium Level →';
+            else if (currentLevel === 'medium') nextText = 'Go to Hard Level →';
+            else nextText = 'Next Game →';
+
+            content.innerHTML = `
+                <h2>🎉 Space-tastic! 🎉</h2>
+                <div class="stars">⭐ ⭐ ⭐</div>
+                <p style="font-size:1.3rem;margin-bottom:20px;">
+                    You finished the <b>${currentLevel.toUpperCase()}</b> level of ${currentGame.toUpperCase()}!
+                </p>
+                <button class="next-level-btn" onclick="nextLevel()">${nextText}</button>
+            `;
+            modal.style.display = 'flex';
+            createConfetti();
+            playSuccessSound();
+        }
+
+        function createConfetti() {
+            const colors = ['#e74c3c','#3498db','#2ecc71','#f1c40f','#9b59b6','#e91e63'];
+            for (let i=0;i<45;i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random()*100+'vw';
+                c.style.background = colors[Math.floor(Math.random()*colors.length)];
+                c.style.animationDuration = (Math.random()*2+2)+'s';
+                c.style.animationDelay = Math.random()*1.5+'s';
+                document.body.appendChild(c);
+                setTimeout(()=>c.remove(),5000);
+            }
+        }
+
+        function nextLevel() {
+            document.getElementById('levelComplete').style.display='none';
+            if (currentLevel === 'easy') {
+                selectLevel('medium');
+            } else if (currentLevel === 'medium') {
+                selectLevel('hard');
+            } else {
+                const games = ['order','match','quiz'];
+                const idx = games.indexOf(currentGame);
+                const nextGame = games[(idx+1)%games.length];
+                currentLevel = 'easy';
+                selectGame(nextGame);
+                selectLevel('easy');
+            }
+        }
+
+        // ==================== GAME SETUP ====================
+        function selectGame(game) {
+            currentGame = game;
+            document.querySelectorAll('.game-card').forEach(c=>{
+                c.classList.toggle('active', c.dataset.game===game);
+            });
+            document.querySelectorAll('.game-content').forEach(g=>{
+                g.classList.remove('active');
+            });
+            if (game==='order') document.getElementById('orderGame').classList.add('active');
+            if (game==='match') document.getElementById('matchGame').classList.add('active');
+            if (game==='quiz')  document.getElementById('quizGame').classList.add('active');
+
+            updateLevelButtons();
+            setupGame();
+        }
+
+        function selectLevel(level) {
+            currentLevel = level;
+            document.querySelectorAll('.level-btn').forEach(btn=>{
+                btn.classList.remove('active');
+                if (btn.classList.contains(level)) btn.classList.add('active');
+            });
+            setupGame();
+        }
+
+        function updateLevelButtons() {
+            document.querySelectorAll('.level-btn').forEach(btn=>{
+                let level = 'easy';
+                if (btn.classList.contains('medium')) level='medium';
+                else if (btn.classList.contains('hard')) level='hard';
+                if (levelsCompleted[currentGame][level]) btn.classList.add('completed');
+                else btn.classList.remove('completed');
+            });
+        }
+
+        function setupGame() {
+            matchesCompleted = 0;
+            if (currentGame === 'order') setupOrderGame();
+            else if (currentGame === 'match') setupMatchGame();
+            else if (currentGame === 'quiz') setupQuizGame();
+        }
+
+        // -------- ORDER GAME ----------
+        function setupOrderGame() {
+            const containerItems = document.getElementById('orderItems');
+            const containerZones = document.getElementById('orderZones');
+            containerItems.innerHTML = '';
+            containerZones.innerHTML = '';
+
+            let count = currentLevel==='easy' ? 4 : (currentLevel==='medium'?6:8);
+            const selected = shuffle([...planetsOrdered]).slice(0,count).sort((a,b)=>a.order-b.order);
+            totalMatches = selected.length;
+            updateProgress();
+
+            selected.forEach(p=>{
+                const card = document.createElement('div');
+                card.className = `draggable-item planet-${p.name.toLowerCase()}`;
+                card.innerHTML = `<span class="planet-emoji">${p.emoji}</span>${p.name}`;
+                card.dataset.match = String(p.order);
+                card.dataset.value = p.name;
+                card.dataset.speak = p.name + ', ' + p.short;
+                card.onclick = ()=>{ initAudio(); speak(p.name + '. ' + p.short); };
+                containerItems.appendChild(card);
+            });
+
+            shuffle([...selected]).forEach(p=>{
+                const zone = document.createElement('div');
+                zone.className = 'drop-zone';
+                zone.dataset.match = String(p.order);
+                const posText = p.order + getOrdinal(p.order) + ' from Sun';
+                zone.innerHTML = `<div class="drop-zone-label">${posText}</div><div style="font-size:1.4rem;">🌞 ➜ ?</div>`;
+                containerZones.appendChild(zone);
+            });
+        }
+
+        function getOrdinal(n) {
+            if (n===1) return 'st';
+            if (n===2) return 'nd';
+            if (n===3) return 'rd';
+            return 'th';
+        }
+
+        // -------- MATCH GAME ----------
+        function setupMatchGame() {
+            const containerItems = document.getElementById('matchItems');
+            const containerZones = document.getElementById('matchZones');
+            containerItems.innerHTML = '';
+            containerZones.innerHTML = '';
+
+            let count = currentLevel==='easy' ? 3 : (currentLevel==='medium'?5:7);
+            const selected = shuffle([...planetsOrdered]).slice(0,count);
+            totalMatches = selected.length;
+            updateProgress();
+
+            selected.forEach(p=>{
+                const card = document.createElement('div');
+                card.className = `draggable-item planet-${p.name.toLowerCase()}`;
+                card.innerHTML = `<span class="planet-emoji">${p.emoji}</span>${p.name}`;
+                card.dataset.match = p.name;
+                card.dataset.value = p.name;
+                card.dataset.speak = p.name + '. ' + p.fact;
+                card.onclick = ()=>{ initAudio(); speak(p.name + '. ' + p.fact); };
+                containerItems.appendChild(card);
+            });
+
+            shuffle([...selected]).forEach(p=>{
+                const zone = document.createElement('div');
+                zone.className = 'drop-zone';
+                zone.dataset.match = p.name;
+                zone.innerHTML = `<div style="font-size:0.9rem;">"${p.fact}"</div>`;
+                containerZones.appendChild(zone);
+            });
+        }
+
+        // -------- QUIZ GAME ----------
+        function setupQuizGame() {
+            matchesCompleted = 0;
+            totalMatches = questionsPerLevel;
+            updateProgress();
+            startQuiz(true);
+        }
+
+        function startQuiz(reset=false) {
+            if (reset || currentQuizSet.length===0) {
+                const shuffled = shuffle([...quizQuestions]);
+                let count = currentLevel==='easy'?5:(currentLevel==='medium'?7:9);
+                currentQuizSet = shuffled.slice(0,count);
+                quizIndex = 0;
+                quizCorrect = 0;
+            } else {
+                quizIndex++;
+            }
+            showQuizQuestion();
+        }
+
+        function showQuizQuestion() {
+            const qEl = document.getElementById('quizQuestion');
+            const optEl = document.getElementById('quizOptions');
+            const progEl = document.getElementById('quizProgress');
+
+            if (quizIndex >= currentQuizSet.length) {
+                // Quiz finished
+                speak(`You finished the quiz with ${quizCorrect} correct answers.`);
+                showFeedback('🎉 Quiz Finished!', 'success');
+                score += quizCorrect*10;
+                updateScore();
+                levelsCompleted.quiz[currentLevel] = true;
+                updateLevelButtons();
+                showLevelComplete();
+                qEl.textContent = 'Quiz finished! You can start again or change level.';
+                optEl.innerHTML = '';
+                progEl.textContent = `Score: ${quizCorrect} / ${currentQuizSet.length}`;
+                return;
+            }
+
+            const q = currentQuizSet[quizIndex];
+            qEl.textContent = q.question;
+            speak(q.question,0.9);
+
+            optEl.innerHTML = '';
+            const shuffledOptions = shuffle([...q.options]);
+            shuffledOptions.forEach(opt=>{
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.textContent = opt;
+                btn.onclick = ()=>checkQuizAnswer(opt, q.answer);
+                optEl.appendChild(btn);
+            });
+
+            progEl.textContent = `Question ${quizIndex+1} / ${currentQuizSet.length}`;
+        }
+
+        function checkQuizAnswer(selected, correct) {
+            if (selected === correct) {
+                quizCorrect++;
+                playSuccessSound();
+                speak('Yes! Correct!');
+                showFeedback('✅ Correct!', 'success');
+                matchesCompleted = Math.min(matchesCompleted+1, totalMatches);
+                updateProgress();
+            } else {
+                playErrorSound();
+                speak('Not this one. Try the next!');
+                showFeedback('❌ Oops!', 'error');
+            }
+            quizIndex++;
+            setTimeout(showQuizQuestion, 800);
+        }
+
+        // -------- Hint ----------
+        function giveHint() {
+            if (currentGame === 'quiz') {
+                speak('Listen carefully to the question. Think about which planet matches best.');
+                return;
+            }
+            const items = document.querySelectorAll('.draggable-item:not(.matched)');
+            if (!items.length) return;
+            const item = items[0];
+            const match = item.dataset.match;
+            const zone = document.querySelector(`.drop-zone[data-match="${match}"]:not(.correct)`);
+            if (!zone) return;
+
+            item.style.animation = 'celebrate 0.5s ease 3';
+            zone.style.animation = 'celebrate 0.5s ease 3';
+            setTimeout(()=>{ item.style.animation=''; zone.style.animation=''; },1500);
+
+            if (item.dataset.speak) speak('Try matching: ' + item.dataset.speak);
+            else if (item.dataset.value) speak('Try matching: ' + item.dataset.value);
+        }
+
+        // ==================== UTIL ====================
+        function shuffle(arr) {
+            for (let i=arr.length-1; i>0; i--) {
+                const j = Math.floor(Math.random()*(i+1));
+                [arr[i],arr[j]] = [arr[j],arr[i]];
+            }
+            return arr;
+        }
+
+        // Mouse fallback (press "m" to toggle)
+        let mouseMode = false;
+        document.addEventListener('keydown', e=>{
+            if (e.key==='m' || e.key==='M') {
+                mouseMode = !mouseMode;
+                alert('Mouse mode: ' + (mouseMode?'ON':'OFF'));
+            }
+        });
+        document.addEventListener('mousemove', e=>{
+            if (!mouseMode) return;
+            handPosition.x = e.clientX;
+            handPosition.y = e.clientY;
+            handCursor.style.display='block';
+            handCursor.style.left = (handPosition.x-30)+'px';
+            handCursor.style.top  = (handPosition.y-30)+'px';
+            if (isDragging && draggedItem) {
+                draggedItem.style.left = (handPosition.x-60)+'px';
+                draggedItem.style.top  = (handPosition.y-60)+'px';
+                highlightDropZones(document.elementsFromPoint(handPosition.x,handPosition.y));
+            }
+        });
+        document.addEventListener('mousedown', e=>{
+            if (!mouseMode) return;
+            isPinching = true;
+            previousPinchState = false;
+            handCursor.classList.remove('open');
+            handCursor.classList.add('closed');
+            handleDragDrop();
+            previousPinchState = true;
+        });
+        document.addEventListener('mouseup', e=>{
+            if (!mouseMode) return;
+            isPinching = false;
+            handCursor.classList.remove('closed');
+            handCursor.classList.add('open');
+            if (isDragging) endDrag(document.elementsFromPoint(handPosition.x,handPosition.y));
+        });
+
+        // ==================== SOLAR SYSTEM DIAGRAM ====================
+        function setupSolarSystemDiagram() {
+            const container = document.getElementById('solarSystemContainer');
+
+            // Add orbital rings
+            const orbitDistances = [100, 150, 200, 250, 300, 350, 400, 450];
+            orbitDistances.forEach(distance => {
+                const ring = document.createElement('div');
+                ring.className = 'orbital-ring';
+                ring.style.width = (distance * 2) + 'px';
+                ring.style.height = (distance * 2) + 'px';
+                container.appendChild(ring);
+            });
+
+            // Add planets with animations
+            planetsOrdered.forEach((planet) => {
+                const card = document.createElement('div');
+                card.className = `planet-info-card ${planet.name.toLowerCase()}`;
+                card.innerHTML = `
+                    <div class="planet-order">#${planet.order}</div>
+                    <div class="planet-orbit ${planet.name.toLowerCase()}">
+                        ${planet.emoji}
+                    </div>
+                    <div class="planet-name">${planet.name}</div>
+                    <div class="planet-fact">${planet.fact}</div>
+                `;
+
+                card.addEventListener('click', () => {
+                    initAudio();
+                    speak(`${planet.name}. ${planet.fact}`);
+                });
+
+                card.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    initAudio();
+                    speak(`${planet.name}. ${planet.fact}`);
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', ()=>{
+            setupCamera();
+            setupSolarSystemDiagram();
+            updateLevelButtons();
+            setupGame();
+            document.addEventListener('click', ()=>{ initAudio(); }, { once:true });
+        });
+
+        // Hand connections
+        const HAND_CONNECTIONS = [
+            [0,1],[1,2],[2,3],[3,4],
+            [0,5],[5,6],[6,7],[7,8],
+            [0,9],[9,10],[10,11],[11,12],
+            [0,13],[13,14],[14,15],[15,16],
+            [0,17],[17,18],[18,19],[19,20],
+            [5,9],[9,13],[13,17]
+        ];
+    </script>
+</body>
+</html>

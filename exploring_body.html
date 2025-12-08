@@ -1,0 +1,2241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Body Explorer - Learn Your Amazing Body!</title>
+
+    <!-- OpenDyslexic Font for better readability -->
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            /* Soft, friendly colors for kids */
+            --bg-primary: #E8F4F8;
+            --bg-secondary: #D4E9F7;
+            --bg-card: #FFFFFF;
+            --text-primary: #2C3E50;
+            --text-secondary: #5D6D7E;
+
+            /* Body system colors */
+            --color-skin: #FFECD2;
+            --color-bones: #F5F5DC;
+            --color-muscles: #E8747C;
+            --color-organs: #9B59B6;
+            --color-brain: #FFB6C1;
+            --color-heart: #E74C3C;
+            --color-lungs: #85C1E9;
+            --color-stomach: #F39C12;
+            --color-liver: #873600;
+            --color-kidneys: #C0392B;
+            --color-intestines: #F5B7B1;
+
+            /* Accent colors */
+            --accent-blue: #3498DB;
+            --accent-green: #2ECC71;
+            --accent-yellow: #F1C40F;
+            --accent-orange: #E67E22;
+            --accent-pink: #E91E63;
+            --accent-purple: #9B59B6;
+            --accent-red: #E74C3C;
+            --accent-teal: #1ABC9C;
+
+            --shadow: 0 8px 32px rgba(0,0,0,0.1);
+            --shadow-lg: 0 15px 50px rgba(0,0,0,0.15);
+            --radius: 20px;
+            --radius-sm: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.8;
+            letter-spacing: 0.05em;
+            word-spacing: 0.1em;
+            color: var(--text-primary);
+        }
+
+        /* Floating decorations */
+        .decorations {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .deco-item {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.15;
+            animation: floatDeco 20s infinite ease-in-out;
+        }
+
+        @keyframes floatDeco {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(10deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(20px) rotate(-10deg); }
+        }
+
+        /* Main Layout */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 15px;
+            min-height: 100vh;
+        }
+
+        @media (max-width: 1200px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Header */
+        .header {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--accent-teal) 0%, var(--accent-blue) 100%);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.95;
+        }
+
+        /* Camera Section */
+        .camera-section {
+            position: relative;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #1a1a2e;
+        }
+
+        #videoElement {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #canvasOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        /* Body Part Labels */
+        .body-label {
+            position: absolute;
+            padding: 8px 15px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            white-space: nowrap;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .body-label.external {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+            color: white;
+        }
+
+        .body-label.bone {
+            background: linear-gradient(135deg, #F5F5DC, #DDD8C4);
+            color: #333;
+            border: 2px solid #B8860B;
+        }
+
+        .body-label.muscle {
+            background: linear-gradient(135deg, var(--color-muscles), #C0392B);
+            color: white;
+        }
+
+        .body-label.organ {
+            background: linear-gradient(135deg, var(--accent-purple), #8E44AD);
+            color: white;
+        }
+
+        .body-label.highlight {
+            animation: pulseLabel 0.8s infinite;
+            transform: translate(-50%, -50%) scale(1.2);
+            z-index: 100;
+        }
+
+        @keyframes pulseLabel {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.7); }
+            50% { box-shadow: 0 0 0 15px rgba(255,255,255,0); }
+        }
+
+        .label-emoji {
+            font-size: 1.2rem;
+        }
+
+        /* Organ Overlay */
+        .organ-overlay {
+            position: absolute;
+            font-size: 3rem;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            transition: all 0.2s ease;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+            z-index: 5;
+        }
+
+        .organ-overlay.pulse {
+            animation: organPulse 1s infinite;
+        }
+
+        @keyframes organPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* Camera Controls */
+        .camera-controls {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(255,255,255,0.95);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .view-btn {
+            padding: 12px 20px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 3px solid transparent;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .view-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .view-btn.active {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .view-btn span {
+            font-size: 1.2rem;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background: var(--bg-secondary);
+            border-top: 2px solid rgba(0,0,0,0.05);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--accent-red);
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.active {
+            background: var(--accent-green);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+
+        /* Right Panel */
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* Info Card */
+        .info-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .info-card h3 {
+            font-size: 1.2rem;
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-card h3 span {
+            font-size: 1.5rem;
+        }
+
+        /* Mode Selection */
+        .mode-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .mode-btn {
+            padding: 15px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 3px solid transparent;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow);
+        }
+
+        .mode-btn.active {
+            border-color: var(--accent-green);
+            background: rgba(46, 204, 113, 0.15);
+        }
+
+        .mode-btn .icon {
+            font-size: 2rem;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* Level Selection */
+        .level-selector {
+            display: flex;
+            gap: 8px;
+        }
+
+        .level-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .level-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .level-btn.easy.active {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .level-btn.medium.active {
+            background: var(--accent-orange);
+            color: white;
+        }
+
+        .level-btn.hard.active {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        /* Stats Display */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .stat-box {
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: var(--radius-sm);
+            text-align: center;
+        }
+
+        .stat-box .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--accent-blue);
+        }
+
+        .stat-box .label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* Quiz Panel */
+        .quiz-panel {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            color: white;
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+
+        .quiz-panel.active {
+            display: block;
+        }
+
+        .quiz-question {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .quiz-hint {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .quiz-target {
+            font-size: 3rem;
+            text-align: center;
+            margin: 15px 0;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .quiz-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .quiz-option {
+            padding: 15px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.02);
+        }
+
+        .quiz-option.correct {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        .quiz-option.wrong {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+        }
+
+        /* Learning Cards */
+        .learning-cards {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .learning-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-sm);
+            padding: 12px 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .learning-card:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow);
+        }
+
+        .learning-card.selected {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+            color: white;
+        }
+
+        .learning-card .emoji {
+            font-size: 1.8rem;
+        }
+
+        .learning-card .info {
+            flex: 1;
+        }
+
+        .learning-card .name {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .learning-card .desc {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        /* Fun Facts */
+        .fun-fact {
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+            border-radius: var(--radius);
+            padding: 20px;
+            color: #333;
+            box-shadow: var(--shadow);
+        }
+
+        .fun-fact h4 {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fun-fact p {
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* Feedback Messages */
+        .feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 30px 50px;
+            border-radius: var(--radius);
+            font-size: 1.8rem;
+            font-weight: bold;
+            z-index: 1000;
+            animation: popIn 0.4s ease;
+            display: none;
+            text-align: center;
+        }
+
+        .feedback.success {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-teal));
+            color: white;
+            box-shadow: 0 0 50px var(--accent-green);
+        }
+
+        .feedback.error {
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-orange));
+            color: white;
+            box-shadow: 0 0 50px var(--accent-red);
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Level Complete Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: 40px 50px;
+            border-radius: var(--radius);
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            animation: bounceIn 0.5s ease;
+            max-width: 90%;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0) rotate(-5deg); }
+            50% { transform: scale(1.05) rotate(2deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .modal-content h2 {
+            font-size: 2rem;
+            color: var(--accent-purple);
+            margin-bottom: 10px;
+        }
+
+        .modal-stars {
+            font-size: 3rem;
+            margin: 15px 0;
+        }
+
+        .modal-score {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .modal-btn {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-teal));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Sound Toggle */
+        .sound-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sound-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Instructions Toggle */
+        .help-btn {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--accent-orange);
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .help-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Instructions Panel */
+        .instructions-panel {
+            position: fixed;
+            top: 140px;
+            right: 20px;
+            width: 280px;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+            display: none;
+        }
+
+        .instructions-panel.active {
+            display: block;
+        }
+
+        .instructions-panel h4 {
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        .instructions-panel p {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .instructions-panel p span {
+            font-size: 1.3rem;
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -20px;
+            border-radius: 2px;
+            animation: confettiFall 3s linear forwards;
+            z-index: 3000;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Body Part Info Popup */
+        .part-info-popup {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            padding: 20px 30px;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            z-index: 100;
+            display: none;
+            max-width: 500px;
+            text-align: center;
+            border: 3px solid var(--accent-blue);
+        }
+
+        .part-info-popup.active {
+            display: block;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        .part-info-popup h4 {
+            font-size: 1.3rem;
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .part-info-popup p {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        /* Skeleton Drawing */
+        .skeleton-bone {
+            position: absolute;
+            background: linear-gradient(90deg, #F5F5DC, #E8E4D9);
+            border: 2px solid #B8860B;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 3;
+            opacity: 0.85;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.4rem;
+            }
+
+            .camera-controls {
+                padding: 10px;
+            }
+
+            .view-btn {
+                padding: 10px 15px;
+                font-size: 0.8rem;
+            }
+
+            .mode-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .quiz-options {
+                grid-template-columns: 1fr;
+            }
+
+            .instructions-panel {
+                width: 250px;
+                right: 10px;
+            }
+
+            .sound-btn, .help-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Scrollbar styling */
+        .learning-cards::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .learning-cards::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: 4px;
+        }
+
+        .learning-cards::-webkit-scrollbar-thumb {
+            background: var(--accent-blue);
+            border-radius: 4px;
+        }
+
+        /* Touch point indicator */
+        .touch-indicator {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border: 4px solid var(--accent-green);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 20;
+            display: none;
+            transform: translate(-50%, -50%);
+            animation: touchPulse 1s infinite;
+        }
+
+        @keyframes touchPulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 0.5; }
+        }
+
+        /* Category tabs for learning */
+        .category-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .category-tab {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .category-tab.active {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        /* Dynamic Navigation Bar */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-title">📚 Learning Games</div>
+            <div class="nav-menu" id="navMenu"></div>
+        </div>
+    </div>
+
+    <!-- Decorations -->
+    <div class="decorations" id="decorations"></div>
+
+    <!-- Feedback Message -->
+    <div class="feedback" id="feedback"></div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <h2>🎉 Amazing Job! 🎉</h2>
+            <div class="modal-stars" id="modalStars">⭐⭐⭐</div>
+            <div class="modal-score">You learned <span id="modalScore">0</span> body parts!</div>
+            <button class="modal-btn" onclick="closeModal()">Keep Learning! →</button>
+        </div>
+    </div>
+
+    <!-- Sound Toggle -->
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+
+    <!-- Help Toggle -->
+    <button class="help-btn" onclick="toggleInstructions()">❓</button>
+
+    <!-- Instructions Panel -->
+    <div class="instructions-panel" id="instructionsPanel">
+        <h4>📖 How to Use</h4>
+        <p><span>📷</span> Stand in front of camera</p>
+        <p><span>👀</span> See labels on your body!</p>
+        <p><span>🔄</span> Change view modes</p>
+        <p><span>🎯</span> Try quiz mode to test yourself</p>
+        <p><span>📚</span> Click body parts to learn more</p>
+        <p><span>⌨️</span> Press M for mouse mode</p>
+    </div>
+
+    <!-- Body Part Info Popup -->
+    <div class="part-info-popup" id="partInfoPopup">
+        <h4 id="partInfoTitle">🧠 Brain</h4>
+        <p id="partInfoDesc">The brain is the control center of your body!</p>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔬 Body Explorer - Discover Your Amazing Body! 🧬</h1>
+            <p>Move around and learn about your body parts, bones, muscles & organs!</p>
+        </header>
+
+        <!-- Camera Section -->
+        <section class="camera-section">
+            <div class="camera-container">
+                <video id="videoElement" autoplay playsinline></video>
+                <canvas id="canvasOverlay"></canvas>
+                <div id="labelsContainer"></div>
+                <div id="organsContainer"></div>
+                <div class="touch-indicator" id="touchIndicator"></div>
+            </div>
+
+            <div class="camera-controls">
+                <button class="view-btn active" data-view="external" onclick="setView('external')">
+                    <span>👤</span> Body Parts
+                </button>
+                <button class="view-btn" data-view="skeleton" onclick="setView('skeleton')">
+                    <span>🦴</span> Bones
+                </button>
+                <button class="view-btn" data-view="muscles" onclick="setView('muscles')">
+                    <span>💪</span> Muscles
+                </button>
+                <button class="view-btn" data-view="organs" onclick="setView('organs')">
+                    <span>🫀</span> Organs
+                </button>
+                <button class="view-btn" data-view="face" onclick="setView('face')">
+                    <span>😊</span> Face
+                </button>
+                <button class="view-btn" data-view="hands" onclick="setView('hands')">
+                    <span>🖐️</span> Hands
+                </button>
+            </div>
+
+            <div class="status-bar">
+                <div class="status-indicator">
+                    <div class="status-dot" id="statusDot"></div>
+                    <span id="statusText">Waiting for camera...</span>
+                </div>
+                <div style="font-size: 0.9rem;">
+                    Parts found: <strong id="partsFound">0</strong>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Panel -->
+        <aside class="right-panel">
+            <!-- Mode Selection -->
+            <div class="info-card">
+                <h3><span>🎮</span> Learning Mode</h3>
+                <div class="mode-grid">
+                    <button class="mode-btn active" data-mode="explore" onclick="setMode('explore')">
+                        <span class="icon">🔍</span>
+                        Explore
+                    </button>
+                    <button class="mode-btn" data-mode="quiz" onclick="setMode('quiz')">
+                        <span class="icon">❓</span>
+                        Quiz
+                    </button>
+                    <button class="mode-btn" data-mode="touch" onclick="setMode('touch')">
+                        <span class="icon">👆</span>
+                        Touch & Learn
+                    </button>
+                    <button class="mode-btn" data-mode="challenge" onclick="setMode('challenge')">
+                        <span class="icon">🏆</span>
+                        Challenge
+                    </button>
+                </div>
+            </div>
+
+            <!-- Level Selection -->
+            <div class="info-card">
+                <h3><span>📊</span> Difficulty</h3>
+                <div class="level-selector">
+                    <button class="level-btn easy active" onclick="setLevel('easy')">🟢 Easy</button>
+                    <button class="level-btn medium" onclick="setLevel('medium')">🟡 Medium</button>
+                    <button class="level-btn hard" onclick="setLevel('hard')">🔴 Expert</button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="info-card">
+                <h3><span>⭐</span> Your Progress</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="value" id="scoreValue">0</div>
+                        <div class="label">Score</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="streakValue">0</div>
+                        <div class="label">Streak</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="learnedValue">0</div>
+                        <div class="label">Learned</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="value" id="levelValue">1</div>
+                        <div class="label">Level</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quiz Panel -->
+            <div class="quiz-panel" id="quizPanel">
+                <div class="quiz-question" id="quizQuestion">Find this body part!</div>
+                <div class="quiz-target" id="quizTarget">🧠</div>
+                <div class="quiz-hint" id="quizHint">Touch your head to find the brain!</div>
+                <div class="quiz-options" id="quizOptions"></div>
+            </div>
+
+            <!-- Learning Content -->
+            <div class="info-card" id="learningCard">
+                <h3><span>📚</span> Learn More</h3>
+                <div class="category-tabs">
+                    <button class="category-tab active" onclick="setCategory('all')">All</button>
+                    <button class="category-tab" onclick="setCategory('external')">Body</button>
+                    <button class="category-tab" onclick="setCategory('bones')">Bones</button>
+                    <button class="category-tab" onclick="setCategory('organs')">Organs</button>
+                    <button class="category-tab" onclick="setCategory('muscles')">Muscles</button>
+                </div>
+                <div class="learning-cards" id="learningCards"></div>
+            </div>
+
+            <!-- Fun Fact -->
+            <div class="fun-fact">
+                <h4>💡 Did You Know?</h4>
+                <p id="funFactText">Your body has 206 bones! Babies are born with about 270 bones, but many fuse together as you grow.</p>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // ==================== DYNAMIC NAVIGATION SYSTEM ====================
+        // Configuration for available games
+        const GAMES_CONFIG = {
+            'index.html': { name: '🔤 Alphabet & Colors', description: 'Learn letters and colors with drag & drop' },
+            'planets.html': { name: '🪐 Planets', description: 'Explore our solar system' },
+            'exploring_body.html': { name: '🧬 Body Explorer', description: 'Learn about human body parts' },
+            'frost_discovery.html': { name: '❄️ Frost Discovery', description: 'Reveal and learn hidden items' },
+            'hand_music.html': { name: '🎵 Music Hands', description: 'Learn music with hand gestures' },
+            'melt_the_ice.html': { name: '🌈 Melt the Ice', description: 'Melt ice to discover pictures' },
+            'science-lab.html': { name: '🧪 Science Lab', description: 'Perform fun experiments' }
+        };
+
+        // Initialize navigation
+        function initializeNavigation() {
+            const navMenu = document.getElementById('navMenu');
+            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
+
+            // Clear existing menu
+            navMenu.innerHTML = '';
+
+            // Create links for each game
+            for (const [file, config] of Object.entries(GAMES_CONFIG)) {
+                const link = document.createElement('a');
+                link.className = 'nav-link';
+                link.href = file;
+                link.textContent = config.name;
+                link.title = config.description;
+
+                // Mark current page as active
+                if (currentFile === file || (currentFile === '' && file === 'index.html')) {
+                    link.classList.add('active');
+                }
+
+                navMenu.appendChild(link);
+            }
+        }
+
+        // Initialize navigation when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeNavigation();
+        });
+
+        // ==================== CONFIGURATION ====================
+        const CONFIG = {
+            soundEnabled: true,
+            showLabels: true,
+            labelSize: 'normal'
+        };
+
+        // ==================== STATE ====================
+        let currentView = 'external';
+        let currentMode = 'explore';
+        let currentLevel = 'easy';
+        let currentCategory = 'all';
+        let score = 0;
+        let streak = 0;
+        let learned = 0;
+        let level = 1;
+        let partsFound = 0;
+        let quizTarget = null;
+        let learnedParts = new Set();
+        let landmarks = null;
+        let faceLandmarks = null;
+        let leftHandLandmarks = null;
+        let rightHandLandmarks = null;
+
+        // ==================== AUDIO ====================
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTone(freq, duration = 0.2) {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSuccess() {
+            playTone(523, 0.1);
+            setTimeout(() => playTone(659, 0.1), 100);
+            setTimeout(() => playTone(784, 0.2), 200);
+        }
+
+        function playError() {
+            playTone(200, 0.3);
+        }
+
+        function playClick() {
+            playTone(440, 0.1);
+        }
+
+        function speak(text, rate = 0.85) {
+            if (!CONFIG.soundEnabled) return;
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = rate;
+            utterance.pitch = 1.1;
+            utterance.lang = 'en-US';
+            speechSynthesis.speak(utterance);
+        }
+
+        function toggleSound() {
+            CONFIG.soundEnabled = !CONFIG.soundEnabled;
+            document.getElementById('soundBtn').textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+        }
+
+        // ==================== BODY PARTS DATA ====================
+        const bodyPartsData = {
+            // External Body Parts
+            external: {
+                head: { emoji: '🗣️', name: 'Head', desc: 'Your head contains your brain and helps you think, see, hear, smell, and taste!', landmark: 0 },
+                neck: { emoji: '🦒', name: 'Neck', desc: 'Your neck connects your head to your body and lets you turn and nod your head.', landmark: 'neck' },
+                shoulder_left: { emoji: '💪', name: 'Left Shoulder', desc: 'Your shoulders help you lift and move your arms in all directions!', landmark: 11 },
+                shoulder_right: { emoji: '💪', name: 'Right Shoulder', desc: 'Your shoulders help you lift and move your arms in all directions!', landmark: 12 },
+                elbow_left: { emoji: '🔗', name: 'Left Elbow', desc: 'Your elbow is a hinge joint that lets you bend your arm.', landmark: 13 },
+                elbow_right: { emoji: '🔗', name: 'Right Elbow', desc: 'Your elbow is a hinge joint that lets you bend your arm.', landmark: 14 },
+                wrist_left: { emoji: '⌚', name: 'Left Wrist', desc: 'Your wrist connects your hand to your arm and helps you rotate your hand.', landmark: 15 },
+                wrist_right: { emoji: '⌚', name: 'Right Wrist', desc: 'Your wrist connects your hand to your arm and helps you rotate your hand.', landmark: 16 },
+                hip_left: { emoji: '🦵', name: 'Left Hip', desc: 'Your hips are ball-and-socket joints that let your legs move in many directions!', landmark: 23 },
+                hip_right: { emoji: '🦵', name: 'Right Hip', desc: 'Your hips are ball-and-socket joints that let your legs move in many directions!', landmark: 24 },
+                knee_left: { emoji: '🦿', name: 'Left Knee', desc: 'Your knee is the largest joint in your body! It lets you walk, run, and jump.', landmark: 25 },
+                knee_right: { emoji: '🦿', name: 'Right Knee', desc: 'Your knee is the largest joint in your body! It lets you walk, run, and jump.', landmark: 26 },
+                ankle_left: { emoji: '🦶', name: 'Left Ankle', desc: 'Your ankle connects your foot to your leg and helps you balance.', landmark: 27 },
+                ankle_right: { emoji: '🦶', name: 'Right Ankle', desc: 'Your ankle connects your foot to your leg and helps you balance.', landmark: 28 },
+                chest: { emoji: '👕', name: 'Chest', desc: 'Your chest protects your heart and lungs with a cage of ribs!', landmark: 'chest' },
+                stomach_area: { emoji: '🫃', name: 'Tummy', desc: 'Your tummy area contains many important organs that help digest food!', landmark: 'stomach' }
+            },
+
+            // Skeleton/Bones
+            bones: {
+                skull: { emoji: '💀', name: 'Skull', desc: 'Your skull is made of 22 bones and protects your amazing brain!', landmark: 0 },
+                spine: { emoji: '🦴', name: 'Spine', desc: 'Your spine has 33 vertebrae and keeps you standing tall like a tower!', landmark: 'spine' },
+                ribs: { emoji: '🦴', name: 'Ribs', desc: 'You have 24 ribs (12 pairs) that protect your heart and lungs like a cage!', landmark: 'chest' },
+                clavicle_left: { emoji: '🦴', name: 'Left Collarbone', desc: 'Your collarbone connects your arm to your body. It\'s the most commonly broken bone!', landmark: 11 },
+                clavicle_right: { emoji: '🦴', name: 'Right Collarbone', desc: 'Your collarbone connects your arm to your body. It\'s the most commonly broken bone!', landmark: 12 },
+                humerus_left: { emoji: '🦴', name: 'Left Humerus', desc: 'The humerus is your upper arm bone - and yes, it\'s named that because it\'s near your "funny bone"!', landmark: 13 },
+                humerus_right: { emoji: '🦴', name: 'Right Humerus', desc: 'The humerus is your upper arm bone - and yes, it\'s named that because it\'s near your "funny bone"!', landmark: 14 },
+                radius_left: { emoji: '🦴', name: 'Left Radius', desc: 'The radius is one of two bones in your forearm. It\'s on the thumb side!', landmark: 15 },
+                radius_right: { emoji: '🦴', name: 'Right Radius', desc: 'The radius is one of two bones in your forearm. It\'s on the thumb side!', landmark: 16 },
+                pelvis: { emoji: '🦴', name: 'Pelvis', desc: 'Your pelvis is a bowl-shaped bone that supports your spine and protects organs.', landmark: 'pelvis' },
+                femur_left: { emoji: '🦴', name: 'Left Femur', desc: 'The femur is the longest and strongest bone in your entire body!', landmark: 25 },
+                femur_right: { emoji: '🦴', name: 'Right Femur', desc: 'The femur is the longest and strongest bone in your entire body!', landmark: 26 },
+                tibia_left: { emoji: '🦴', name: 'Left Tibia', desc: 'The tibia (shin bone) is the second largest bone in your body!', landmark: 27 },
+                tibia_right: { emoji: '🦴', name: 'Right Tibia', desc: 'The tibia (shin bone) is the second largest bone in your body!', landmark: 28 },
+                patella_left: { emoji: '🦴', name: 'Left Kneecap', desc: 'Your kneecap (patella) protects your knee joint. It\'s the largest sesamoid bone!', landmark: 25 },
+                patella_right: { emoji: '🦴', name: 'Right Kneecap', desc: 'Your kneecap (patella) protects your knee joint. It\'s the largest sesamoid bone!', landmark: 26 }
+            },
+
+            // Muscles
+            muscles: {
+                trapezius: { emoji: '💪', name: 'Trapezius', desc: 'Your trapezius muscle helps you shrug your shoulders and move your head!', landmark: 'neck' },
+                deltoid_left: { emoji: '💪', name: 'Left Deltoid', desc: 'Your deltoid gives your shoulder its round shape and helps lift your arm!', landmark: 11 },
+                deltoid_right: { emoji: '💪', name: 'Right Deltoid', desc: 'Your deltoid gives your shoulder its round shape and helps lift your arm!', landmark: 12 },
+                biceps_left: { emoji: '💪', name: 'Left Biceps', desc: 'Your biceps muscle bends your elbow. Flex to see it bulge!', landmark: 13 },
+                biceps_right: { emoji: '💪', name: 'Right Biceps', desc: 'Your biceps muscle bends your elbow. Flex to see it bulge!', landmark: 14 },
+                triceps_left: { emoji: '💪', name: 'Left Triceps', desc: 'Your triceps is on the back of your arm and straightens your elbow!', landmark: 13 },
+                triceps_right: { emoji: '💪', name: 'Right Triceps', desc: 'Your triceps is on the back of your arm and straightens your elbow!', landmark: 14 },
+                pectorals: { emoji: '💪', name: 'Pectorals', desc: 'Your pectoral muscles (pecs) are in your chest and help you push things!', landmark: 'chest' },
+                abdominals: { emoji: '💪', name: 'Abdominals', desc: 'Your abs help you bend forward and protect your internal organs!', landmark: 'stomach' },
+                quadriceps_left: { emoji: '💪', name: 'Left Quadriceps', desc: 'Your quads are 4 muscles in your thigh that help you walk, run, and kick!', landmark: 25 },
+                quadriceps_right: { emoji: '💪', name: 'Right Quadriceps', desc: 'Your quads are 4 muscles in your thigh that help you walk, run, and kick!', landmark: 26 },
+                hamstrings_left: { emoji: '💪', name: 'Left Hamstrings', desc: 'Your hamstrings are behind your thigh and help you bend your knee!', landmark: 25 },
+                hamstrings_right: { emoji: '💪', name: 'Right Hamstrings', desc: 'Your hamstrings are behind your thigh and help you bend your knee!', landmark: 26 },
+                calves_left: { emoji: '💪', name: 'Left Calf', desc: 'Your calf muscle helps you stand on tiptoes and push off when walking!', landmark: 27 },
+                calves_right: { emoji: '💪', name: 'Right Calf', desc: 'Your calf muscle helps you stand on tiptoes and push off when walking!', landmark: 28 },
+                gluteus: { emoji: '🍑', name: 'Gluteus', desc: 'Your gluteus (bottom muscles) are the largest muscles in your body!', landmark: 'pelvis' }
+            },
+
+            // Internal Organs
+            organs: {
+                brain: { emoji: '🧠', name: 'Brain', desc: 'Your brain has 86 billion neurons and controls everything you do, think, and feel!', landmark: 0, offset: { y: -0.05 } },
+                eyes: { emoji: '👁️', name: 'Eyes', desc: 'Your eyes can see about 10 million different colors!', landmark: 'eyes' },
+                heart: { emoji: '❤️', name: 'Heart', desc: 'Your heart beats about 100,000 times every day, pumping blood through your body!', landmark: 'heart', pulse: true },
+                lungs: { emoji: '🫁', name: 'Lungs', desc: 'Your lungs take in about 2,000 gallons of air every day!', landmark: 'lungs' },
+                stomach: { emoji: '🟤', name: 'Stomach', desc: 'Your stomach can hold about 1 liter of food and uses acid to break it down!', landmark: 'stomach_organ' },
+                liver: { emoji: '🟫', name: 'Liver', desc: 'Your liver is your largest internal organ and does over 500 different jobs!', landmark: 'liver' },
+                kidneys: { emoji: '🫘', name: 'Kidneys', desc: 'Your kidneys filter about 50 gallons of blood every day to remove waste!', landmark: 'kidneys' },
+                intestines: { emoji: '🌀', name: 'Intestines', desc: 'Your intestines are about 25 feet long - that\'s as long as 5 adult humans lying down!', landmark: 'intestines' },
+                bladder: { emoji: '💧', name: 'Bladder', desc: 'Your bladder can hold about 2 cups of urine!', landmark: 'bladder' }
+            },
+
+            // Face Parts
+            face: {
+                forehead: { emoji: '🧠', name: 'Forehead', desc: 'Your forehead protects the front part of your brain!', landmark: 'forehead' },
+                eyebrow_left: { emoji: '🤨', name: 'Left Eyebrow', desc: 'Eyebrows keep sweat from dripping into your eyes!', landmark: 'eyebrow_left' },
+                eyebrow_right: { emoji: '🤨', name: 'Right Eyebrow', desc: 'Eyebrows keep sweat from dripping into your eyes!', landmark: 'eyebrow_right' },
+                eye_left: { emoji: '👁️', name: 'Left Eye', desc: 'Your eye blinks about 15-20 times per minute to stay moist!', landmark: 'eye_left' },
+                eye_right: { emoji: '👁️', name: 'Right Eye', desc: 'Your eye blinks about 15-20 times per minute to stay moist!', landmark: 'eye_right' },
+                nose: { emoji: '👃', name: 'Nose', desc: 'Your nose can detect over 1 trillion different smells!', landmark: 'nose' },
+                ear_left: { emoji: '👂', name: 'Left Ear', desc: 'Your ears never stop working, even when you sleep!', landmark: 'ear_left' },
+                ear_right: { emoji: '👂', name: 'Right Ear', desc: 'Your ears never stop working, even when you sleep!', landmark: 'ear_right' },
+                cheek_left: { emoji: '😊', name: 'Left Cheek', desc: 'Your cheeks help you smile, talk, and chew food!', landmark: 'cheek_left' },
+                cheek_right: { emoji: '😊', name: 'Right Cheek', desc: 'Your cheeks help you smile, talk, and chew food!', landmark: 'cheek_right' },
+                mouth: { emoji: '👄', name: 'Mouth', desc: 'Your mouth helps you eat, speak, breathe, and make expressions!', landmark: 'mouth' },
+                lips: { emoji: '💋', name: 'Lips', desc: 'Your lips have more nerve endings than your fingertips!', landmark: 'lips' },
+                chin: { emoji: '🗣️', name: 'Chin', desc: 'Humans are the only animals with a true chin!', landmark: 'chin' },
+                teeth: { emoji: '🦷', name: 'Teeth', desc: 'Adults have 32 teeth! Your teeth are as unique as your fingerprints.', landmark: 'mouth' },
+                tongue: { emoji: '👅', name: 'Tongue', desc: 'Your tongue has about 10,000 taste buds!', landmark: 'mouth' }
+            },
+
+            // Hand Parts
+            hands: {
+                palm_left: { emoji: '🤚', name: 'Left Palm', desc: 'Your palm has many nerve endings that help you feel textures!', landmark: 'palm_left' },
+                palm_right: { emoji: '🤚', name: 'Right Palm', desc: 'Your palm has many nerve endings that help you feel textures!', landmark: 'palm_right' },
+                thumb_left: { emoji: '👍', name: 'Left Thumb', desc: 'Your thumb is opposable, which means it can touch all your other fingers!', landmark: 'thumb_left' },
+                thumb_right: { emoji: '👍', name: 'Right Thumb', desc: 'Your thumb is opposable, which means it can touch all your other fingers!', landmark: 'thumb_right' },
+                index_left: { emoji: '👆', name: 'Left Index Finger', desc: 'Your index finger is your most sensitive finger!', landmark: 'index_left' },
+                index_right: { emoji: '👆', name: 'Right Index Finger', desc: 'Your index finger is your most sensitive finger!', landmark: 'index_right' },
+                middle_left: { emoji: '🖕', name: 'Left Middle Finger', desc: 'Your middle finger is usually your longest finger!', landmark: 'middle_left' },
+                middle_right: { emoji: '🖐️', name: 'Right Middle Finger', desc: 'Your middle finger is usually your longest finger!', landmark: 'middle_right' },
+                ring_left: { emoji: '💍', name: 'Left Ring Finger', desc: 'The ring finger is traditionally where wedding rings are worn!', landmark: 'ring_left' },
+                ring_right: { emoji: '💍', name: 'Right Ring Finger', desc: 'The ring finger is traditionally where wedding rings are worn!', landmark: 'ring_right' },
+                pinky_left: { emoji: '🤙', name: 'Left Pinky', desc: 'Your pinky finger provides 50% of your hand\'s strength!', landmark: 'pinky_left' },
+                pinky_right: { emoji: '🤙', name: 'Right Pinky', desc: 'Your pinky finger provides 50% of your hand\'s strength!', landmark: 'pinky_right' },
+                knuckles_left: { emoji: '✊', name: 'Left Knuckles', desc: 'Your knuckles are joints that let your fingers bend!', landmark: 'knuckles_left' },
+                knuckles_right: { emoji: '✊', name: 'Right Knuckles', desc: 'Your knuckles are joints that let your fingers bend!', landmark: 'knuckles_right' },
+                fingernails: { emoji: '💅', name: 'Fingernails', desc: 'Fingernails grow about 3.5mm per month. They protect your fingertips!', landmark: 'fingernails' }
+            }
+        };
+
+        // Fun Facts
+        const funFacts = [
+            "Your body has 206 bones! Babies are born with about 270 bones, but many fuse together as you grow.",
+            "The human body has over 600 muscles! The smallest is in your ear.",
+            "Your heart pumps about 2,000 gallons of blood every day!",
+            "Your brain uses 20% of all the oxygen and blood in your body.",
+            "The average person takes about 20,000 breaths per day!",
+            "Your nose can remember 50,000 different scents!",
+            "Human bones are 5 times stronger than steel of the same weight!",
+            "The human eye can distinguish about 10 million different colors.",
+            "Your stomach gets a new lining every 3-4 days!",
+            "Nerve signals travel at speeds up to 250 miles per hour!",
+            "The smallest bone in your body is in your ear - it's called the stirrup!",
+            "Your skin is your largest organ and weighs about 8 pounds!",
+            "Humans are the only animals that produce emotional tears.",
+            "Your tongue print is as unique as your fingerprint!",
+            "The human body contains enough iron to make a 3-inch nail.",
+            "You produce about 1 liter of saliva every day!",
+            "Your hair grows about 6 inches per year.",
+            "The human brain is about 75% water!",
+            "Babies have about 300 bones, but adults only have 206!",
+            "Your blood vessels, if laid end to end, would circle Earth twice!"
+        ];
+
+        // ==================== MEDIAPIPE SETUP ====================
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('canvasOverlay');
+        const canvasCtx = canvasElement.getContext('2d');
+        const labelsContainer = document.getElementById('labelsContainer');
+        const organsContainer = document.getElementById('organsContainer');
+
+        const holistic = new Holistic({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
+        });
+
+        holistic.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            enableSegmentation: false,
+            smoothSegmentation: false,
+            refineFaceLandmarks: true,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        holistic.onResults(onResults);
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 1280, height: 720, facingMode: 'user' }
+                });
+                videoElement.srcObject = stream;
+
+                videoElement.onloadedmetadata = () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    document.getElementById('statusDot').classList.add('active');
+                    document.getElementById('statusText').textContent = 'Camera ready!';
+                    detectLoop();
+                };
+            } catch (err) {
+                console.error('Camera error:', err);
+                document.getElementById('statusText').textContent = 'Camera not available';
+            }
+        }
+
+        async function detectLoop() {
+            if (videoElement.readyState >= 2) {
+                await holistic.send({ image: videoElement });
+            }
+            requestAnimationFrame(detectLoop);
+        }
+
+        function onResults(results) {
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            landmarks = results.poseLandmarks;
+            faceLandmarks = results.faceLandmarks;
+            leftHandLandmarks = results.leftHandLandmarks;
+            rightHandLandmarks = results.rightHandLandmarks;
+
+            // Draw pose skeleton
+            if (landmarks) {
+                drawConnectors(canvasCtx, landmarks, POSE_CONNECTIONS, {
+                    color: 'rgba(52, 152, 219, 0.6)',
+                    lineWidth: 3
+                });
+                drawLandmarks(canvasCtx, landmarks, {
+                    color: 'rgba(46, 204, 113, 0.8)',
+                    lineWidth: 2,
+                    radius: 5
+                });
+
+                updateLabels();
+                partsFound = countVisibleParts();
+                document.getElementById('partsFound').textContent = partsFound;
+            }
+
+            // Draw face mesh
+            if (faceLandmarks && (currentView === 'face' || currentView === 'external')) {
+                drawConnectors(canvasCtx, faceLandmarks, FACEMESH_TESSELATION, {
+                    color: 'rgba(155, 89, 182, 0.2)',
+                    lineWidth: 1
+                });
+            }
+
+            // Draw hands
+            if (leftHandLandmarks && (currentView === 'hands' || currentView === 'external')) {
+                drawConnectors(canvasCtx, leftHandLandmarks, HAND_CONNECTIONS, {
+                    color: 'rgba(231, 76, 60, 0.6)',
+                    lineWidth: 2
+                });
+                drawLandmarks(canvasCtx, leftHandLandmarks, {
+                    color: 'rgba(241, 196, 15, 0.8)',
+                    lineWidth: 1,
+                    radius: 3
+                });
+            }
+
+            if (rightHandLandmarks && (currentView === 'hands' || currentView === 'external')) {
+                drawConnectors(canvasCtx, rightHandLandmarks, HAND_CONNECTIONS, {
+                    color: 'rgba(52, 152, 219, 0.6)',
+                    lineWidth: 2
+                });
+                drawLandmarks(canvasCtx, rightHandLandmarks, {
+                    color: 'rgba(46, 204, 113, 0.8)',
+                    lineWidth: 1,
+                    radius: 3
+                });
+            }
+        }
+
+        // ==================== LABEL POSITIONING ====================
+        function getLandmarkPosition(landmarkId) {
+            if (!landmarks) return null;
+
+            const container = document.querySelector('.camera-container');
+            const rect = container.getBoundingClientRect();
+
+            if (typeof landmarkId === 'number') {
+                const lm = landmarks[landmarkId];
+                if (!lm || lm.visibility < 0.5) return null;
+                return {
+                    x: (1 - lm.x) * rect.width,
+                    y: lm.y * rect.height
+                };
+            }
+
+            // Special landmark calculations
+            switch (landmarkId) {
+                case 'neck':
+                    const neck1 = landmarks[11];
+                    const neck2 = landmarks[12];
+                    if (!neck1 || !neck2) return null;
+                    return {
+                        x: (1 - (neck1.x + neck2.x) / 2) * rect.width,
+                        y: ((neck1.y + neck2.y) / 2 - 0.05) * rect.height
+                    };
+
+                case 'chest':
+                    const ch1 = landmarks[11];
+                    const ch2 = landmarks[12];
+                    const ch3 = landmarks[23];
+                    const ch4 = landmarks[24];
+                    if (!ch1 || !ch2 || !ch3 || !ch4) return null;
+                    return {
+                        x: (1 - (ch1.x + ch2.x + ch3.x + ch4.x) / 4) * rect.width,
+                        y: ((ch1.y + ch2.y) / 2 + 0.08) * rect.height
+                    };
+
+                case 'stomach':
+                case 'stomach_organ':
+                    const st1 = landmarks[23];
+                    const st2 = landmarks[24];
+                    if (!st1 || !st2) return null;
+                    return {
+                        x: (1 - (st1.x + st2.x) / 2) * rect.width,
+                        y: ((st1.y + st2.y) / 2 - 0.05) * rect.height
+                    };
+
+                case 'pelvis':
+                    const p1 = landmarks[23];
+                    const p2 = landmarks[24];
+                    if (!p1 || !p2) return null;
+                    return {
+                        x: (1 - (p1.x + p2.x) / 2) * rect.width,
+                        y: ((p1.y + p2.y) / 2) * rect.height
+                    };
+
+                case 'spine':
+                    const sp1 = landmarks[11];
+                    const sp2 = landmarks[12];
+                    const sp3 = landmarks[23];
+                    const sp4 = landmarks[24];
+                    if (!sp1 || !sp2 || !sp3 || !sp4) return null;
+                    return {
+                        x: (1 - (sp1.x + sp2.x + sp3.x + sp4.x) / 4) * rect.width,
+                        y: ((sp1.y + sp2.y + sp3.y + sp4.y) / 4) * rect.height
+                    };
+
+                case 'heart':
+                    const h1 = landmarks[11];
+                    const h2 = landmarks[12];
+                    if (!h1 || !h2) return null;
+                    return {
+                        x: (1 - (h1.x + h2.x) / 2 + 0.05) * rect.width,
+                        y: ((h1.y + h2.y) / 2 + 0.08) * rect.height
+                    };
+
+                case 'lungs':
+                    const l1 = landmarks[11];
+                    const l2 = landmarks[12];
+                    if (!l1 || !l2) return null;
+                    return {
+                        x: (1 - (l1.x + l2.x) / 2) * rect.width,
+                        y: ((l1.y + l2.y) / 2 + 0.1) * rect.height
+                    };
+
+                case 'liver':
+                    const lv1 = landmarks[11];
+                    const lv2 = landmarks[12];
+                    const lv3 = landmarks[23];
+                    if (!lv1 || !lv2 || !lv3) return null;
+                    return {
+                        x: (1 - lv1.x + 0.03) * rect.width,
+                        y: ((lv1.y + lv3.y) / 2 - 0.02) * rect.height
+                    };
+
+                case 'kidneys':
+                    const k1 = landmarks[23];
+                    const k2 = landmarks[24];
+                    if (!k1 || !k2) return null;
+                    return {
+                        x: (1 - (k1.x + k2.x) / 2) * rect.width,
+                        y: ((k1.y + k2.y) / 2 - 0.1) * rect.height
+                    };
+
+                case 'intestines':
+                    const i1 = landmarks[23];
+                    const i2 = landmarks[24];
+                    if (!i1 || !i2) return null;
+                    return {
+                        x: (1 - (i1.x + i2.x) / 2) * rect.width,
+                        y: ((i1.y + i2.y) / 2 + 0.02) * rect.height
+                    };
+
+                case 'bladder':
+                    const b1 = landmarks[23];
+                    const b2 = landmarks[24];
+                    if (!b1 || !b2) return null;
+                    return {
+                        x: (1 - (b1.x + b2.x) / 2) * rect.width,
+                        y: ((b1.y + b2.y) / 2 + 0.08) * rect.height
+                    };
+
+                case 'eyes':
+                    const head = landmarks[0];
+                    if (!head) return null;
+                    return {
+                        x: (1 - head.x) * rect.width,
+                        y: (head.y - 0.02) * rect.height
+                    };
+
+                default:
+                    return getFaceLandmarkPosition(landmarkId, rect);
+            }
+        }
+
+        function getFaceLandmarkPosition(landmarkId, rect) {
+            if (!faceLandmarks) return null;
+
+            const facePositions = {
+                'forehead': 10,
+                'eyebrow_left': 105,
+                'eyebrow_right': 334,
+                'eye_left': 33,
+                'eye_right': 263,
+                'nose': 1,
+                'ear_left': 234,
+                'ear_right': 454,
+                'cheek_left': 123,
+                'cheek_right': 352,
+                'mouth': 13,
+                'lips': 14,
+                'chin': 152
+            };
+
+            const idx = facePositions[landmarkId];
+            if (idx === undefined || !faceLandmarks[idx]) return null;
+
+            const lm = faceLandmarks[idx];
+            return {
+                x: (1 - lm.x) * rect.width,
+                y: lm.y * rect.height
+            };
+        }
+
+        function getHandLandmarkPosition(landmarkId, rect) {
+            const handPositions = {
+                'palm_left': { hand: 'left', idx: 0 },
+                'palm_right': { hand: 'right', idx: 0 },
+                'thumb_left': { hand: 'left', idx: 4 },
+                'thumb_right': { hand: 'right', idx: 4 },
+                'index_left': { hand: 'left', idx: 8 },
+                'index_right': { hand: 'right', idx: 8 },
+                'middle_left': { hand: 'left', idx: 12 },
+                'middle_right': { hand: 'right', idx: 12 },
+                'ring_left': { hand: 'left', idx: 16 },
+                'ring_right': { hand: 'right', idx: 16 },
+                'pinky_left': { hand: 'left', idx: 20 },
+                'pinky_right': { hand: 'right', idx: 20 },
+                'knuckles_left': { hand: 'left', idx: 5 },
+                'knuckles_right': { hand: 'right', idx: 5 },
+                'fingernails': { hand: 'right', idx: 8 }
+            };
+
+            const pos = handPositions[landmarkId];
+            if (!pos) return null;
+
+            // Note: MediaPipe returns hands mirrored
+            const handLandmarks = pos.hand === 'left' ? rightHandLandmarks : leftHandLandmarks;
+            if (!handLandmarks || !handLandmarks[pos.idx]) return null;
+
+            const lm = handLandmarks[pos.idx];
+            return {
+                x: (1 - lm.x) * rect.width,
+                y: lm.y * rect.height
+            };
+        }
+
+        // ==================== UPDATE LABELS ====================
+        function updateLabels() {
+            labelsContainer.innerHTML = '';
+            organsContainer.innerHTML = '';
+
+            let partsToShow = {};
+
+            // Determine which parts to show based on view and level
+            switch (currentView) {
+                case 'external':
+                    partsToShow = filterByLevel(bodyPartsData.external);
+                    break;
+                case 'skeleton':
+                    partsToShow = filterByLevel(bodyPartsData.bones);
+                    break;
+                case 'muscles':
+                    partsToShow = filterByLevel(bodyPartsData.muscles);
+                    break;
+                case 'organs':
+                    partsToShow = filterByLevel(bodyPartsData.organs);
+                    showOrganOverlays();
+                    break;
+                case 'face':
+                    partsToShow = filterByLevel(bodyPartsData.face);
+                    break;
+                case 'hands':
+                    partsToShow = filterByLevel(bodyPartsData.hands);
+                    break;
+            }
+
+            // Create labels
+            Object.entries(partsToShow).forEach(([key, part]) => {
+                let pos;
+
+                if (currentView === 'hands') {
+                    const container = document.querySelector('.camera-container');
+                    const rect = container.getBoundingClientRect();
+                    pos = getHandLandmarkPosition(part.landmark, rect);
+                } else {
+                    pos = getLandmarkPosition(part.landmark);
+                }
+
+                if (pos && pos.x > 0 && pos.x < document.querySelector('.camera-container').offsetWidth) {
+                    createLabel(key, part, pos);
+                }
+            });
+        }
+
+        function filterByLevel(parts) {
+            const entries = Object.entries(parts);
+            let count;
+
+            switch (currentLevel) {
+                case 'easy':
+                    count = Math.min(6, entries.length);
+                    break;
+                case 'medium':
+                    count = Math.min(10, entries.length);
+                    break;
+                case 'hard':
+                    count = entries.length;
+                    break;
+            }
+
+            return Object.fromEntries(entries.slice(0, count));
+        }
+
+        function createLabel(key, part, pos) {
+            const label = document.createElement('div');
+            label.className = `body-label ${getViewClass()}`;
+            label.dataset.part = key;
+
+            if (quizTarget && quizTarget === key) {
+                label.classList.add('highlight');
+            }
+
+            label.innerHTML = `
+                <span class="label-emoji">${part.emoji}</span>
+                <span class="label-text">${part.name}</span>
+            `;
+
+            label.style.left = pos.x + 'px';
+            label.style.top = pos.y + 'px';
+
+            label.addEventListener('click', () => {
+                handlePartClick(key, part);
+            });
+
+            labelsContainer.appendChild(label);
+        }
+
+        function getViewClass() {
+            switch (currentView) {
+                case 'skeleton': return 'bone';
+                case 'muscles': return 'muscle';
+                case 'organs': return 'organ';
+                default: return 'external';
+            }
+        }
+
+        function showOrganOverlays() {
+            const organs = [
+                { emoji: '🧠', landmark: 0, offset: { y: -0.03 } },
+                { emoji: '❤️', landmark: 'heart', pulse: true },
+                { emoji: '🫁', landmark: 'lungs' },
+                { emoji: '🟤', landmark: 'stomach_organ' },
+                { emoji: '🫘', landmark: 'kidneys' }
+            ];
+
+            organs.forEach(organ => {
+                const pos = getLandmarkPosition(organ.landmark);
+                if (pos) {
+                    const overlay = document.createElement('div');
+                    overlay.className = 'organ-overlay' + (organ.pulse ? ' pulse' : '');
+                    overlay.textContent = organ.emoji;
+                    overlay.style.left = pos.x + 'px';
+                    overlay.style.top = pos.y + (organ.offset?.y || 0) * 100 + 'px';
+                    organsContainer.appendChild(overlay);
+                }
+            });
+        }
+
+        function countVisibleParts() {
+            return labelsContainer.children.length;
+        }
+
+        // ==================== INTERACTION HANDLERS ====================
+        function handlePartClick(key, part) {
+            initAudio();
+            playClick();
+
+            // Show info popup
+            document.getElementById('partInfoTitle').innerHTML = `${part.emoji} ${part.name}`;
+            document.getElementById('partInfoDesc').textContent = part.desc;
+            document.getElementById('partInfoPopup').classList.add('active');
+
+            // Speak the info
+            speak(`${part.name}. ${part.desc}`);
+
+            // Add to learned
+            if (!learnedParts.has(key)) {
+                learnedParts.add(key);
+                learned = learnedParts.size;
+                updateStats();
+            }
+
+            // Hide popup after delay
+            setTimeout(() => {
+                document.getElementById('partInfoPopup').classList.remove('active');
+            }, 5000);
+
+            // Check quiz
+            if (currentMode === 'quiz' && quizTarget === key) {
+                handleCorrectAnswer();
+            }
+        }
+
+        // ==================== VIEW & MODE CONTROLS ====================
+        function setView(view) {
+            currentView = view;
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.view === view);
+            });
+
+            // Announce view change
+            const viewNames = {
+                external: 'Body Parts',
+                skeleton: 'Bones and Skeleton',
+                muscles: 'Muscles',
+                organs: 'Internal Organs',
+                face: 'Face Parts',
+                hands: 'Hand Parts'
+            };
+            speak(`Now showing ${viewNames[view]}`);
+            updateLearningCards();
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+
+            document.getElementById('quizPanel').classList.toggle('active', mode === 'quiz' || mode === 'challenge');
+            document.getElementById('learningCard').classList.toggle('active', mode !== 'quiz');
+
+            if (mode === 'quiz' || mode === 'challenge') {
+                startQuiz();
+            } else if (mode === 'touch') {
+                speak('Touch and Learn mode! Click on any body part label to learn about it.');
+            } else {
+                speak('Explore mode! Move around to see your body parts labeled.');
+                quizTarget = null;
+            }
+        }
+
+        function setLevel(level) {
+            currentLevel = level;
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.classList.contains(level)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            const levelNames = { easy: 'Easy', medium: 'Medium', hard: 'Expert' };
+            speak(`Level set to ${levelNames[level]}`);
+
+            if (currentMode === 'quiz' || currentMode === 'challenge') {
+                startQuiz();
+            }
+            updateLearningCards();
+        }
+
+        function setCategory(category) {
+            currentCategory = category;
+            document.querySelectorAll('.category-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.toLowerCase().includes(category) ||
+                    (category === 'all' && tab.textContent === 'All'));
+            });
+            updateLearningCards();
+        }
+
+        // ==================== QUIZ SYSTEM ====================
+        function startQuiz() {
+            let allParts = [];
+
+            // Gather parts based on current view
+            switch (currentView) {
+                case 'external':
+                    allParts = Object.entries(bodyPartsData.external);
+                    break;
+                case 'skeleton':
+                    allParts = Object.entries(bodyPartsData.bones);
+                    break;
+                case 'muscles':
+                    allParts = Object.entries(bodyPartsData.muscles);
+                    break;
+                case 'organs':
+                    allParts = Object.entries(bodyPartsData.organs);
+                    break;
+                case 'face':
+                    allParts = Object.entries(bodyPartsData.face);
+                    break;
+                case 'hands':
+                    allParts = Object.entries(bodyPartsData.hands);
+                    break;
+            }
+
+            // Filter by level
+            const filtered = filterByLevel(Object.fromEntries(allParts));
+            const filteredEntries = Object.entries(filtered);
+
+            if (filteredEntries.length === 0) return;
+
+            // Pick random target
+            const [key, part] = filteredEntries[Math.floor(Math.random() * filteredEntries.length)];
+            quizTarget = key;
+
+            document.getElementById('quizQuestion').textContent = 'Find this body part!';
+            document.getElementById('quizTarget').textContent = part.emoji;
+            document.getElementById('quizHint').textContent = `Look for: ${part.name}`;
+
+            speak(`Find the ${part.name}!`);
+
+            // Generate multiple choice options for challenge mode
+            if (currentMode === 'challenge') {
+                generateQuizOptions(key, part, filteredEntries);
+            } else {
+                document.getElementById('quizOptions').innerHTML = '';
+            }
+        }
+
+        function generateQuizOptions(correctKey, correctPart, allParts) {
+            const options = [{ key: correctKey, part: correctPart }];
+
+            // Add wrong options
+            const wrongOptions = allParts.filter(([k]) => k !== correctKey);
+            const shuffled = wrongOptions.sort(() => Math.random() - 0.5).slice(0, 3);
+            shuffled.forEach(([key, part]) => options.push({ key, part }));
+
+            // Shuffle all options
+            options.sort(() => Math.random() - 0.5);
+
+            // Render options
+            const container = document.getElementById('quizOptions');
+            container.innerHTML = '';
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'quiz-option';
+                btn.textContent = `${opt.part.emoji} ${opt.part.name}`;
+                btn.onclick = () => checkQuizAnswer(opt.key === correctKey, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        function checkQuizAnswer(isCorrect, button) {
+            if (isCorrect) {
+                button.classList.add('correct');
+                handleCorrectAnswer();
+            } else {
+                button.classList.add('wrong');
+                handleWrongAnswer();
+            }
+        }
+
+        function handleCorrectAnswer() {
+            playSuccess();
+            showFeedback('🎉 Correct!', 'success');
+            speak('Great job! That\'s correct!');
+
+            score += currentMode === 'challenge' ? 20 : 10;
+            streak++;
+            level = Math.floor(score / 100) + 1;
+            updateStats();
+
+            // Check for level complete
+            if (score > 0 && score % 100 === 0) {
+                setTimeout(() => showLevelComplete(), 1500);
+            } else {
+                setTimeout(() => startQuiz(), 2000);
+            }
+        }
+
+        function handleWrongAnswer() {
+            playError();
+            showFeedback('❌ Try Again!', 'error');
+            speak('Not quite! Try again.');
+            streak = 0;
+            updateStats();
+        }
+
+        // ==================== UI UPDATES ====================
+        function updateStats() {
+            document.getElementById('scoreValue').textContent = score;
+            document.getElementById('streakValue').textContent = streak;
+            document.getElementById('learnedValue').textContent = learned;
+            document.getElementById('levelValue').textContent = level;
+        }
+
+        function showFeedback(text, type) {
+            const feedback = document.getElementById('feedback');
+            feedback.textContent = text;
+            feedback.className = `feedback ${type}`;
+            feedback.style.display = 'block';
+
+            setTimeout(() => {
+                feedback.style.display = 'none';
+            }, 1500);
+        }
+
+        function showLevelComplete() {
+            document.getElementById('modalScore').textContent = learned;
+            document.getElementById('modalStars').textContent = streak >= 5 ? '⭐⭐⭐' : streak >= 3 ? '⭐⭐' : '⭐';
+            document.getElementById('modalOverlay').style.display = 'flex';
+            createConfetti();
+            speak('Amazing! You completed this level!');
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            startQuiz();
+        }
+
+        function createConfetti() {
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e91e63'];
+
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(confetti);
+
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        function toggleInstructions() {
+            document.getElementById('instructionsPanel').classList.toggle('active');
+        }
+
+        function updateLearningCards() {
+            const container = document.getElementById('learningCards');
+            container.innerHTML = '';
+
+            let allParts = {};
+
+            if (currentCategory === 'all') {
+                Object.values(bodyPartsData).forEach(category => {
+                    Object.assign(allParts, category);
+                });
+            } else {
+                const categoryMap = {
+                    'external': 'external',
+                    'bones': 'bones',
+                    'organs': 'organs',
+                    'muscles': 'muscles'
+                };
+                allParts = bodyPartsData[categoryMap[currentCategory]] || {};
+            }
+
+            const filtered = filterByLevel(allParts);
+
+            Object.entries(filtered).forEach(([key, part]) => {
+                const card = document.createElement('div');
+                card.className = 'learning-card' + (learnedParts.has(key) ? ' selected' : '');
+                card.innerHTML = `
+                    <span class="emoji">${part.emoji}</span>
+                    <div class="info">
+                        <div class="name">${part.name}</div>
+                        <div class="desc">${part.desc.substring(0, 50)}...</div>
+                    </div>
+                `;
+                card.onclick = () => {
+                    initAudio();
+                    speak(`${part.name}. ${part.desc}`);
+
+                    // Show full info
+                    document.getElementById('partInfoTitle').innerHTML = `${part.emoji} ${part.name}`;
+                    document.getElementById('partInfoDesc').textContent = part.desc;
+                    document.getElementById('partInfoPopup').classList.add('active');
+
+                    setTimeout(() => {
+                        document.getElementById('partInfoPopup').classList.remove('active');
+                    }, 5000);
+                };
+                container.appendChild(card);
+            });
+        }
+
+        function updateFunFact() {
+            const fact = funFacts[Math.floor(Math.random() * funFacts.length)];
+            document.getElementById('funFactText').textContent = fact;
+        }
+
+        // ==================== DECORATIONS ====================
+        function createDecorations() {
+            const container = document.getElementById('decorations');
+            const emojis = ['🧬', '🔬', '💊', '🩺', '🦴', '🧠', '❤️', '🫁', '💪', '👁️', '👂', '👃', '🦷', '🩻'];
+
+            for (let i = 0; i < 20; i++) {
+                const deco = document.createElement('div');
+                deco.className = 'deco-item';
+                deco.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                deco.style.left = Math.random() * 100 + 'vw';
+                deco.style.top = Math.random() * 100 + 'vh';
+                deco.style.animationDelay = Math.random() * 20 + 's';
+                container.appendChild(deco);
+            }
+        }
+
+        // ==================== MOUSE MODE ====================
+        let mouseMode = false;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'm' || e.key === 'M') {
+                mouseMode = !mouseMode;
+                alert('Mouse mode: ' + (mouseMode ? 'ON' : 'OFF'));
+            }
+        });
+
+        // ==================== POSE CONNECTIONS ====================
+        const POSE_CONNECTIONS = [
+            [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
+            [11, 23], [12, 24], [23, 24],
+            [23, 25], [25, 27], [24, 26], [26, 28],
+            [27, 29], [29, 31], [28, 30], [30, 32]
+        ];
+
+        const FACEMESH_TESSELATION = [];
+        for (let i = 0; i < 468; i += 3) {
+            FACEMESH_TESSELATION.push([i, i + 1], [i + 1, i + 2], [i + 2, i]);
+        }
+
+        const HAND_CONNECTIONS = [
+            [0, 1], [1, 2], [2, 3], [3, 4],
+            [0, 5], [5, 6], [6, 7], [7, 8],
+            [0, 9], [9, 10], [10, 11], [11, 12],
+            [0, 13], [13, 14], [14, 15], [15, 16],
+            [0, 17], [17, 18], [18, 19], [19, 20],
+            [5, 9], [9, 13], [13, 17]
+        ];
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            createDecorations();
+            setupCamera();
+            updateStats();
+            updateLearningCards();
+            updateFunFact();
+
+            // Rotate fun facts
+            setInterval(updateFunFact, 15000);
+
+            // Initialize audio on interaction
+            document.addEventListener('click', () => initAudio(), { once: true });
+        });
+    </script>
+</body>
+</html>

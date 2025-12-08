@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Magic Ice Melt - Learn with Your Hand!</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(to bottom, #a0d8ef, #e0f7fa);
+    font-family: 'Comic Sans MS', 'Chalkboard', sans-serif;
+    overflow: hidden;
+    touch-action: none;
+  }
+  .container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  canvas {
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+  .title {
+    position: absolute;
+    top: 20px;
+    font-size: 48px;
+    color: white;
+    text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+    z-index: 10;
+    pointer-events: none;
+  }
+  .instructions {
+    position: absolute;
+    bottom: 30px;
+    font-size: 32px;
+    color: white;
+    background: rgba(0,0,0,0.4);
+    padding: 15px 30px;
+    border-radius: 50px;
+    text-shadow: 2px 2px 4px black;
+    z-index: 10;
+  }
+  .loading {
+    position: absolute;
+    inset: 0;
+    background: #111;
+    color: white;
+    font-size: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+    z-index: 100;
+    transition: opacity 1s;
+  }
+  .loading.hidden { opacity: 0; pointer-events: none; }
+  .success {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 100px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 20;
+    animation: celebrate 2s forwards;
+  }
+  @keyframes celebrate {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+    50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  }
+  .input_video { display: none; }
+
+  /* Dynamic Navigation Bar */
+  .nav-bar {
+    position: sticky;
+    top: 0;
+    z-index: 500;
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  }
+
+  .nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .nav-title {
+    font-size: 1.3rem;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    white-space: nowrap;
+  }
+
+  .nav-menu {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .nav-link {
+    padding: 10px 20px;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid white;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .nav-link:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+  }
+
+  .nav-link.active {
+    background: white;
+    color: #4facfe;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+</style>
+</head>
+<body>
+
+<!-- Dynamic Navigation Bar -->
+<div class="nav-bar">
+  <div class="nav-container">
+    <div class="nav-title">📚 Learning Games</div>
+    <div class="nav-menu" id="navMenu"></div>
+  </div>
+</div>
+
+<div class="loading" id="loader">
+  <div>Loading Magic Ice...</div>
+  <div style="font-size:120px;">Snowflake</div>
+</div>
+
+<div class="container">
+  <h1 class="title">Magic Ice Melt! Wave your hand!</h1>
+  <canvas class="output_canvas" width="1280" height="720"></canvas>
+  <video class="input_video"></video>
+  <div class="instructions" id="instruction">Move your hand to melt the ice and find the hidden picture!</div>
+  <div class="success" id="success">Great Job!</div>
+</div>
+
+<!-- Three.js + MediaPipe + Refractor -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
+<!-- Refractor from three.js examples (slightly modified for standalone use) -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/objects/Refractor.js"></script>
+
+<script>
+// ==================== DYNAMIC NAVIGATION SYSTEM ====================
+const GAMES_CONFIG_NAV = {
+    'index.html': { name: '🔤 Alphabet & Colors', description: 'Learn letters and colors with drag & drop' },
+    'planets.html': { name: '🪐 Planets', description: 'Explore our solar system' },
+    'exploring_body.html': { name: '🧬 Body Explorer', description: 'Learn about human body parts' },
+    'frost_discovery.html': { name: '❄️ Frost Discovery', description: 'Reveal and learn hidden items' },
+    'hand_music.html': { name: '🎵 Music Hands', description: 'Learn music with hand gestures' },
+    'melt_the_ice.html': { name: '🌈 Melt the Ice', description: 'Melt ice to discover pictures' },
+    'science-lab.html': { name: '🧪 Science Lab', description: 'Perform fun experiments' }
+};
+
+function initializeNavigation() {
+    const navMenu = document.getElementById('navMenu');
+    if (!navMenu) return;
+    const currentFile = window.location.pathname.split('/').pop() || 'melt_the_ice.html';
+    navMenu.innerHTML = '';
+    for (const [file, config] of Object.entries(GAMES_CONFIG_NAV)) {
+        const link = document.createElement('a');
+        link.className = 'nav-link';
+        link.href = file;
+        link.textContent = config.name;
+        link.title = config.description;
+        if (currentFile === file || (currentFile === '' && file === 'melt_the_ice.html')) {
+            link.classList.add('active');
+        }
+        navMenu.appendChild(link);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initializeNavigation();
+});
+
+// ===================== EDUCATIONAL CONTENT =====================
+// Easy to change! Just add more objects with image + spoken word
+const lessons = [
+  { image: "https://assets.codepen.io/5409376/apple.png",        word: "Apple",      sound: "A for Apple" },
+  { image: "https://assets.codepen.io/5409376/ball.png",         word: "Ball",       sound: "B for Ball" },
+  { image: "https://assets.codepen.io/5409376/cat.png",          word: "Cat",        sound: "C for Cat" },
+  { image: "https://assets.codepen.io/5409376/dog.png",          word: "Dog",        sound: "D for Dog" },
+  { image: "https://assets.codepen.io/5409376/elephant.png",     word: "Elephant",   sound: "E for Elephant" },
+  { image: "https://assets.codepen.io/5409376/fish.png",         word: "Fish",       sound: "F for Fish" },
+  { image: "https://assets.codepen.io/5409376/grapes.png",       word: "Grapes",     sound: "G for Grapes" },
+  { image: "https://assets.codepen.io/5409376/house.png",        word: "House",      sound: "H for House" },
+  { image: "https://assets.codepen.io/5409376/icecream.png",     word: "Ice Cream",  sound: "I for Ice Cream" },
+  { image: "https://assets.codepen.io/5409376/juice.png",        word: "Juice",      sound: "J for Juice" },
+  // Add as many as you want!
+];
+
+let currentLessonIndex = 0;
+let lessonImageTexture = null;
+
+// ===================== ORIGINAL ICE EFFECT CODE (slightly adapted) =====================
+"use strict";
+(function () {
+    const iceRefractionShader = {
+        uniforms: {
+            color: { value: null },
+            tDiffuse: { value: null },
+            tIceColorMap: { value: null },
+            tIceAlphaMap: { value: null },
+            tAlphaMap: { value: null },
+            tDudv: { value: null },
+            textureMatrix: { value: null }
+        },
+        vertexShader: `
+      uniform mat4 textureMatrix;
+      varying vec2 vUv;
+      varying vec4 vUvRefraction;
+      void main() {
+        vUv = uv;
+        vUvRefraction = textureMatrix * vec4(position, 1.0);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+        fragmentShader: `
+      uniform sampler2D tDiffuse;
+      uniform sampler2D tIceColorMap;
+      uniform sampler2D tIceAlphaMap;
+      uniform sampler2D tAlphaMap;
+      uniform sampler2D tDudv;
+      varying vec2 vUv;
+      varying vec4 vUvRefraction;
+      void main() {
+        float distortionStrength = 0.5;
+        vec2 distortedUv = texture2D(tDudv, vUv.xy).rg * distortionStrength;
+        distortedUv = vUv.xy + vec2(distortedUv.x, distortedUv.y);
+        vec2 distortion = (texture2D(tDudv, distortedUv).rg * 2.0 - 1.0) * distortionStrength;
+        vec4 uv = vec4(vUvRefraction);
+        uv.xy += distortion;
+        vec4 base = texture2DProj(tDiffuse, uv);
+        vec4 iceColor = texture2D(tIceColorMap, vUv.xy);
+        vec4 iceAlpha = texture2D(tIceAlphaMap, vUv.xy);
+        vec4 alpha = texture2D(tAlphaMap, vUv.xy);
+        gl_FragColor = vec4(mix(base.rgb, iceColor.rgb, iceAlpha.r * alpha.r), base.a);
+      }
+    `
+    };
+
+    class IceDefrostingEffectRenderer {
+        constructor(config) {
+            this.config = config;
+            this.scene = new THREE.Scene();
+            this.renderer = new THREE.WebGLRenderer({ canvas: config.canvasElement, antialias: true, alpha: true });
+            this.renderer.setSize(config.viewportWidth, config.viewportHeight);
+            this.renderer.setClearColor(0x000000, 0);
+            this.camera = new THREE.PerspectiveCamera(config.verticalFov, config.viewportWidth / config.viewportHeight, config.near, config.far);
+
+            this.currentAccumulationMaskBuffer = new THREE.WebGLRenderTarget(config.viewportWidth, config.viewportHeight, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat });
+            this.previousAccumulationMaskBuffer = this.currentAccumulationMaskBuffer.clone();
+
+            this.viewportPlane = new THREE.PlaneBufferGeometry(config.viewportWidth, config.viewportHeight);
+            this.unitSizePlane = new THREE.PlaneBufferGeometry(1, 1);
+
+            this.numAssetsToLoad = 3;
+            const root = this;
+            const onLoad = () => { --root.numAssetsToLoad; };
+
+            const prefix = "https://assets.codepen.io/5409376";
+            this.frostDiffuseTexture = new THREE.TextureLoader().load(prefix + "/frost_diffuse.jpg", onLoad);
+            this.frostDudvTexture = new THREE.TextureLoader().load(prefix + "/frost_dudv.jpg", onLoad);
+            this.frostDudvTexture.wrapS = this.frostDudvTexture.wrapT = THREE.RepeatWrapping;
+            this.frostTransparencyTexture = new THREE.TextureLoader().load(prefix + "/frost_transparency.jpg", onLoad);
+
+            this.ignoreHandsAnimationClock = new THREE.Clock();
+        }
+
+        isReadyToRender() { return this.numAssetsToLoad <= 0; }
+
+        render(cameraFrame, firstHandCircle) {
+            if (!this.isReadyToRender()) return;
+
+            if (this.ignoreHandsAnimationClock.getElapsedTime() < 1.5) {
+                firstHandCircle = null;
+            }
+
+            this.renderFrostOcclusionMaskPass(firstHandCircle);
+            this.renderFinalPass(cameraFrame);
+
+            // swap buffers
+            [this.currentAccumulationMaskBuffer, this.previousAccumulationMaskBuffer] =
+            [this.previousAccumulationMaskBuffer, this.currentAccumulationMaskBuffer];
+        }
+
+        renderFrostOcclusionMaskPass(handCircle) {
+            this.scene.clear();
+
+            // previous mask (additive)
+            const prev = new THREE.Mesh(this.viewportPlane, new THREE.MeshBasicMaterial({
+                map: this.previousAccumulationMaskBuffer.texture,
+                blending: THREE.AdditiveBlending,
+                depthTest: false
+            }));
+            this.scene.add(prev);
+
+            // hand eraser (subtracts frost)
+            if (handCircle) {
+                const size = handCircle.radius * 5; // big brush for kids
+                const handEraser = new THREE.Mesh(this.unitSizePlane, new THREE.MeshBasicMaterial({
+                    color: 0x000000,
+                    blending: THREE.SubtractiveBlending,
+                    depthTest: false
+                }));
+                handEraser.scale.set(size, size, 1);
+                handEraser.position.set(handCircle.centerX, handCircle.centerY, 0);
+                this.scene.add(handEraser);
+            }
+
+            this.renderer.setRenderTarget(this.currentAccumulationMaskBuffer);
+            this.renderer.clear();
+            this.renderer.render(this.scene, this.camera);
+            this.renderer.setRenderTarget(null);
+        }
+
+        renderFinalPass(cameraFrame) {
+            this.scene.clear();
+
+            // background lesson image
+            const bg = new THREE.Mesh(this.viewportPlane, new THREE.MeshBasicMaterial({
+                map: lessonImageTexture
+            }));
+            this.scene.add(bg);
+
+            // ice refractor
+            const refractor = new THREE.Refractor(this.viewportPlane, {
+                textureWidth: this.config.viewportWidth,
+                textureHeight: this.config.viewportHeight,
+                shader: iceRefractionShader
+            });
+            refractor.material.uniforms.tDudv.value = this.frostDudvTexture;
+            refractor.material.uniforms.tIceColorMap.value = this.frostDiffuseTexture;
+            refractor.material.uniforms.tIceAlphaMap.value = this.frostTransparencyTexture;
+            refractor.material.uniforms.tAlphaMap.value = this.currentAccumulationMaskBuffer.texture;
+            refractor.material.uniforms.tDiffuse.value = lessonImageTexture;
+            this.scene.add(refractor);
+
+            this.renderer.render(this.scene, this.camera);
+        }
+    }
+
+    // Simple hand processor (same idea as original)
+    class SimpleHandProcessor {
+        constructor() {
+            this.filtered = null;
+            this.lastSeen = 0;
+        }
+        process(multiHandLandmarks) {
+            if (!multiHandLandmarks || multiHandLandmarks.length === 0) {
+                this.lastSeen++;
+                if (this.lastSeen > 10) this.filtered = null;
+                return this.filtered;
+            }
+            this.lastSeen = 0;
+            const lm = multiHandLandmarks[0];
+            let cx = 0, cy = 0;
+            lm.forEach(p => { cx += p.x; cy += p.y; });
+            cx /= lm.length; cy /= lm.length;
+            const centerX = (cx - 0.5) * 1280;
+            const centerY = (0.5 - cy) * 720;
+            const radius = 120; // fixed big radius for kids
+            this.filtered = { centerX, centerY, radius };
+            return this.filtered;
+        }
+    }
+
+    // ===================== MAIN =====================
+    const canvasElement = document.querySelector(".output_canvas");
+    const videoElement = document.querySelector(".input_video");
+
+    const config = {
+        canvasElement,
+        viewportWidth: 1280,
+        viewportHeight: 720,
+        verticalFov: 45,
+        near: 1,
+        far: 1000
+    };
+
+    const renderer = new IceDefrostingEffectRenderer(config);
+    const handProcessor = new SimpleHandProcessor();
+
+    // Load first lesson
+    function loadLesson(idx) {
+        const lesson = lessons[idx % lessons.length];
+        document.getElementById("instruction").textContent = `Melt the ice to see...`;
+        lessonImageTexture = new THREE.TextureLoader().load(lesson.image, () => {
+            // reset frost when new image loads
+            renderer.currentAccumulationMaskBuffer = new THREE.WebGLRenderTarget(1280,720,{minFilter:THREE.LinearFilter,magFilter:THREE.LinearFilter});
+            renderer.previousAccumulationMaskBuffer = renderer.currentAccumulationMaskBuffer.clone();
+        });
+        // Speech (Optional) use Web Speech API to say the word
+        if ('speechSynthesis' in window) {
+            const utter = new SpeechSynthesisUtterance(lesson.sound);
+            utter.lang = "en-US";
+            utter.rate = 0.9;
+            speechSynthesis.cancel();
+            speechSynthesis.speak(utter);
+        }
+    }
+
+    loadLesson(0);
+
+    const hands = new Hands({locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+    }});
+    hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.7
+    });
+    hands.onResults(onResults);
+
+    function onResults(results) {
+        if (!renderer.isReadyToRender()) return;
+
+        document.body.classList.add("loaded");
+        document.getElementById("loader").classList.add("hidden");
+
+        const hand = handProcessor.process(results.multiHandLandmarks);
+
+        renderer.render(results.image, hand);
+
+        // Check if ice is mostly melted - go to next lesson
+        if (hand && Math.random() < 0.003) { // rough way to detect "fully melted"
+            document.getElementById("success").style.opacity = 1;
+            setTimeout(() => {
+                currentLessonIndex++;
+                loadLesson(currentLessonIndex);
+                document.getElementById("success").style.opacity = 0;
+            }, 2500);
+        }
+    }
+
+    const camera = new Camera(videoElement, {
+        onFrame: async () => {
+            await hands.send({image: videoElement});
+        },
+        width: 1280,
+        height: 720
+    });
+    camera.start();
+
+})();
+</script>
+</body>
+</html>
