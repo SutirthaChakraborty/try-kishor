@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rhythm Conductor – Move to the Beat</title>
+
+    <!-- OpenDyslexic Font for better readability -->
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --text-primary: #ffffff;
+            --text-secondary: #b8b8d1;
+            --accent-pink: #ff6b9d;
+            --accent-purple: #c44fff;
+            --accent-blue: #4facfe;
+            --accent-cyan: #00f2fe;
+            --accent-green: #55efc4;
+            --accent-yellow: #ffeaa7;
+            --accent-orange: #fdcb6e;
+            --accent-red: #ff7675;
+            --glow: 0 0 20px rgba(79, 172, 254, 0.5);
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', cursive, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.8;
+            letter-spacing: 0.05em;
+            color: var(--text-primary);
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+        }
+
+        .music-note {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.15;
+            animation: floatNote 15s infinite ease-in-out;
+        }
+
+        @keyframes floatNote {
+            0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.15; }
+            90% { opacity: 0.15; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* Hand Cursors */
+        .hand-cursor {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            transition: transform 0.05s ease-out;
+            display: none;
+        }
+
+        .hand-cursor.left {
+            background: radial-gradient(circle, var(--accent-pink) 0%, transparent 70%);
+            border: 3px solid var(--accent-pink);
+            box-shadow: 0 0 20px var(--accent-pink);
+        }
+
+        .hand-cursor.right {
+            background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 70%);
+            border: 3px solid var(--accent-cyan);
+            box-shadow: 0 0 20px var(--accent-cyan);
+        }
+
+        .hand-cursor.pressing {
+            transform: scale(0.7);
+        }
+
+        /* Main Container */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(196, 79, 255, 0.3) 0%, rgba(79, 172, 254, 0.3) 100%);
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Dynamic Navigation Bar */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Camera Preview */
+        .camera-preview {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid var(--accent-purple);
+            box-shadow: var(--glow);
+            z-index: 100;
+            background: #000;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .camera-preview canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.active {
+            background: #2ecc71;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Instructions Panel */
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 2px solid rgba(255,255,255,0.1);
+            max-width: 280px;
+            z-index: 100;
+        }
+
+        .instructions h4 {
+            color: var(--accent-cyan);
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .instructions p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .instructions p span {
+            font-size: 1.2rem;
+        }
+
+        /* Mode Selector */
+        .mode-selector {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .mode-btn {
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: rgba(255,255,255,0.08);
+            color: var(--text-primary);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mode-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .mode-btn.active {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border-color: var(--accent-cyan);
+            box-shadow: var(--glow);
+        }
+
+        /* Level Selector */
+        .level-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .level-btn {
+            padding: 8px 22px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-secondary);
+            border: 2px solid transparent;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .level-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .level-btn.easy.active {
+            background: rgba(85, 239, 196, 0.2);
+            color: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        .level-btn.medium.active {
+            background: rgba(253, 203, 110, 0.2);
+            color: var(--accent-orange);
+            border-color: var(--accent-orange);
+        }
+
+        .level-btn.hard.active {
+            background: rgba(255, 118, 117, 0.2);
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-item span {
+            font-size: 1.2rem;
+        }
+
+        /* Sound Toggle */
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Game Area */
+        .game-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: var(--radius);
+            padding: 25px;
+            border: 2px solid rgba(255,255,255,0.1);
+            min-height: 420px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .beat-stage {
+            position: relative;
+            width: 100%;
+            height: 320px;
+            border-radius: 15px;
+            background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 60%),
+                        radial-gradient(circle at bottom, rgba(255,255,255,0.08), transparent 60%),
+                        linear-gradient(180deg, rgba(15,52,96,0.9), rgba(22,33,62,0.9));
+            overflow: hidden;
+        }
+
+        .beat-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            transform: translateX(-50%);
+            background: linear-gradient(180deg, var(--accent-cyan), var(--accent-blue));
+            box-shadow: 0 0 20px rgba(79,172,254,0.7);
+        }
+
+        .hit-band {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 90px;
+            transform: translateY(-50%);
+            background: radial-gradient(circle, rgba(255,255,255,0.12), transparent 65%);
+            pointer-events: none;
+        }
+
+        .beat-zone-label {
+            position: absolute;
+            top: 50%;
+            left: 55%;
+            transform: translateY(-50%);
+            font-size: 1.1rem;
+            color: var(--accent-yellow);
+            text-shadow: 0 0 8px rgba(0,0,0,0.7);
+        }
+
+        .note-dot {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--accent-pink), var(--accent-purple));
+            box-shadow: 0 0 18px rgba(196,79,255,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .note-dot.good {
+            background: radial-gradient(circle at 30% 30%, var(--accent-green), #00b894);
+            box-shadow: 0 0 18px rgba(85,239,196,1);
+        }
+
+        .note-dot.miss {
+            background: radial-gradient(circle at 30% 30%, var(--accent-red), #d63031);
+            box-shadow: 0 0 18px rgba(255,118,117,1);
+        }
+
+        .beat-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 70px;
+            height: 70px;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.7);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .beat-pulse.active {
+            animation: pulseBeat 0.4s ease-out;
+        }
+
+        @keyframes pulseBeat {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+            100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+        }
+
+        .callout-panel {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .callout-word {
+            font-size: 1.4rem;
+            color: var(--accent-yellow);
+        }
+
+        /* Game Message */
+        .game-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 35px 55px;
+            border-radius: var(--radius);
+            font-size: 1.9rem;
+            font-weight: bold;
+            z-index: 2000;
+            animation: popIn 0.4s ease;
+            display: none;
+            text-align: center;
+        }
+
+        .game-message.success {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-green);
+        }
+
+        .game-message.error {
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-orange));
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-red);
+        }
+
+        .game-message.info {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-purple);
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            top: -20px;
+            border-radius: 2px;
+            animation: confettiFall 3s linear forwards;
+            z-index: 4000;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Level Complete Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            padding: 50px;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 3px solid var(--accent-purple);
+            box-shadow: 0 0 50px var(--accent-purple);
+            animation: bounceIn 0.5s ease;
+            max-width: 90%;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0) rotate(-5deg); }
+            50% { transform: scale(1.1) rotate(3deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .modal-content h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .modal-stars {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-score {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        .control-btn {
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.primary {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border-color: var(--accent-cyan);
+        }
+
+        .control-btn.primary:hover {
+            box-shadow: var(--glow);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .header h1 {
+                font-size: 1.7rem;
+            }
+            .beat-stage {
+                height: 260px;
+            }
+            .camera-preview {
+                width: 160px;
+                height: 120px;
+            }
+            .instructions {
+                display: none;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.4rem;
+            }
+            .mode-btn {
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+            .beat-stage {
+                height: 220px;
+            }
+            .note-dot {
+                width: 30px;
+                height: 30px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-title">📚 Learning Games</div>
+            <div class="nav-menu" id="navMenu"></div>
+        </div>
+    </div>
+
+    <!-- Animated Background -->
+    <div class="bg-animation" id="bgAnimation"></div>
+
+    <!-- Hand Cursors -->
+    <div class="hand-cursor left" id="leftHandCursor"></div>
+    <div class="hand-cursor right" id="rightHandCursor"></div>
+
+    <!-- Game Message -->
+    <div class="game-message" id="gameMessage"></div>
+
+    <!-- Level Complete Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <h2>🎉 Great Rhythm! 🎉</h2>
+            <div class="modal-stars">⭐⭐⭐</div>
+            <div class="modal-score">Score: <span id="finalScore">0</span></div>
+            <button class="control-btn primary" onclick="nextChallenge()">Next Pattern →</button>
+        </div>
+    </div>
+
+    <!-- Sound Toggle -->
+    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+
+    <!-- Camera Preview -->
+    <div class="camera-preview">
+        <video id="videoElement" autoplay playsinline></video>
+        <canvas id="canvasOverlay"></canvas>
+        <div class="camera-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Camera</span>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <h4>🖐️ How to Play</h4>
+        <p><span>👏</span> Clap when dots reach the line</p>
+        <p><span>●</span> Filled dots = clap</p>
+        <p><span>○</span> Empty dots = wait</p>
+        <p><span>⌨️</span> Press M for mouse mode</p>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🥁 Rhythm Conductor – Move to the Beat</h1>
+            <p>Follow the beat, clap on time, and learn words like slow, fast, and steady!</p>
+        </header>
+
+        <!-- Mode Selection -->
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="steady" onclick="selectMode('steady')">
+                <span>🎵</span> Steady Beat
+            </button>
+            <button class="mode-btn" data-mode="pattern" onclick="selectMode('pattern')">
+                <span>🎯</span> Copy the Pattern
+            </button>
+        </div>
+
+        <!-- Level Selector -->
+        <div class="level-selector">
+            <button class="level-btn easy active" onclick="selectLevel('easy')">🟢 Easy</button>
+            <button class="level-btn medium" onclick="selectLevel('medium')">🟡 Medium</button>
+            <button class="level-btn hard" onclick="selectLevel('hard')">🔴 Hard</button>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span>⭐</span> Score: <strong id="scoreDisplay">0</strong>
+            </div>
+            <div class="stat-item">
+                <span>🔥</span> Streak: <strong id="streakDisplay">0</strong>
+            </div>
+            <div class="stat-item">
+                <span>⏱️</span> Tempo: <strong id="tempoDisplay">80</strong> BPM
+            </div>
+            <div class="stat-item">
+                <span>🎯</span> Accuracy: <strong id="accuracyDisplay">0%</strong>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div class="game-container">
+            <div class="beat-stage" id="beatStage">
+                <div class="beat-line"></div>
+                <div class="hit-band"></div>
+                <div class="beat-zone-label" id="beatZoneLabel">Clap on the line!</div>
+                <div class="beat-pulse" id="beatPulse"></div>
+            </div>
+
+            <div class="callout-panel">
+                <div id="calloutText">
+                    Voice: <span class="callout-word" id="calloutWord">Clap on 1, 2, 3, 4…</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== DYNAMIC NAVIGATION SYSTEM ====================
+        const GAMES_CONFIG = {
+            'index.html':          { name: '🔤 Alphabet & Colors', description: 'Learn letters and colors with drag & drop' },
+            'planets.html':        { name: '🪐 Planets', description: 'Explore our solar system' },
+            'exploring_body.html': { name: '🧬 Body Explorer', description: 'Learn about human body parts' },
+            'frost_discovery.html':{ name: '❄️ Frost Discovery', description: 'Reveal and learn hidden items' },
+            'hand_music.html':     { name: '🎵 Music Hands', description: 'Learn music with hand gestures' },
+            'melt_the_ice.html':   { name: '🌈 Melt the Ice', description: 'Melt ice to discover pictures' },
+            'science-lab.html':    { name: '🧪 Science Lab', description: 'Perform fun experiments' },
+            'rhythm_conductor.html': { name: '🥁 Rhythm Conductor', description: 'Move to the beat & learn tempo' }
+        };
+
+        function initializeNavigation() {
+            const navMenu = document.getElementById('navMenu');
+            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
+            navMenu.innerHTML = '';
+
+            for (const [file, config] of Object.entries(GAMES_CONFIG)) {
+                const link = document.createElement('a');
+                link.className = 'nav-link';
+                link.href = file;
+                link.textContent = config.name;
+                link.title = config.description;
+                if (currentFile === file) link.classList.add('active');
+                navMenu.appendChild(link);
+            }
+        }
+
+        // ==================== CONFIG & STATE ====================
+        const CONFIG = {
+            velocityThreshold: 0.008,  // Velocity threshold for detecting hand movement toward each other
+            minHandDistance: 0.25,     // Minimum distance to start tracking (hands should be somewhat apart)
+            maxHandDistance: 0.65,     // Maximum distance to consider (ignore if hands too far)
+            smoothingFactor: 0.3,
+            soundEnabled: true,
+            clapCooldown: 300          // Minimum ms between claps
+        };
+
+        let currentMode = 'steady';   // 'steady' or 'pattern'
+        let currentLevel = 'easy';    // 'easy', 'medium', 'hard'
+        let score = 0;
+        let streak = 0;
+        let totalBeats = 0;
+        let goodBeats = 0;
+        let audioCtx = null;
+
+        // Beat engine
+        let bpm = 80;
+        let beatInterval = 60000 / bpm;
+        let patternIndex = 0;
+        let beatTimer = null;
+        let gameRunning = false;
+
+        const LEVEL_CONFIG = {
+            easy: {
+                bpm: 70,
+                patterns: {
+                    steady: [1,1,1,1],       // clap on all beats
+                    pattern: [1,0,1,0]       // clap - rest - clap - rest
+                }
+            },
+            medium: {
+                bpm: 90,
+                patterns: {
+                    steady: [1,1,1,1],
+                    pattern: [1,0,1,1]       // clap-rest-clap-clap
+                }
+            },
+            hard: {
+                bpm: 110,
+                patterns: {
+                    steady: [1,1,1,1],
+                    pattern: [1,0,1,0,1,1,0,1] // longer syncopated pattern
+                }
+            }
+        };
+
+        // Each note object: { element, spawnTime, travelDuration, laneY, requiresHit, hasScored, hitTime }
+        let activeNotes = [];
+
+        // Hand tracking state
+        let hands = {
+            left:  { x: 0, y: 0, prevX: 0, prevY: 0, detected: false },
+            right: { x: 0, y: 0, prevX: 0, prevY: 0, detected: false }
+        };
+        let lastClapTime = 0;
+
+        // Last clap info
+        let lastClap = null; // { time, yNorm }
+
+        // DOM refs
+        const beatStage = document.getElementById('beatStage');
+        const beatPulse = document.getElementById('beatPulse');
+        const beatZoneLabel = document.getElementById('beatZoneLabel');
+        const calloutWordEl = document.getElementById('calloutWord');
+
+        // ==================== AUDIO ====================
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleSound() {
+            CONFIG.soundEnabled = !CONFIG.soundEnabled;
+            document.getElementById('soundToggle').textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+        }
+
+        function playClick() {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = 800;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function playHitSound(isGood) {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (isGood) {
+                // Pleasant chime for good hit
+                osc.frequency.value = 880; // A5
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.3);
+            } else {
+                // Low thud for miss
+                osc.frequency.value = 150;
+                osc.type = 'triangle';
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.2);
+            }
+        }
+
+        function playClapSound() {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            // Sharp clap sound
+            const noise = audioCtx.createBufferSource();
+            const buffer = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.1, audioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < data.length; i++) {
+                data[i] = Math.random() * 2 - 1;
+            }
+            noise.buffer = buffer;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'highpass';
+            filter.frequency.value = 1000;
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            noise.start(audioCtx.currentTime);
+        }
+
+        function playSuccessJingle() {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const notes = [523.25, 659.25, 783.99]; // C5 E5 G5
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                const t = audioCtx.currentTime + i * 0.12;
+                gain.gain.setValueAtTime(0.4, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+                osc.start(t);
+                osc.stop(t + 0.25);
+            });
+        }
+
+        function playErrorSound() {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.value = 200;
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        // ==================== UI HELPERS ====================
+        function updateStats() {
+            document.getElementById('scoreDisplay').textContent = score;
+            document.getElementById('streakDisplay').textContent = streak;
+            document.getElementById('tempoDisplay').textContent = bpm;
+
+            const accuracy = totalBeats > 0 ? Math.round((goodBeats / totalBeats) * 100) : 0;
+            document.getElementById('accuracyDisplay').textContent = accuracy + '%';
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('gameMessage');
+            msg.textContent = text;
+            msg.className = `game-message ${type}`;
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 1400);
+        }
+
+        function showLevelComplete() {
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('modalOverlay').style.display = 'flex';
+            createConfetti();
+        }
+
+        function nextChallenge() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            startGame(); // restart with new pattern / tempo
+        }
+
+        function createConfetti() {
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e91e63', '#00bcd4'];
+            for (let i = 0; i < 60; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        function triggerBeatPulse() {
+            beatPulse.classList.remove('active');
+            void beatPulse.offsetWidth; // reflow to restart animation
+            beatPulse.classList.add('active');
+        }
+
+        // ==================== BEAT & NOTES LOGIC ====================
+        function selectMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.mode === mode);
+            });
+            startGame();
+        }
+
+        function selectLevel(level) {
+            currentLevel = level;
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.classList.contains(level)) btn.classList.add('active');
+            });
+            startGame();
+        }
+
+        function resetGameState() {
+            score = 0;
+            streak = 0;
+            totalBeats = 0;
+            goodBeats = 0;
+            patternIndex = 0;
+            activeNotes.forEach(n => n.element.remove());
+            activeNotes = [];
+            updateStats();
+        }
+
+        function getCurrentPattern() {
+            const cfg = LEVEL_CONFIG[currentLevel];
+            bpm = cfg.bpm;
+            beatInterval = 60000 / bpm;
+            const pattern = cfg.patterns[currentMode];
+            return pattern;
+        }
+
+        function startGame() {
+            resetGameState();
+            if (beatTimer) {
+                clearInterval(beatTimer);
+                beatTimer = null;
+            }
+            gameRunning = true;
+            const pattern = getCurrentPattern();
+
+            calloutWordEl.textContent = currentMode === 'steady'
+                ? 'Clap on 1, 2, 3, 4…'
+                : 'Clap – rest – follow the pattern!';
+            beatZoneLabel.textContent = currentMode === 'steady'
+                ? 'Steady beat'
+                : 'Copy this pattern';
+
+            updateStats();
+
+            // Start beat loop
+            beatTimer = setInterval(() => {
+                if (!gameRunning) return;
+                spawnBeat();
+            }, beatInterval);
+
+            // Also spawn immediately so they don’t wait
+            spawnBeat();
+        }
+
+        function stopGame() {
+            gameRunning = false;
+            if (beatTimer) {
+                clearInterval(beatTimer);
+                beatTimer = null;
+            }
+        }
+
+        function spawnBeat() {
+            const pattern = getCurrentPattern();
+            const requiresHit = pattern[patternIndex % pattern.length] === 1;
+            patternIndex++;
+
+            const spawnTime = performance.now();
+            const travelDuration = beatInterval * 2; // takes 2 beats to cross screen
+            const laneY = chooseLaneY(patternIndex, requiresHit);
+
+            // Visual dot
+            const dot = document.createElement('div');
+            dot.className = 'note-dot';
+            dot.textContent = requiresHit ? '●' : '○';
+            beatStage.appendChild(dot);
+
+            const note = {
+                element: dot,
+                spawnTime,
+                travelDuration,
+                laneY,
+                requiresHit,
+                hasScored: false,
+                hitTime: spawnTime + travelDuration * 0.5
+            };
+            activeNotes.push(note);
+
+            // Update display
+            if (currentMode === 'steady') {
+                const beatNumber = ((patternIndex - 1) % 4) + 1;
+                calloutWordEl.textContent = `Beat: ${beatNumber}`;
+            } else {
+                calloutWordEl.textContent = requiresHit ? 'Clap' : 'Rest';
+            }
+
+            triggerBeatPulse();
+            playClick();
+            totalBeats++;
+            updateStats();
+        }
+
+        function chooseLaneY(index, requiresHit) {
+            // Map to UP / MIDDLE / DOWN to encourage vertical movement
+            if (!requiresHit) return 0.5; // rests in center
+
+            if (currentLevel === 'easy') return 0.5; // middle only
+
+            if (currentLevel === 'medium') {
+                const cycle = index % 2 === 0 ? 0.3 : 0.7; // up-down-up-down
+                return cycle;
+            }
+
+            // hard: repeating Up-Mid-Down pattern
+            const mod = index % 3;
+            if (mod === 0) return 0.25; // up
+            if (mod === 1) return 0.5;  // mid
+            return 0.75;                // down
+        }
+
+        function updateNotes() {
+            const now = performance.now();
+            const stageRect = beatStage.getBoundingClientRect();
+
+            activeNotes.forEach(note => {
+                const t = (now - note.spawnTime) / note.travelDuration;
+                if (t >= 1) return;
+                const xPercent = t * 100;  // from left (0%) to right (100%)
+                const yPercent = note.laneY * 100;
+
+                note.element.style.left = xPercent + '%';
+                note.element.style.top = yPercent + '%';
+
+                // Evaluate at center line (50%)
+                if (!note.hasScored && t >= 0.5) {
+                    note.hasScored = true;
+                    evaluateBeat(note);
+                }
+            });
+
+            // Remove finished notes
+            activeNotes = activeNotes.filter(note => {
+                const t = (now - note.spawnTime) / note.travelDuration;
+                if (t >= 1) {
+                    note.element.remove();
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        function evaluateBeat(note) {
+            const hitWindow = beatInterval * 0.3; // +/- 30% of a beat
+
+            if (note.requiresHit) {
+                if (
+                    lastClap &&
+                    Math.abs(lastClap.time - note.hitTime) <= hitWindow &&
+                    Math.abs(lastClap.yNorm - note.laneY) <= 0.2
+                ) {
+                    // Good hit
+                    goodBeats++;
+                    streak++;
+                    score += 20;
+                    note.element.classList.add('good');
+                    playHitSound(true);
+                    showMessage('🎉 Good!', 'success');
+                    updateStats();
+
+                    // small chance to trigger "level complete"
+                    if (goodBeats > 0 && goodBeats % 16 === 0) {
+                        playSuccessJingle();
+                        showLevelComplete();
+                    }
+                } else {
+                    // Miss
+                    streak = 0;
+                    note.element.classList.add('miss');
+                    playHitSound(false);
+                    showMessage('❌ Miss', 'error');
+                    updateStats();
+                }
+            } else {
+                // Rest: if they clapped here, it’s a "too many claps"
+                if (lastClap && Math.abs(lastClap.time - note.hitTime) <= hitWindow) {
+                    streak = 0;
+                    note.element.classList.add('miss');
+                    playHitSound(false);
+                    showMessage('🤫 Rest!', 'error');
+                    updateStats();
+                } else {
+                    // they stayed quiet – good
+                    goodBeats++;
+                    note.element.classList.add('good');
+                    score += 10;
+                    streak++;
+                    updateStats();
+                }
+            }
+        }
+
+        // ==================== MEDIAPIPE HANDS ====================
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('canvasOverlay');
+        const canvasCtx = canvasElement.getContext('2d');
+        const leftHandCursor = document.getElementById('leftHandCursor');
+        const rightHandCursor = document.getElementById('rightHandCursor');
+        const statusDot = document.getElementById('statusDot');
+
+        const mpHands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        mpHands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.5
+        });
+
+        mpHands.onResults(onResults);
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: 'user' }
+                });
+                videoElement.srcObject = stream;
+                videoElement.onloadedmetadata = () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    statusDot.classList.add('active');
+                    detectLoop();
+                };
+            } catch (err) {
+                console.error('Camera error:', err);
+                document.getElementById('statusText').textContent = 'No cam';
+            }
+        }
+
+        async function detectLoop() {
+            if (videoElement.readyState >= 2) {
+                await mpHands.send({ image: videoElement });
+            }
+            requestAnimationFrame(detectLoop);
+        }
+
+        function onResults(results) {
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            let leftDetected = false;
+            let rightDetected = false;
+
+            if (results.multiHandLandmarks && results.multiHandedness) {
+                results.multiHandLandmarks.forEach((landmarks, index) => {
+                    const handedness = results.multiHandedness[index].label;
+
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+                        color: handedness === 'Left' ? '#ff6b9d' : '#00f2fe',
+                        lineWidth: 2
+                    });
+                    drawLandmarks(canvasCtx, landmarks, {
+                        color: handedness === 'Left' ? '#ff6b9d' : '#00f2fe',
+                        lineWidth: 1,
+                        radius: 3
+                    });
+
+                    if (handedness === 'Left') {
+                        rightDetected = true;
+                        processHand(landmarks, 'right');
+                    } else {
+                        leftDetected = true;
+                        processHand(landmarks, 'left');
+                    }
+                });
+            }
+
+            if (!leftDetected) {
+                leftHandCursor.style.display = 'none';
+                hands.left.detected = false;
+            }
+            if (!rightDetected) {
+                rightHandCursor.style.display = 'none';
+                hands.right.detected = false;
+            }
+
+            // Check for clapping gesture
+            if (leftDetected && rightDetected) {
+                checkForClap();
+            }
+        }
+
+        const HAND_CONNECTIONS = [
+            [0, 1], [1, 2], [2, 3], [3, 4],
+            [0, 5], [5, 6], [6, 7], [7, 8],
+            [0, 9], [9, 10], [10, 11], [11, 12],
+            [0, 13], [13, 14], [14, 15], [15, 16],
+            [0, 17], [17, 18], [18, 19], [19, 20],
+            [5, 9], [9, 13], [13, 17]
+        ];
+
+        function processHand(landmarks, side) {
+            const indexTip = landmarks[8];
+            const wrist = landmarks[0];
+
+            // Save previous position
+            hands[side].prevX = hands[side].x || 0;
+            hands[side].prevY = hands[side].y || 0;
+
+            // Use index finger for more visible tracking
+            const rawX = (1 - indexTip.x) * window.innerWidth;
+            const rawY = indexTip.y * window.innerHeight;
+
+            hands[side].x += (rawX - hands[side].x) * CONFIG.smoothingFactor;
+            hands[side].y += (rawY - hands[side].y) * CONFIG.smoothingFactor;
+            hands[side].detected = true;
+
+            const cursor = side === 'left' ? leftHandCursor : rightHandCursor;
+            cursor.style.display = 'block';
+            cursor.style.left = (hands[side].x - 25) + 'px';
+            cursor.style.top = (hands[side].y - 25) + 'px';
+        }
+
+        function checkForClap() {
+            if (!hands.left.detected || !hands.right.detected) return;
+
+            const now = performance.now();
+            if (now - lastClapTime < CONFIG.clapCooldown) return;
+
+            // Calculate current distance
+            const dx = hands.left.x - hands.right.x;
+            const dy = hands.left.y - hands.right.y;
+            const distance = Math.sqrt(dx * dx + dy * dy) / window.innerWidth;
+
+            // Calculate velocity (how fast hands are moving toward each other)
+            const leftVelX = hands.left.x - hands.left.prevX;
+            const leftVelY = hands.left.y - hands.left.prevY;
+            const rightVelX = hands.right.x - hands.right.prevX;
+            const rightVelY = hands.right.y - hands.right.prevY;
+
+            // Check if hands are moving toward each other (opposite velocities in X)
+            const movingToward = (leftVelX > 0 && rightVelX < 0) || (leftVelX < 0 && rightVelX > 0);
+
+            // Calculate combined velocity magnitude
+            const velocityMagnitude = (Math.abs(leftVelX) + Math.abs(rightVelX)) / window.innerWidth;
+
+            // Detect clap: hands moving toward each other fast enough, and at reasonable distance
+            if (movingToward &&
+                velocityMagnitude > CONFIG.velocityThreshold &&
+                distance > CONFIG.minHandDistance &&
+                distance < CONFIG.maxHandDistance) {
+
+                lastClapTime = now;
+
+                // Use midpoint between hands for clap position
+                const clapX = (hands.left.x + hands.right.x) / 2;
+                const clapY = (hands.left.y + hands.right.y) / 2;
+                registerClap(clapX, clapY);
+                playClapSound();
+
+                // Visual feedback
+                leftHandCursor.classList.add('pressing');
+                rightHandCursor.classList.add('pressing');
+                setTimeout(() => {
+                    leftHandCursor.classList.remove('pressing');
+                    rightHandCursor.classList.remove('pressing');
+                }, 200);
+            }
+        }        function registerClap(x, y) {
+            const yNorm = y / window.innerHeight;
+            lastClap = {
+                time: performance.now(),
+                yNorm
+            };
+        }
+
+        // ==================== MOUSE FALLBACK ====================
+        let mouseMode = false;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'm' || e.key === 'M') {
+                mouseMode = !mouseMode;
+                alert('Mouse mode: ' + (mouseMode ? 'ON' : 'OFF'));
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!mouseMode) return;
+            rightHandCursor.style.display = 'block';
+            rightHandCursor.style.left = (e.clientX - 25) + 'px';
+            rightHandCursor.style.top = (e.clientY - 25) + 'px';
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            if (!mouseMode) return;
+            rightHandCursor.classList.add('pressing');
+            registerClap(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!mouseMode) return;
+            rightHandCursor.classList.remove('pressing');
+        });
+
+        // ==================== BACKGROUND ANIMATION ====================
+        function createMusicNotes() {
+            const container = document.getElementById('bgAnimation');
+            const notes = ['♪', '♫', '♬', '♩', '🎵', '🎶'];
+            for (let i = 0; i < 15; i++) {
+                const note = document.createElement('div');
+                note.className = 'music-note';
+                note.textContent = notes[Math.floor(Math.random() * notes.length)];
+                note.style.left = Math.random() * 100 + 'vw';
+                note.style.animationDelay = Math.random() * 15 + 's';
+                note.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                container.appendChild(note);
+            }
+        }
+
+        // ==================== MAIN LOOP ====================
+        function gameLoop() {
+            updateNotes();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeNavigation();
+            createMusicNotes();
+            setupCamera();
+            updateStats();
+
+            // Init audio on first user interaction
+            document.addEventListener('click', () => { initAudio(); }, { once: true });
+            document.addEventListener('touchstart', () => { initAudio(); }, { once: true });
+
+            startGame();
+            gameLoop();
+        });
+    </script>
+</body>
+</html>

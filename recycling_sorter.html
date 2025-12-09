@@ -1,0 +1,1698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recycling Sorter – Save the Planet Game</title>
+
+    <!-- OpenDyslexic Font for better readability -->
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --text-primary: #ffffff;
+            --text-secondary: #b8b8d1;
+            --accent-pink: #ff6b9d;
+            --accent-purple: #c44fff;
+            --accent-blue: #4facfe;
+            --accent-cyan: #00f2fe;
+            --accent-green: #55efc4;
+            --accent-yellow: #ffeaa7;
+            --accent-orange: #fdcb6e;
+            --accent-red: #ff7675;
+            --glow: 0 0 20px rgba(79, 172, 254, 0.5);
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', cursive, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.8;
+            letter-spacing: 0.05em;
+            color: var(--text-primary);
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+        }
+
+        .music-note {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.15;
+            animation: floatNote 15s infinite ease-in-out;
+        }
+
+        @keyframes floatNote {
+            0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.15; }
+            90% { opacity: 0.15; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* Hand Cursors */
+        .hand-cursor {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            transition: transform 0.05s ease-out;
+            display: none;
+        }
+
+        .hand-cursor.left {
+            background: radial-gradient(circle, var(--accent-pink) 0%, transparent 70%);
+            border: 3px solid var(--accent-pink);
+            box-shadow: 0 0 20px var(--accent-pink);
+        }
+
+        .hand-cursor.right {
+            background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 70%);
+            border: 3px solid var(--accent-cyan);
+            box-shadow: 0 0 20px var(--accent-cyan);
+        }
+
+        .hand-cursor.pressing {
+            transform: scale(0.7);
+        }
+
+        .hand-cursor.wiggle {
+            animation: wiggle 0.4s ease;
+        }
+
+        /* Wiggle animation */
+        @keyframes wiggle {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-4px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Main Container */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(196, 79, 255, 0.3) 0%, rgba(79, 172, 254, 0.3) 100%);
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Dynamic Navigation Bar */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            padding: 18px 25px;
+            margin-bottom: 20px;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3), 0 0 50px rgba(79, 172, 254, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            padding: 5px 0;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            flex: 1;
+            justify-content: flex-end;
+        }
+
+        .nav-link {
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-block;
+            backdrop-filter: blur(5px);
+            white-space: nowrap;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .nav-link.active {
+            background: white;
+            color: var(--accent-purple);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.3);
+            border-color: white;
+            transform: scale(1.05);
+        }
+
+        /* Camera Preview */
+        .camera-preview {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid var(--accent-purple);
+            box-shadow: var(--glow);
+            z-index: 100;
+            background: #000;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .camera-preview canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.active {
+            background: #2ecc71;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Instructions Panel */
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 2px solid rgba(255,255,255,0.1);
+            max-width: 280px;
+            z-index: 100;
+        }
+
+        .instructions h4 {
+            color: var(--accent-cyan);
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .instructions p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .instructions p span {
+            font-size: 1.2rem;
+        }
+
+        /* Level Selector */
+        .level-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .level-btn {
+            padding: 8px 22px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-secondary);
+            border: 2px solid transparent;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .level-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .level-btn.easy.active {
+            background: rgba(85, 239, 196, 0.2);
+            color: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        .level-btn.medium.active {
+            background: rgba(253, 203, 110, 0.2);
+            color: var(--accent-orange);
+            border-color: var(--accent-orange);
+        }
+
+        .level-btn.hard.active {
+            background: rgba(255, 118, 117, 0.2);
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-item span {
+            font-size: 1.2rem;
+        }
+
+        /* Sound Toggle */
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Game Area */
+        .game-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            min-height: 600px;
+            position: relative;
+        }
+
+        .play-area {
+            position: relative;
+            height: 450px;
+            border-radius: 15px;
+            background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 60%),
+                        radial-gradient(circle at bottom, rgba(255,255,255,0.08), transparent 60%),
+                        linear-gradient(180deg, rgba(15,52,96,0.95), rgba(22,33,62,0.95));
+            overflow: hidden;
+        }
+
+        .play-area::before {
+            content: "⭐ Latest item auto-selected! Pinch: Left=Plastic/Cans | Right=Compost ⭐";
+            position: absolute;
+            top: 8px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            color: gold;
+            opacity: 0.9;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        .trash-item {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            border-radius: 15px;
+            background: rgba(0,0,0,0.4);
+            border: 2px solid rgba(255,255,255,0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            cursor: grab;
+            transition: transform 0.1s ease;
+            font-size: 1.7rem;
+        }
+
+        .trash-item.grabbed {
+            cursor: grabbing;
+            transform: scale(1.15);
+            box-shadow: 0 0 25px rgba(255,255,255,0.7);
+            z-index: 10;
+        }
+
+        .trash-item.selected {
+            transform: scale(1.25);
+            box-shadow: 0 0 40px rgba(255, 215, 0, 0.9),
+                        0 0 60px rgba(255, 215, 0, 0.6),
+                        inset 0 0 20px rgba(255, 215, 0, 0.3);
+            border: 3px solid gold;
+            z-index: 15;
+            animation: pulse-glow 1s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 40px rgba(255, 215, 0, 0.9),
+                            0 0 60px rgba(255, 215, 0, 0.6),
+                            inset 0 0 20px rgba(255, 215, 0, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 50px rgba(255, 215, 0, 1),
+                            0 0 80px rgba(255, 215, 0, 0.8),
+                            inset 0 0 30px rgba(255, 215, 0, 0.5);
+            }
+        }
+
+        .trash-item-label {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+        }
+
+        .trash-item.wiggle {
+            animation: wiggle 0.4s ease;
+        }
+
+        .bins-row {
+            margin-top: 12px;
+            display: flex;
+            justify-content: space-evenly;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .recycle-bin {
+            flex: 1;
+            min-width: 120px;
+            max-width: 180px;
+            padding: 10px 8px;
+            border-radius: 15px;
+            border: 2px solid rgba(255,255,255,0.2);
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .recycle-bin.active-bin {
+            box-shadow: 0 0 20px rgba(255,255,255,0.3);
+        }
+
+        .recycle-bin:hover {
+            transform: translateY(-3px);
+        }
+
+        .bin-icon {
+            font-size: 2.2rem;
+            margin-bottom: 4px;
+        }
+
+        .bin-name {
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+
+        .bin-text {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 3px;
+            text-align: center;
+        }
+
+        .bin-strip {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+        }
+
+        .bin-highlight {
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            border: 3px dashed rgba(255,255,255,0.0);
+            pointer-events: none;
+            transition: border-color 0.15s ease;
+        }
+
+        .recycle-bin.drop-target .bin-highlight {
+            border-color: rgba(255,255,255,0.9);
+        }
+
+        .callout-panel {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .callout-word {
+            font-size: 1.3rem;
+            color: var(--accent-yellow);
+        }
+
+        /* Game Message */
+        .game-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 30px 50px;
+            border-radius: var(--radius);
+            font-size: 1.8rem;
+            font-weight: bold;
+            z-index: 2000;
+            animation: popIn 0.4s ease;
+            display: none;
+            text-align: center;
+        }
+
+        .game-message.success {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-green);
+        }
+
+        .game-message.error {
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-orange));
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-red);
+        }
+
+        .game-message.info {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-purple);
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            top: -20px;
+            border-radius: 2px;
+            animation: confettiFall 3s linear forwards;
+            z-index: 4000;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Level Complete Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            padding: 50px;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 3px solid var(--accent-purple);
+            box-shadow: 0 0 50px var(--accent-purple);
+            animation: bounceIn 0.5s ease;
+            max-width: 90%;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0) rotate(-5deg); }
+            50% { transform: scale(1.1) rotate(3deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .modal-content h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .modal-stars {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-score {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        .control-btn {
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-family: inherit;
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.primary {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border-color: var(--accent-cyan);
+        }
+
+        .control-btn.primary:hover {
+            box-shadow: var(--glow);
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .header h1 {
+                font-size: 1.7rem;
+            }
+            .camera-preview {
+                width: 160px;
+                height: 120px;
+            }
+            .instructions {
+                display: none;
+            }
+            .trash-item {
+                width: 60px;
+                height: 60px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.4rem;
+            }
+            .level-btn {
+                padding: 6px 14px;
+                font-size: 0.85rem;
+            }
+            .trash-item {
+                width: 55px;
+                height: 55px;
+                font-size: 1.4rem;
+            }
+            .bin-name {
+                font-size: 0.8rem;
+            }
+            .bin-text {
+                font-size: 0.65rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-title">📚 Learning Games</div>
+            <div class="nav-menu" id="navMenu"></div>
+        </div>
+    </div>
+
+    <!-- Animated Background -->
+    <div class="bg-animation" id="bgAnimation"></div>
+
+    <!-- Hand Cursors -->
+    <div class="hand-cursor left" id="leftHandCursor"></div>
+    <div class="hand-cursor right" id="rightHandCursor"></div>
+
+    <!-- Game Message -->
+    <div class="game-message" id="gameMessage"></div>
+
+    <!-- Level Complete Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <h2>🌍 Great Sorting! 🌍</h2>
+            <div class="modal-stars">⭐⭐⭐</div>
+            <div class="modal-score">Score: <span id="finalScore">0</span></div>
+            <button class="control-btn primary" onclick="nextChallenge()">New Round →</button>
+        </div>
+    </div>
+
+    <!-- Sound Toggle -->
+    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+
+    <!-- Camera Preview -->
+    <div class="camera-preview">
+        <video id="videoElement" autoplay playsinline></video>
+        <canvas id="canvasOverlay"></canvas>
+        <div class="camera-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Camera</span>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <h4>🖐️ How to Play</h4>
+        <p><span>⭐</span> Latest item auto-selected</p>
+        <p><span>🤏</span> Left pinch → Plastic/Cans</p>
+        <p><span>🤏</span> Right pinch → Compost</p>
+        <p><span>💡</span> No hand movement needed!</p>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>♻️ Recycling Sorter – Save the Planet</h1>
+            <p>Latest garbage auto-selected! Just pinch: Left=Plastic/Cans, Right=Compost!</p>
+        </header>
+
+        <!-- Level Selector -->
+        <div class="level-selector">
+            <button class="level-btn easy active" onclick="selectLevel('easy')">🟢 Easy</button>
+            <button class="level-btn medium" onclick="selectLevel('medium')">🟡 Medium</button>
+            <button class="level-btn hard" onclick="selectLevel('hard')">🔴 Hard</button>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span>⭐</span> Score: <strong id="scoreDisplay">0</strong>
+            </div>
+            <div class="stat-item">
+                <span>🔥</span> Streak: <strong id="streakDisplay">0</strong>
+            </div>
+            <div class="stat-item">
+                <span>✅</span> Correct: <strong id="correctDisplay">0</strong>
+            </div>
+            <div class="stat-item">
+                <span>❌</span> Oops: <strong id="mistakesDisplay">0</strong>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div class="game-container">
+            <div class="play-area" id="playArea"></div>
+
+            <div class="bins-row" id="binsRow"></div>
+
+            <div class="callout-panel">
+                <span id="calloutText">
+                    Voice: <span class="callout-word" id="calloutWord">Pick up an item and sort it!</span>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== DYNAMIC NAVIGATION ====================
+        const GAMES_CONFIG = {
+            'index.html':            { name: '🔤 Alphabet & Colors', description: 'Learn letters and colors with drag & drop' },
+            'planets.html':          { name: '🪐 Planets', description: 'Explore our solar system' },
+            'exploring_body.html':   { name: '🧬 Body Explorer', description: 'Learn about human body parts' },
+            'frost_discovery.html':  { name: '❄️ Frost Discovery', description: 'Reveal and learn hidden items' },
+            'hand_music.html':       { name: '🎵 Music Hands', description: 'Learn music with hand gestures' },
+            'melt_the_ice.html':     { name: '🌈 Melt the Ice', description: 'Melt ice to discover pictures' },
+            'science-lab.html':      { name: '🧪 Science Lab', description: 'Perform fun experiments' },
+            'rhythm_conductor.html': { name: '🥁 Rhythm Conductor', description: 'Move to the beat & learn tempo' },
+            'recycling_sorter.html': { name: '♻️ Recycling Sorter', description: 'Sort rubbish into the correct bin' }
+        };
+
+        function initializeNavigation() {
+            const navMenu = document.getElementById('navMenu');
+            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
+            navMenu.innerHTML = '';
+
+            for (const [file, config] of Object.entries(GAMES_CONFIG)) {
+                const link = document.createElement('a');
+                link.className = 'nav-link';
+                link.href = file;
+                link.textContent = config.name;
+                link.title = config.description;
+                if (currentFile === file) link.classList.add('active');
+                navMenu.appendChild(link);
+            }
+        }
+
+        // ==================== CONFIG & STATE ====================
+        const CONFIG = {
+            pinchThreshold: 0.07,
+            smoothingFactor: 0.4,
+            soundEnabled: true
+        };
+
+        let currentLevel = 'easy';
+        let score = 0;
+        let streak = 0;
+        let correctCount = 0;
+        let mistakesCount = 0;
+
+        let audioCtx = null;
+
+        const playArea = document.getElementById('playArea');
+        const binsRow  = document.getElementById('binsRow');
+        const calloutWordEl = document.getElementById('calloutWord');
+
+        // Item & bin configuration
+        const BIN_TYPES = {
+            plastic: {
+                id: 'plastic',
+                emoji: '♻️',
+                name: 'Plastic & Cans',
+                shortName: 'plastic',
+                description: 'Bottles & cans',
+                strip: '#4facfe'
+            },
+            food: {
+                id: 'food',
+                emoji: '🍌',
+                name: 'Food / Compost',
+                shortName: 'food',
+                description: 'Peels & leftovers',
+                strip: '#00b894'
+            },
+            paper: {
+                id: 'paper',
+                emoji: '📄',
+                name: 'Paper & Card',
+                shortName: 'paper',
+                description: 'Sheets & boxes',
+                strip: '#ffeaa7'
+            },
+            general: {
+                id: 'general',
+                emoji: '🗑️',
+                name: 'General Waste',
+                shortName: 'general',
+                description: 'Things that can’t be recycled',
+                strip: '#636e72'
+            }
+        };
+
+        const LEVEL_BINS = {
+            easy:   ['plastic', 'food'],
+            medium: ['plastic', 'food', 'paper'],
+            hard:   ['plastic', 'food', 'paper', 'general']
+        };
+
+        const ITEMS_LIBRARY = [
+            // PLASTIC & CANS - Easy level
+            { id: 'plastic-bottle', label: 'Plastic bottle', emoji: '🥤', category: 'plastic', levels: ['easy','medium','hard'] },
+            { id: 'water-bottle',   label: 'Water bottle',   emoji: '💧', category: 'plastic', levels: ['easy','medium','hard'] },
+            { id: 'drink-can',      label: 'Drink can',      emoji: '🥫', category: 'plastic', levels: ['easy','medium','hard'] },
+            { id: 'soda-can',       label: 'Soda can',       emoji: '🥤', category: 'plastic', levels: ['medium','hard'] },
+            { id: 'milk-carton',    label: 'Milk carton',    emoji: '🥛', category: 'plastic', levels: ['medium','hard'] },
+            { id: 'yogurt-pot',     label: 'Yogurt pot',     emoji: '🥣', category: 'plastic', levels: ['hard'] },
+            { id: 'shampoo-bottle', label: 'Shampoo bottle', emoji: '🧴', category: 'plastic', levels: ['hard'] },
+
+            // FOOD/COMPOST - Easy level
+            { id: 'banana-peel',    label: 'Banana peel',    emoji: '🍌', category: 'food',    levels: ['easy','medium','hard'] },
+            { id: 'apple-core',     label: 'Apple core',     emoji: '🍎', category: 'food',    levels: ['easy','medium','hard'] },
+            { id: 'orange-peel',    label: 'Orange peel',    emoji: '🍊', category: 'food',    levels: ['easy','medium','hard'] },
+            { id: 'egg-shells',     label: 'Egg shells',     emoji: '🥚', category: 'food',    levels: ['medium','hard'] },
+            { id: 'coffee-grounds', label: 'Coffee grounds', emoji: '☕', category: 'food',    levels: ['medium','hard'] },
+            { id: 'veg-scraps',     label: 'Veggie scraps',  emoji: '🥕', category: 'food',    levels: ['medium','hard'] },
+            { id: 'bread-crust',    label: 'Bread crust',    emoji: '🍞', category: 'food',    levels: ['hard'] },
+            { id: 'tea-bag',        label: 'Tea bag',        emoji: '🍵', category: 'food',    levels: ['hard'] },
+
+            // PAPER - Medium level
+            { id: 'newspaper',      label: 'Newspaper',      emoji: '📰', category: 'paper',   levels: ['medium','hard'] },
+            { id: 'paper-sheet',    label: 'Paper sheet',    emoji: '📄', category: 'paper',   levels: ['medium','hard'] },
+            { id: 'cardboard-box',  label: 'Cardboard box',  emoji: '📦', category: 'paper',   levels: ['medium','hard'] },
+            { id: 'envelope',       label: 'Envelope',       emoji: '✉️', category: 'paper',   levels: ['medium','hard'] },
+            { id: 'magazine',       label: 'Magazine',       emoji: '📖', category: 'paper',   levels: ['hard'] },
+            { id: 'paper-bag',      label: 'Paper bag',      emoji: '🛍️', category: 'paper',   levels: ['hard'] },
+
+            // GENERAL WASTE - Hard level
+            { id: 'chip-bag',       label: 'Crisp packet',   emoji: '🍟', category: 'general', levels: ['hard'] },
+            { id: 'pizza-greasy',   label: 'Greasy pizza box',emoji: '🍕', category: 'general', levels: ['hard'] },
+            { id: 'styrofoam',      label: 'Styrofoam',      emoji: '📦', category: 'general', levels: ['hard'] },
+            { id: 'plastic-wrap',   label: 'Plastic wrap',   emoji: '📦', category: 'general', levels: ['hard'] },
+            { id: 'straw',          label: 'Plastic straw',  emoji: '🥤', category: 'general', levels: ['hard'] }
+        ];
+
+        const LEVEL_FALL_SPEED = {
+            easy: 120,
+            medium: 160,
+            hard: 210
+        };
+
+        const LEVEL_SPAWN_INTERVAL = {
+            easy: 2500,
+            medium: 2000,
+            hard: 1600
+        };
+
+        let items = []; // { el, config, x, y, fallSpeed, grabbed, selected }
+        let spawnTimer = null;
+        let lastFrameTime = performance.now();
+        let selectedItem = null; // Currently auto-selected item
+
+        // Drag state
+        let grabbedItem = null;
+        let grabOffsetX = 0;
+        let grabOffsetY = 0;
+
+        // Hand tracking state
+        let hands = {
+            left:  { x: 0, y: 0, pressing: false, prevPressing: false },
+            right: { x: 0, y: 0, pressing: false, prevPressing: false }
+        };
+
+        // ==================== AUDIO ====================
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleSound() {
+            CONFIG.soundEnabled = !CONFIG.soundEnabled;
+            document.getElementById('soundToggle').textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+        }
+
+        function playChime() {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const freqs = [659.25, 784.0, 987.77]; // E5, G5, B5
+            freqs.forEach((f, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'triangle';
+                osc.frequency.value = f;
+                const t = audioCtx.currentTime + i * 0.08;
+                gain.gain.setValueAtTime(0.4, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+                osc.start(t);
+                osc.stop(t + 0.25);
+            });
+        }
+
+        function playErrorSound() {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.value = 180;
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+            osc.start(audioCtx.currentTime);
+            osc.stop(audioCtx.currentTime + 0.25);
+        }
+
+        function speak(text, rate = 0.9) {
+            if (!CONFIG.soundEnabled) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = rate;
+            utterance.pitch = 1.05;
+            utterance.lang = 'en-US';
+            speechSynthesis.speak(utterance);
+        }
+
+        // ==================== UI HELPERS ====================
+        function updateStats() {
+            document.getElementById('scoreDisplay').textContent = score;
+            document.getElementById('streakDisplay').textContent = streak;
+            document.getElementById('correctDisplay').textContent = correctCount;
+            document.getElementById('mistakesDisplay').textContent = mistakesCount;
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('gameMessage');
+            msg.textContent = text;
+            msg.className = `game-message ${type}`;
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 1400);
+        }
+
+        function showLevelComplete() {
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('modalOverlay').style.display = 'flex';
+            createConfetti();
+        }
+
+        function nextChallenge() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            startLevel();
+        }
+
+        function createConfetti() {
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e91e63', '#00bcd4'];
+            for (let i = 0; i < 60; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        // ==================== LEVEL / BINS ====================
+        function selectLevel(level) {
+            currentLevel = level;
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.classList.contains(level)) btn.classList.add('active');
+            });
+            startLevel();
+        }
+
+        function setupBins() {
+            binsRow.innerHTML = '';
+            const binsForLevel = LEVEL_BINS[currentLevel];
+
+            binsForLevel.forEach(binId => {
+                const config = BIN_TYPES[binId];
+                const bin = document.createElement('div');
+                bin.className = 'recycle-bin active-bin';
+                bin.dataset.type = config.id;
+
+                const icon = document.createElement('div');
+                icon.className = 'bin-icon';
+                icon.textContent = config.emoji;
+
+                const name = document.createElement('div');
+                name.className = 'bin-name';
+                name.textContent = config.name;
+
+                const text = document.createElement('div');
+                text.className = 'bin-text';
+                text.textContent = config.description;
+
+                const strip = document.createElement('div');
+                strip.className = 'bin-strip';
+                strip.style.background = config.strip;
+
+                const highlight = document.createElement('div');
+                highlight.className = 'bin-highlight';
+
+                bin.appendChild(icon);
+                bin.appendChild(name);
+                bin.appendChild(text);
+                bin.appendChild(strip);
+                bin.appendChild(highlight);
+
+                binsRow.appendChild(bin);
+            });
+        }
+
+        function resetItems() {
+            items.forEach(it => it.el.remove());
+            items = [];
+            grabbedItem = null;
+            selectedItem = null;
+        }
+
+        function startLevel() {
+            // reset state
+            resetItems();
+            if (spawnTimer) {
+                clearInterval(spawnTimer);
+                spawnTimer = null;
+            }
+            score = 0;
+            streak = 0;
+            correctCount = 0;
+            mistakesCount = 0;
+            updateStats();
+            setupBins();
+
+            const levelName = currentLevel === 'easy' ? 'Easy: Left pinch for plastic, right pinch for food!'
+                            : currentLevel === 'medium' ? 'Medium: Use correct hand for each item!'
+                            : 'Hard: Choose the right hand for tricky items!';
+            calloutWordEl.textContent = levelName;
+            speak(levelName);
+
+            const interval = LEVEL_SPAWN_INTERVAL[currentLevel];
+            spawnTimer = setInterval(() => {
+                if (items.length < 8) {
+                    spawnItem();
+                }
+            }, interval);
+
+            // spawn a couple immediately
+            spawnItem();
+            setTimeout(spawnItem, 800);
+        }
+
+        // ==================== ITEMS ====================
+        function getRandomItemConfig() {
+            const available = ITEMS_LIBRARY.filter(it => it.levels.includes(currentLevel));
+            return available[Math.floor(Math.random() * available.length)];
+        }
+
+        function spawnItem() {
+            const cfg = getRandomItemConfig();
+            const playRect = playArea.getBoundingClientRect();
+            const padding = 60;
+            const xPx = padding + Math.random() * (playRect.width - 2 * padding);
+            const yPx = -80;
+
+            const el = document.createElement('div');
+            el.className = 'trash-item';
+            el.dataset.id = cfg.id;
+            el.dataset.category = cfg.category;
+
+            const emojiSpan = document.createElement('div');
+            emojiSpan.textContent = cfg.emoji;
+
+            const labelSpan = document.createElement('div');
+            labelSpan.className = 'trash-item-label';
+            labelSpan.textContent = cfg.label;
+
+            el.appendChild(emojiSpan);
+            el.appendChild(labelSpan);
+
+            playArea.appendChild(el);
+
+            el.style.left = xPx + 'px';
+            el.style.top = yPx + 'px';
+
+            const item = {
+                el,
+                config: cfg,
+                x: xPx,
+                y: yPx,
+                fallSpeed: LEVEL_FALL_SPEED[currentLevel],
+                grabbed: false,
+                selected: false
+            };
+
+            items.push(item);
+
+            // Auto-select the newest item
+            selectLatestItem();
+        }
+
+        function selectLatestItem() {
+            // Deselect previous item
+            if (selectedItem) {
+                selectedItem.el.classList.remove('selected');
+                selectedItem.selected = false;
+            }
+
+            // Select the most recently added item (last in array)
+            if (items.length > 0) {
+                selectedItem = items[items.length - 1];
+                selectedItem.el.classList.add('selected');
+                selectedItem.selected = true;
+
+                // Announce what needs to be sorted
+                const categoryName = BIN_TYPES[selectedItem.config.category].name;
+                calloutWordEl.textContent = `${selectedItem.config.label} → ${categoryName}`;
+            }
+        }
+
+        function updateItems(dt) {
+            const playRect = playArea.getBoundingClientRect();
+
+            items.forEach(item => {
+                if (!item.grabbed) {
+                    item.y += item.fallSpeed * dt;
+                    item.el.style.top = item.y + 'px';
+                }
+            });
+
+            // Remove items that fell past bottom
+            const beforeLength = items.length;
+            items = items.filter(item => {
+                if (item.y > playRect.height + 100) {
+                    // If this was the selected item, clear selection
+                    if (selectedItem === item) {
+                        selectedItem = null;
+                    }
+                    item.el.remove();
+                    // treat as missed, but not too punishing
+                    mistakesCount++;
+                    streak = 0;
+                    updateStats();
+                    return false;
+                }
+                return true;
+            });
+
+            // If an item was removed and it was selected, auto-select next
+            if (items.length < beforeLength && !selectedItem) {
+                selectLatestItem();
+            }
+        }
+
+        function findItemByElement(el) {
+            return items.find(it => it.el === el) || null;
+        }
+
+        // ==================== AUTO-SELECTION SORTING ====================
+        function sortSelectedItemWithHand(hand) {
+            if (!selectedItem) return;
+
+            const item = selectedItem;
+
+            // Determine target bin based on hand
+            const targetBin = hand === 'left' ? 'plastic' : 'food';
+
+            // Check if this item can go in the target bin
+            const correctCategory = item.config.category;
+            const isCorrect = correctCategory === targetBin;
+
+            if (isCorrect) {
+                // Instant sort - correct!
+                score += 20;
+                streak++;
+                correctCount++;
+                updateStats();
+
+                const binName = BIN_TYPES[targetBin].shortName;
+                const phrase = `${item.config.label} – ${binName} bin!`;
+                calloutWordEl.textContent = phrase;
+                speak(phrase);
+                playChime();
+                showMessage('⭐ Perfect!', 'success');
+
+                // remove item
+                item.el.remove();
+                items = items.filter(it => it !== item);
+                selectedItem = null;
+
+                // Auto-select next item
+                selectLatestItem();
+
+                if (correctCount > 0 && correctCount % 8 === 0) {
+                    showLevelComplete();
+                }
+            } else {
+                // Wrong bin for this hand
+                mistakesCount++;
+                streak = 0;
+                updateStats();
+
+                const correctBinName = BIN_TYPES[correctCategory].name;
+                const phrase = `Try ${hand === 'left' ? 'right' : 'left'} hand! This goes in ${correctBinName}.`;
+                calloutWordEl.textContent = phrase;
+                speak(phrase);
+                playErrorSound();
+                showMessage(`⚠️ Wrong hand! Use ${hand === 'left' ? 'right' : 'left'} hand`, 'error');
+
+                // wiggle item + cursor
+                const cursor = hand === 'left' ? leftHandCursor : rightHandCursor;
+                item.el.classList.add('wiggle');
+                cursor.classList.add('wiggle');
+                setTimeout(() => {
+                    item.el.classList.remove('wiggle');
+                    cursor.classList.remove('wiggle');
+                }, 450);
+            }
+        }        function startGrab(x, y) {
+            // Fallback for mouse mode
+            if (grabbedItem) return;
+
+            const elements = document.elementsFromPoint(x, y);
+            for (const el of elements) {
+                if (el.classList && el.classList.contains('trash-item')) {
+                    const item = findItemByElement(el);
+                    if (!item) continue;
+                    grabbedItem = item;
+                    grabbedItem.grabbed = true;
+                    const rect = el.getBoundingClientRect();
+                    grabOffsetX = x - rect.left;
+                    grabOffsetY = y - rect.top;
+                    el.classList.add('grabbed');
+                    break;
+                }
+            }
+        }
+
+        function moveGrab(x, y) {
+            if (!grabbedItem) return;
+            const el = grabbedItem.el;
+            const playRect = playArea.getBoundingClientRect();
+            let newLeft = x - playRect.left - grabOffsetX;
+            let newTop  = y - playRect.top - grabOffsetY;
+
+            const maxLeft = playRect.width - el.offsetWidth;
+            const maxTop  = playRect.height - el.offsetHeight;
+            newLeft = Math.max(0, Math.min(maxLeft, newLeft));
+            newTop  = Math.max(-40, Math.min(maxTop, newTop));
+
+            grabbedItem.x = newLeft;
+            grabbedItem.y = newTop;
+            el.style.left = newLeft + 'px';
+            el.style.top  = newTop + 'px';
+
+            // highlight bin under cursor
+            document.querySelectorAll('.recycle-bin').forEach(bin => {
+                bin.classList.remove('drop-target');
+            });
+            const elements = document.elementsFromPoint(x, y);
+            for (const el2 of elements) {
+                if (el2.classList && el2.classList.contains('recycle-bin')) {
+                    el2.classList.add('drop-target');
+                    break;
+                }
+            }
+        }
+
+        function releaseGrabWithHand(x, y, hand) {
+            // In pinch mode, sorting happens instantly on grab
+            // This function is for compatibility
+        }
+
+        function releaseGrab(x, y) {
+            if (!grabbedItem) return;
+            const el = grabbedItem.el;
+
+            document.querySelectorAll('.recycle-bin').forEach(bin => {
+                bin.classList.remove('drop-target');
+            });
+
+            let dropBin = null;
+            const elements = document.elementsFromPoint(x, y);
+            for (const el2 of elements) {
+                if (el2.classList && el2.classList.contains('recycle-bin')) {
+                    dropBin = el2;
+                    break;
+                }
+            }
+
+            if (dropBin) {
+                handleDrop(grabbedItem, dropBin.dataset.type, dropBin);
+            } else {
+                // Let the item fall again
+                grabbedItem.grabbed = false;
+                el.classList.remove('grabbed');
+            }
+
+            grabbedItem = null;
+        }
+
+        function handleDrop(item, binType, binEl) {
+            const correctCategory = item.config.category;
+            const isCorrect = correctCategory === binType;
+
+            item.grabbed = false;
+            item.el.classList.remove('grabbed');
+
+            const rightCursor = document.getElementById('rightHandCursor');
+
+            if (isCorrect) {
+                score += 20;
+                streak++;
+                correctCount++;
+                updateStats();
+
+                const binName = BIN_TYPES[binType].shortName;
+                const phrase = `${item.config.label} – ${binName} bin.`;
+                calloutWordEl.textContent = phrase;
+                speak(phrase);
+                playChime();
+                showMessage('⭐ Great sorting!', 'success');
+
+                // remove item
+                item.el.remove();
+                items = items.filter(it => it !== item);
+
+                if (correctCount > 0 && correctCount % 8 === 0) {
+                    showLevelComplete();
+                }
+            } else {
+                mistakesCount++;
+                streak = 0;
+                updateStats();
+
+                const phrase = 'Not quite, try another bin.';
+                calloutWordEl.textContent = phrase;
+                speak(phrase);
+                playErrorSound();
+                showMessage('⚠️ Try another bin', 'error');
+
+                // wiggle item + "finger"
+                item.el.classList.add('wiggle');
+                rightCursor.classList.add('wiggle');
+                setTimeout(() => {
+                    item.el.classList.remove('wiggle');
+                    rightCursor.classList.remove('wiggle');
+                }, 450);
+
+                // Let item drop again from its current position
+            }
+        }
+
+        // ==================== MEDIAPIPE HANDS ====================
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('canvasOverlay');
+        const canvasCtx = canvasElement.getContext('2d');
+        const leftHandCursor = document.getElementById('leftHandCursor');
+        const rightHandCursor = document.getElementById('rightHandCursor');
+        const statusDot = document.getElementById('statusDot');
+
+        const HAND_CONNECTIONS = [
+            [0, 1], [1, 2], [2, 3], [3, 4],
+            [0, 5], [5, 6], [6, 7], [7, 8],
+            [0, 9], [9, 10], [10, 11], [11, 12],
+            [0, 13], [13, 14], [14, 15], [15, 16],
+            [0, 17], [17, 18], [18, 19], [19, 20],
+            [5, 9], [9, 13], [13, 17]
+        ];
+
+        const mpHands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        mpHands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.5
+        });
+
+        mpHands.onResults(onResults);
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: 'user' }
+                });
+                videoElement.srcObject = stream;
+                videoElement.onloadedmetadata = () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    statusDot.classList.add('active');
+                    detectLoop();
+                };
+            } catch (err) {
+                console.error('Camera error:', err);
+                document.getElementById('statusText').textContent = 'No cam';
+            }
+        }
+
+        async function detectLoop() {
+            if (videoElement.readyState >= 2) {
+                await mpHands.send({ image: videoElement });
+            }
+            requestAnimationFrame(detectLoop);
+        }
+
+        function onResults(results) {
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            let leftDetected = false;
+            let rightDetected = false;
+
+            if (results.multiHandLandmarks && results.multiHandedness) {
+                results.multiHandLandmarks.forEach((landmarks, index) => {
+                    const handedness = results.multiHandedness[index].label;
+
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+                        color: handedness === 'Left' ? '#ff6b9d' : '#00f2fe',
+                        lineWidth: 2
+                    });
+                    drawLandmarks(canvasCtx, landmarks, {
+                        color: handedness === 'Left' ? '#ff6b9d' : '#00f2fe',
+                        lineWidth: 1,
+                        radius: 3
+                    });
+
+                    if (handedness === 'Left') {
+                        rightDetected = true;
+                        processHand(landmarks, 'right');
+                    } else {
+                        leftDetected = true;
+                        processHand(landmarks, 'left');
+                    }
+                });
+            }
+
+            if (!leftDetected) {
+                leftHandCursor.style.display = 'none';
+                hands.left.pressing = false;
+            }
+            if (!rightDetected) {
+                rightHandCursor.style.display = 'none';
+                hands.right.pressing = false;
+            }
+        }
+
+        function processHand(landmarks, side) {
+            const indexTip = landmarks[8];
+            const thumbTip = landmarks[4];
+
+            const rawX = (1 - indexTip.x) * window.innerWidth;
+            const rawY = indexTip.y * window.innerHeight;
+
+            hands[side].x += (rawX - hands[side].x) * CONFIG.smoothingFactor;
+            hands[side].y += (rawY - hands[side].y) * CONFIG.smoothingFactor;
+
+            const cursor = side === 'left' ? leftHandCursor : rightHandCursor;
+            cursor.style.display = 'block';
+            cursor.style.left = (hands[side].x - 25) + 'px';
+            cursor.style.top = (hands[side].y - 25) + 'px';
+
+            const pinchDistance = Math.sqrt(
+                Math.pow(indexTip.x - thumbTip.x, 2) +
+                Math.pow(indexTip.y - thumbTip.y, 2) +
+                Math.pow(indexTip.z - thumbTip.z, 2)
+            );
+
+            hands[side].prevPressing = hands[side].pressing;
+            hands[side].pressing = pinchDistance < CONFIG.pinchThreshold;
+
+            cursor.classList.toggle('pressing', hands[side].pressing);
+
+            // When pinch happens, sort the selected item
+            if (hands[side].pressing && !hands[side].prevPressing) {
+                sortSelectedItemWithHand(side);
+            }
+        }
+
+        // ==================== MOUSE FALLBACK ====================
+        let mouseMode = false;
+        let mouseDown = false;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'm' || e.key === 'M') {
+                mouseMode = !mouseMode;
+                alert('Mouse mode: ' + (mouseMode ? 'ON' : 'OFF'));
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!mouseMode) return;
+            rightHandCursor.style.display = 'block';
+            rightHandCursor.style.left = (e.clientX - 25) + 'px';
+            rightHandCursor.style.top = (e.clientY - 25) + 'px';
+            if (mouseDown && grabbedItem) {
+                moveGrab(e.clientX, e.clientY);
+            }
+        });
+
+        document.addEventListener('mousedown', (e) => {
+            if (!mouseMode) return;
+            mouseDown = true;
+            rightHandCursor.classList.add('pressing');
+            startGrab(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!mouseMode) return;
+            mouseDown = false;
+            rightHandCursor.classList.remove('pressing');
+            releaseGrab(e.clientX, e.clientY);
+        });
+
+        // ==================== BACKGROUND ANIMATION ====================
+        function createMusicNotes() {
+            const container = document.getElementById('bgAnimation');
+            const notes = ['♻️', '🍃', '🌱', '🍀', '🌍', '💧'];
+            for (let i = 0; i < 15; i++) {
+                const note = document.createElement('div');
+                note.className = 'music-note';
+                note.textContent = notes[Math.floor(Math.random() * notes.length)];
+                note.style.left = Math.random() * 100 + 'vw';
+                note.style.animationDelay = Math.random() * 15 + 's';
+                note.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                container.appendChild(note);
+            }
+        }
+
+        // ==================== MAIN LOOP ====================
+        function gameLoop() {
+            const now = performance.now();
+            const dt = (now - lastFrameTime) / 1000;
+            lastFrameTime = now;
+
+            updateItems(dt);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeNavigation();
+            createMusicNotes();
+            setupCamera();
+            updateStats();
+
+            // Init audio on first user interaction
+            document.addEventListener('click', () => { initAudio(); }, { once: true });
+            document.addEventListener('touchstart', () => { initAudio(); }, { once: true });
+
+            startLevel();
+            lastFrameTime = performance.now();
+            gameLoop();
+        });
+    </script>
+</body>
+</html>

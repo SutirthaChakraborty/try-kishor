@@ -1,0 +1,1881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraction Pizza Party – Slice & Share</title>
+
+    <!-- OpenDyslexic Font for better readability -->
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-tertiary: #0f3460;
+            --text-primary: #ffffff;
+            --text-secondary: #b8b8d1;
+            --accent-pink: #ff6b9d;
+            --accent-purple: #c44fff;
+            --accent-blue: #4facfe;
+            --accent-cyan: #00f2fe;
+            --accent-green: #55efc4;
+            --accent-yellow: #ffeaa7;
+            --accent-orange: #fdcb6e;
+            --accent-red: #ff7675;
+            --glow: 0 0 20px rgba(79, 172, 254, 0.5);
+            --shadow: 0 10px 40px rgba(0,0,0,0.4);
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', cursive, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.8;
+            letter-spacing: 0.05em;
+            color: var(--text-primary);
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+        }
+
+        .music-note {
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.15;
+            animation: floatNote 15s infinite ease-in-out;
+        }
+
+        @keyframes floatNote {
+            0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+            10% { opacity: 0.15; }
+            90% { opacity: 0.15; }
+            100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+        }
+
+        /* Hand Cursors */
+        .hand-cursor {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            transition: transform 0.05s ease-out;
+            display: none;
+        }
+
+        .hand-cursor.left {
+            background: radial-gradient(circle, var(--accent-pink) 0%, transparent 70%);
+            border: 3px solid var(--accent-pink);
+            box-shadow: 0 0 20px var(--accent-pink);
+        }
+
+        .hand-cursor.right {
+            background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 70%);
+            border: 3px solid var(--accent-cyan);
+            box-shadow: 0 0 20px var(--accent-cyan);
+        }
+
+        .hand-cursor.pressing {
+            transform: scale(0.7);
+        }
+
+        .hand-cursor.wiggle {
+            animation: wiggle 0.4s ease;
+        }
+
+        @keyframes wiggle {
+            0% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            50% { transform: translateX(6px); }
+            75% { transform: translateX(-4px); }
+            100% { transform: translateX(0); }
+        }
+
+        /* Main Container */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 15px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(196, 79, 255, 0.3) 0%, rgba(79, 172, 254, 0.3) 100%);
+            border-radius: var(--radius);
+            margin-bottom: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, var(--accent-orange), var(--accent-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Dynamic Navigation Bar */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Camera Preview */
+        .camera-preview {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid var(--accent-purple);
+            box-shadow: var(--glow);
+            z-index: 100;
+            background: #000;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .camera-preview canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.active {
+            background: #2ecc71;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Instructions Panel */
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 2px solid rgba(255,255,255,0.1);
+            max-width: 280px;
+            z-index: 100;
+        }
+
+        .instructions h4 {
+            color: var(--accent-cyan);
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .instructions p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .instructions p span {
+            font-size: 1.2rem;
+        }
+
+        /* Level Selector */
+        .level-selector {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .level-btn {
+            padding: 8px 22px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-secondary);
+            border: 2px solid transparent;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .level-btn:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .level-btn.easy.active {
+            background: rgba(85, 239, 196, 0.2);
+            color: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        .level-btn.medium.active {
+            background: rgba(253, 203, 110, 0.2);
+            color: var(--accent-orange);
+            border-color: var(--accent-orange);
+        }
+
+        .level-btn.hard.active {
+            background: rgba(255, 118, 117, 0.2);
+            color: var(--accent-red);
+            border-color: var(--accent-red);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            padding: 8px 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50px;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-item span {
+            font-size: 1.2rem;
+        }
+
+        /* Sound Toggle */
+        .sound-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Game Area */
+        .game-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: var(--radius);
+            padding: 20px;
+            border: 2px solid rgba(255,255,255,0.1);
+            min-height: 430px;
+            position: relative;
+        }
+
+        .pizza-lab {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .pizza-stage {
+            position: relative;
+            border-radius: 15px;
+            background: radial-gradient(circle at top, rgba(255,255,255,0.08), transparent 60%),
+                        radial-gradient(circle at bottom, rgba(255,255,255,0.08), transparent 60%),
+                        linear-gradient(180deg, rgba(15,52,96,0.95), rgba(22,33,62,0.95));
+            overflow: hidden;
+        }
+
+        #pizzaCanvas {
+            width: 100%;
+            height: 260px;
+            display: block;
+        }
+
+        .pizza-label {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 12px;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.3);
+            font-size: 0.85rem;
+            color: var(--accent-yellow);
+        }
+
+        .pizza-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .prompt-text {
+            flex: 1 1 220px;
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        .prompt-highlight {
+            font-size: 1.3rem;
+            color: var(--accent-yellow);
+        }
+
+        .explanation-text {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .control-btn {
+            padding: 8px 16px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .control-btn:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .control-btn.primary {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            border-color: var(--accent-cyan);
+        }
+
+        .control-btn.primary:hover {
+            box-shadow: var(--glow);
+        }
+
+        .fraction-row {
+            margin-top: 8px;
+        }
+
+        .fraction-title {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .fraction-tiles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .fraction-tile {
+            padding: 12px 24px;
+            border-radius: 15px;
+            border: 3px solid rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.8rem;
+            min-width: 80px;
+            min-height: 60px;
+            transition: all 0.2s ease;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .fraction-tile:hover {
+            transform: translateY(-2px) scale(1.05);
+            background: rgba(0,0,0,0.7);
+            border-color: rgba(255,255,255,0.8);
+        }
+
+        .fraction-tile.correct {
+            border-color: var(--accent-green);
+            box-shadow: 0 0 15px rgba(85,239,196,0.8);
+        }
+
+        .fraction-tile.wrong {
+            border-color: var(--accent-red);
+            box-shadow: 0 0 15px rgba(255,118,117,0.8);
+        }
+
+        .fraction-tile.active {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(79,172,254,0.8);
+        }
+
+        .multi-pizza-section {
+            margin-top: 10px;
+        }
+
+        .multi-pizza-title {
+            text-align: center;
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .multi-pizza-title strong {
+            color: var(--accent-yellow);
+        }
+
+        .multi-pizza-row {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 4px;
+        }
+
+        .pizza-option {
+            width: 160px;
+            border-radius: 20px;
+            border: 3px solid rgba(255,255,255,0.5);
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            overflow: hidden;
+        }
+
+        .pizza-option:hover {
+            transform: translateY(-3px) scale(1.05);
+            border-color: rgba(255,255,255,0.8);
+            background: rgba(0,0,0,0.7);
+        }
+
+        .pizza-option.correct {
+            box-shadow: 0 0 20px rgba(85,239,196,1);
+            border-color: var(--accent-green);
+        }
+
+        .pizza-option.wrong {
+            box-shadow: 0 0 20px rgba(255,118,117,1);
+            border-color: var(--accent-red);
+        }
+
+        .pizza-option canvas {
+            width: 100%;
+            height: 130px;
+            display: block;
+        }
+
+        .pizza-option-label {
+            font-size: 1rem;
+            color: var(--text-primary);
+            padding: 8px 10px 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Game Message */
+        .game-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 30px 50px;
+            border-radius: var(--radius);
+            font-size: 1.8rem;
+            font-weight: bold;
+            z-index: 2000;
+            animation: popIn 0.4s ease;
+            display: none;
+            text-align: center;
+        }
+
+        .game-message.success {
+            background: linear-gradient(135deg, var(--accent-green), var(--accent-cyan));
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-green);
+        }
+
+        .game-message.error {
+            background: linear-gradient(135deg, var(--accent-red), var(--accent-orange));
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-red);
+        }
+
+        .game-message.info {
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+            color: #fff;
+            box-shadow: 0 0 50px var(--accent-purple);
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 12px;
+            height: 12px;
+            top: -20px;
+            border-radius: 2px;
+            animation: confettiFall 3s linear forwards;
+            z-index: 4000;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Level Complete Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-tertiary));
+            padding: 50px;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 3px solid var(--accent-purple);
+            box-shadow: 0 0 50px var(--accent-purple);
+            animation: bounceIn 0.5s ease;
+            max-width: 90%;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0) rotate(-5deg); }
+            50% { transform: scale(1.1) rotate(3deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .modal-content h2 {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, var(--accent-yellow), var(--accent-orange));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .modal-stars {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-score {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 25px;
+        }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .header h1 {
+                font-size: 1.7rem;
+            }
+            .camera-preview {
+                width: 160px;
+                height: 120px;
+            }
+            .instructions {
+                display: none;
+            }
+            #pizzaCanvas {
+                height: 220px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.4rem;
+            }
+            .level-btn {
+                padding: 6px 14px;
+                font-size: 0.85rem;
+            }
+            .pizza-option {
+                width: 140px;
+            }
+            .fraction-tile {
+                padding: 10px 18px;
+                font-size: 1.5rem;
+                min-width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-title">📚 Learning Games</div>
+            <div class="nav-menu" id="navMenu"></div>
+        </div>
+    </div>
+
+    <!-- Animated Background -->
+    <div class="bg-animation" id="bgAnimation"></div>
+
+    <!-- Hand Cursors -->
+    <div class="hand-cursor left" id="leftHandCursor"></div>
+    <div class="hand-cursor right" id="rightHandCursor"></div>
+
+    <!-- Game Message -->
+    <div class="game-message" id="gameMessage"></div>
+
+    <!-- Level Complete Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-content">
+            <h2>🍕 Fraction Star! 🍕</h2>
+            <div class="modal-stars">⭐⭐⭐</div>
+            <div class="modal-score">Score: <span id="finalScore">0</span></div>
+            <button class="control-btn primary" onclick="nextChallenge()">New Pizza →</button>
+        </div>
+    </div>
+
+    <!-- Sound Toggle -->
+    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+
+    <!-- Camera Preview -->
+    <div class="camera-preview">
+        <video id="videoElement" autoplay playsinline></video>
+        <canvas id="canvasOverlay"></canvas>
+        <div class="camera-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Camera</span>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <h4>🖐️ How to Play</h4>
+        <p><span>👆</span> Move your hand to move the cutter</p>
+        <p><span>✊</span> Pinch and drag across the pizza to cut</p>
+        <p><span>🔢</span> Match pizzas to the right fraction</p>
+        <p><span>⌨️</span> Press M for mouse mode</p>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>2️⃣ Fraction Pizza Party – Slice & Share</h1>
+            <p>Cut and share pizzas with your hands to learn halves, thirds, quarters and more.</p>
+        </header>
+
+        <!-- Level Selector -->
+        <div class="level-selector">
+            <button class="level-btn easy active" onclick="selectLevel('easy')">🟢 Easy (½ & ¼)</button>
+            <button class="level-btn medium" onclick="selectLevel('medium')">🟡 Medium (⅓ & ⅙)</button>
+            <button class="level-btn hard" onclick="selectLevel('hard')">🔴 Hard (Which pizza is ¾?)</button>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <span>⭐</span> Score: <strong id="scoreDisplay">0</strong>
+            </div>
+            <div class="stat-item">
+                <span>🔥</span> Streak: <strong id="streakDisplay">0</strong>
+            </div>
+            <div class="stat-item">
+                <span>🍕</span> Pizzas done: <strong id="pizzaDoneDisplay">0</strong>
+            </div>
+            <div class="stat-item">
+                <span>📊</span> Correct matches: <strong id="correctDisplay">0</strong>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div class="game-container">
+            <div class="pizza-lab">
+                <div class="pizza-stage">
+                    <canvas id="pizzaCanvas"></canvas>
+                    <div class="pizza-label" id="pizzaLabel">Pinch and drag to cut equal slices</div>
+                </div>
+
+                <div class="pizza-controls">
+                    <div class="prompt-text">
+                        <div>
+                            Prompt:
+                            <span class="prompt-highlight" id="promptHighlight">Make one half.</span>
+                        </div>
+                        <div class="explanation-text" id="explanationText">
+                            Voice: “This is one half – two equal pieces.”
+                        </div>
+                    </div>
+                    <div>
+                        <button class="control-btn" onclick="clearPizza()">🧽 Clear Pizza</button>
+                        <button class="control-btn primary" onclick="nextTask()">🔁 New Task</button>
+                    </div>
+                </div>
+
+                <div class="fraction-row" id="fractionRow">
+                    <div class="fraction-title" id="fractionTitle">
+                        Drag the right fraction tile onto the pizza (or tap with your hand).
+                    </div>
+                    <div class="fraction-tiles" id="fractionTiles"></div>
+                </div>
+
+                <div class="multi-pizza-section hidden" id="multiPizzaSection">
+                    <div class="multi-pizza-title">
+                        <span id="multiPizzaPrompt">
+                            Which pizza shows <strong>¾</strong>? Tap to choose.
+                        </span>
+                    </div>
+                    <div class="multi-pizza-row" id="multiPizzaRow"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== DYNAMIC NAVIGATION ====================
+        const GAMES_CONFIG = {
+            'index.html':              { name: '🔤 Alphabet & Colors', description: 'Learn letters and colors with drag & drop' },
+            'planets.html':            { name: '🪐 Planets', description: 'Explore our solar system' },
+            'exploring_body.html':     { name: '🧬 Body Explorer', description: 'Learn about human body parts' },
+            'frost_discovery.html':    { name: '❄️ Frost Discovery', description: 'Reveal and learn hidden items' },
+            'hand_music.html':         { name: '🎵 Music Hands', description: 'Learn music with hand gestures' },
+            'melt_the_ice.html':       { name: '🌈 Melt the Ice', description: 'Melt ice to discover pictures' },
+            'science-lab.html':        { name: '🧪 Science Lab', description: 'Perform fun experiments' },
+            'rhythm_conductor.html':   { name: '🥁 Rhythm Conductor', description: 'Move to the beat & learn tempo' },
+            'recycling_sorter.html':   { name: '♻️ Recycling Sorter', description: 'Sort rubbish into the correct bin' },
+            'shape_symmetry_lab.html': { name: '🔷 Shape & Symmetry Lab', description: 'Draw shapes with a magic mirror' },
+            'fraction_pizza_party.html': { name: '🍕 Fraction Pizza Party', description: 'Slice and share pizzas to learn fractions' }
+        };
+
+        function initializeNavigation() {
+            const navMenu = document.getElementById('navMenu');
+            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
+            navMenu.innerHTML = '';
+
+            for (const [file, config] of Object.entries(GAMES_CONFIG)) {
+                const link = document.createElement('a');
+                link.className = 'nav-link';
+                link.href = file;
+                link.textContent = config.name;
+                link.title = config.description;
+                if (currentFile === file) link.classList.add('active');
+                navMenu.appendChild(link);
+            }
+        }
+
+        // ==================== CONFIG & STATE ====================
+        const CONFIG = {
+            pinchThreshold: 0.07,
+            smoothingFactor: 0.4,
+            soundEnabled: true
+        };
+
+        let currentLevel = 'easy';
+        let score = 0;
+        let streak = 0;
+        let pizzasDone = 0;
+        let correctMatches = 0;
+
+        let audioCtx = null;
+
+        // Pizza drawing state
+        const pizzaCanvas = document.getElementById('pizzaCanvas');
+        const pizzaCtx = pizzaCanvas.getContext('2d');
+        let pizzaCenterX = 0;
+        let pizzaCenterY = 0;
+        let pizzaRadius = 0;
+        let pizzaSlices = 1;           // number of equal slices currently drawn
+        let shadedSlices = 0;          // number of shaded slices for visual fraction
+        let cutEnabled = true;         // only for cut tasks
+        let cutInProgress = false;
+        let cutStart = null;
+
+        // Task state
+        const promptHighlightEl = document.getElementById('promptHighlight');
+        const explanationEl = document.getElementById('explanationText');
+        const fractionRowEl = document.getElementById('fractionRow');
+        const fractionTitleEl = document.getElementById('fractionTitle');
+        const fractionTilesEl = document.getElementById('fractionTiles');
+        const multiPizzaSectionEl = document.getElementById('multiPizzaSection');
+        const multiPizzaRowEl = document.getElementById('multiPizzaRow');
+        const multiPizzaPromptEl = document.getElementById('multiPizzaPrompt');
+
+        let currentTask = null;
+        let easyIndex = 0;
+        let mediumIndex = 0;
+        let hardIndex = 0;
+
+        const FRACTION_DISPLAY = {
+            '1/2': '½',
+            '1/3': '⅓',
+            '1/4': '¼',
+            '1/6': '⅙',
+            '3/4': '¾'
+        };
+
+        const EASY_TASKS = [
+            {
+                type: 'cut',
+                targetSlices: 2,
+                prompt: 'Make one half.',
+                explanation: 'This is one half – two equal pieces.',
+                fraction: '1/2'
+            },
+            {
+                type: 'cut',
+                targetSlices: 4,
+                prompt: 'Cut the pizza into 4 equal slices.',
+                explanation: 'This is one quarter – four equal pieces.',
+                fraction: '1/4'
+            },
+            {
+                type: 'cut',
+                targetSlices: 2,
+                prompt: 'Share the pizza so 2 friends get the same size slice.',
+                explanation: 'Two equal pieces means one half each.',
+                fraction: '1/2'
+            },
+            {
+                type: 'cut',
+                targetSlices: 4,
+                prompt: 'Share the pizza so 4 friends get the same size slice.',
+                explanation: 'Four equal pieces means one quarter each.',
+                fraction: '1/4'
+            }
+        ];
+
+        const MEDIUM_TASKS = [
+            {
+                type: 'cut',
+                targetSlices: 3,
+                prompt: 'Cut the pizza into 3 equal slices.',
+                explanation: 'This is one third – three equal pieces.',
+                fraction: '1/3'
+            },
+            {
+                type: 'cut',
+                targetSlices: 6,
+                prompt: 'Cut the pizza into 6 equal slices.',
+                explanation: 'This is one sixth – six equal pieces.',
+                fraction: '1/6'
+            },
+            {
+                type: 'tile',
+                slices: 2,
+                shaded: 1,
+                prompt: 'Which fraction matches this pizza?',
+                explanation: 'Half the pizza is shaded.',
+                correctFraction: '1/2',
+                options: ['1/2', '1/3', '1/4']
+            },
+            {
+                type: 'tile',
+                slices: 4,
+                shaded: 1,
+                prompt: 'Which fraction matches the shaded part?',
+                explanation: 'One of four slices is shaded.',
+                correctFraction: '1/4',
+                options: ['1/4', '1/2', '1/6']
+            },
+            {
+                type: 'tile',
+                slices: 3,
+                shaded: 1,
+                prompt: 'Which fraction matches the shaded part?',
+                explanation: 'One of three slices is shaded.',
+                correctFraction: '1/3',
+                options: ['1/3', '1/2', '1/6']
+            },
+            {
+                type: 'tile',
+                slices: 6,
+                shaded: 1,
+                prompt: 'Which fraction matches the shaded part?',
+                explanation: 'One of six slices is shaded.',
+                correctFraction: '1/6',
+                options: ['1/6', '1/2', '1/4']
+            }
+        ];
+
+        const HARD_TASKS = [
+            {
+                type: 'multi',
+                prompt: 'Which pizza shows ¾? Tap to choose.',
+                explanation: 'Three of four equal slices are shaded.',
+                fraction: '3/4'
+            },
+            {
+                type: 'multi',
+                prompt: 'Which pizza shows ½?',
+                explanation: 'One of two slices is shaded.',
+                fraction: '1/2'
+            }
+        ];
+
+        // Hand tracking state
+        let hands = {
+            left:  { x: 0, y: 0, pressing: false, prevPressing: false },
+            right: { x: 0, y: 0, pressing: false, prevPressing: false }
+        };
+
+        // ==================== AUDIO ====================
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function toggleSound() {
+            CONFIG.soundEnabled = !CONFIG.soundEnabled;
+            document.getElementById('soundToggle').textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+        }
+
+        function playSoftPing() {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.value = 880;
+            const t = audioCtx.currentTime;
+            gain.gain.setValueAtTime(0.4, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+            osc.start(t);
+            osc.stop(t + 0.15);
+        }
+
+        function playSuccessJingle() {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const notes = [523.25, 659.25, 783.99];
+            notes.forEach((freq, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                const t = audioCtx.currentTime + i * 0.1;
+                gain.gain.setValueAtTime(0.4, t);
+                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+                osc.start(t);
+                osc.stop(t + 0.25);
+            });
+        }
+
+        function playErrorSound() {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sawtooth';
+            osc.frequency.value = 200;
+            const t = audioCtx.currentTime;
+            gain.gain.setValueAtTime(0.4, t);
+            gain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+            osc.start(t);
+            osc.stop(t + 0.25);
+        }
+
+        function speak(text, rate = 0.9) {
+            if (!CONFIG.soundEnabled) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = rate;
+            utterance.pitch = 1.05;
+            utterance.lang = 'en-US';
+            speechSynthesis.speak(utterance);
+        }
+
+        // ==================== UI HELPERS ====================
+        function updateStats() {
+            document.getElementById('scoreDisplay').textContent = score;
+            document.getElementById('streakDisplay').textContent = streak;
+            document.getElementById('pizzaDoneDisplay').textContent = pizzasDone;
+            document.getElementById('correctDisplay').textContent = correctMatches;
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('gameMessage');
+            msg.textContent = text;
+            msg.className = `game-message ${type}`;
+            msg.style.display = 'block';
+            setTimeout(() => { msg.style.display = 'none'; }, 1400);
+        }
+
+        function showLevelComplete() {
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('modalOverlay').style.display = 'flex';
+            createConfetti();
+        }
+
+        function nextChallenge() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            nextTask(true);
+        }
+
+        function createConfetti() {
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e91e63', '#00bcd4'];
+            for (let i = 0; i < 60; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(confetti);
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        // ==================== PIZZA CANVAS ====================
+        function resizePizzaCanvas() {
+            const rect = pizzaCanvas.getBoundingClientRect();
+            pizzaCanvas.width = rect.width * window.devicePixelRatio;
+            pizzaCanvas.height = rect.height * window.devicePixelRatio;
+            pizzaCtx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+
+            pizzaCenterX = rect.width / 2;
+            pizzaCenterY = rect.height / 2;
+            pizzaRadius = Math.min(rect.width, rect.height) * 0.4;
+
+            drawPizza();
+        }
+
+        window.addEventListener('resize', resizePizzaCanvas);
+
+        function clearPizza() {
+            pizzaSlices = 1;
+            shadedSlices = 0;
+            cutInProgress = false;
+            cutStart = null;
+            drawPizza();
+        }
+
+        function drawPizza() {
+            const w = pizzaCanvas.width / window.devicePixelRatio;
+            const h = pizzaCanvas.height / window.devicePixelRatio;
+            pizzaCtx.clearRect(0, 0, w, h);
+
+            // table shadow
+            pizzaCtx.fillStyle = 'rgba(0,0,0,0.35)';
+            pizzaCtx.beginPath();
+            pizzaCtx.ellipse(pizzaCenterX, pizzaCenterY + pizzaRadius * 0.75, pizzaRadius * 1.2, pizzaRadius * 0.4, 0, 0, Math.PI * 2);
+            pizzaCtx.fill();
+
+            // crust
+            pizzaCtx.fillStyle = '#e0a86a';
+            pizzaCtx.beginPath();
+            pizzaCtx.arc(pizzaCenterX, pizzaCenterY, pizzaRadius * 1.05, 0, Math.PI * 2);
+            pizzaCtx.fill();
+
+            // base
+            pizzaCtx.fillStyle = '#f5d6a1';
+            pizzaCtx.beginPath();
+            pizzaCtx.arc(pizzaCenterX, pizzaCenterY, pizzaRadius, 0, Math.PI * 2);
+            pizzaCtx.fill();
+
+            if (pizzaSlices < 1) pizzaSlices = 1;
+
+            const totalSlices = pizzaSlices;
+            const baseColour = '#f6c26b';
+            const shadeColour = '#ff7675';
+
+            for (let i = 0; i < totalSlices; i++) {
+                const startAngle = (i / totalSlices) * Math.PI * 2 - Math.PI / 2;
+                const endAngle = ((i + 1) / totalSlices) * Math.PI * 2 - Math.PI / 2;
+
+                pizzaCtx.beginPath();
+                pizzaCtx.moveTo(pizzaCenterX, pizzaCenterY);
+                pizzaCtx.arc(pizzaCenterX, pizzaCenterY, pizzaRadius, startAngle, endAngle);
+                pizzaCtx.closePath();
+
+                if (i < shadedSlices) {
+                    pizzaCtx.fillStyle = shadeColour;
+                } else {
+                    pizzaCtx.fillStyle = baseColour;
+                }
+                pizzaCtx.fill();
+            }
+
+            // slice outlines
+            pizzaCtx.strokeStyle = 'rgba(0,0,0,0.3)';
+            pizzaCtx.lineWidth = 2;
+            for (let i = 0; i < totalSlices; i++) {
+                const angle = (i / totalSlices) * Math.PI * 2 - Math.PI / 2;
+                pizzaCtx.beginPath();
+                pizzaCtx.moveTo(pizzaCenterX, pizzaCenterY);
+                pizzaCtx.lineTo(
+                    pizzaCenterX + pizzaRadius * Math.cos(angle),
+                    pizzaCenterY + pizzaRadius * Math.sin(angle)
+                );
+                pizzaCtx.stroke();
+            }
+
+            // outer ring
+            pizzaCtx.strokeStyle = 'rgba(0,0,0,0.55)';
+            pizzaCtx.lineWidth = 3;
+            pizzaCtx.beginPath();
+            pizzaCtx.arc(pizzaCenterX, pizzaCenterY, pizzaRadius, 0, Math.PI * 2);
+            pizzaCtx.stroke();
+        }
+
+        function registerCut(startX, startY, endX, endY) {
+            const dx = endX - startX;
+            const dy = endY - startY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 40) return; // ignore tiny wiggles
+
+            // each cut increases slice count by 1
+            pizzaSlices = Math.min(pizzaSlices + 1, 8);
+            shadedSlices = 0;
+            drawPizza();
+            playSoftPing();
+
+            if (currentTask && currentTask.type === 'cut') {
+                checkCutTaskComplete();
+            }
+        }
+
+        function checkCutTaskComplete() {
+            if (!currentTask || currentTask.type !== 'cut') return;
+            if (pizzaSlices === currentTask.targetSlices) {
+                shadedSlices = 1; // show one slice shaded to highlight 1/n
+                drawPizza();
+                score += 20;
+                streak++;
+                pizzasDone++;
+                correctMatches++;
+                updateStats();
+
+                const name = fractionName(currentTask.targetSlices);
+                const explanation = currentTask.explanation || '';
+                showMessage('🎉 Great! That is ' + name, 'success');
+                speak(explanation || ('This is ' + name + ', ' + currentTask.targetSlices + ' equal pieces.'), 0.85);
+                playSuccessJingle();
+
+                if (pizzasDone % 5 === 0) {
+                    setTimeout(() => showLevelComplete(), 900);
+                }
+            } else {
+                // gentle hint: need more/less cuts
+                if (pizzaSlices < currentTask.targetSlices) {
+                    speak('You need more slices. Keep cutting until all pieces are equal.', 0.9);
+                } else if (pizzaSlices > currentTask.targetSlices) {
+                    speak('That is too many slices. Try clearing and cutting again.', 0.9);
+                }
+            }
+        }
+
+        function fractionName(den) {
+            if (den === 2) return 'one half';
+            if (den === 3) return 'one third';
+            if (den === 4) return 'one quarter';
+            if (den === 6) return 'one sixth';
+            if (den === 8) return 'one eighth';
+            return 'one over ' + den;
+        }
+
+        // ==================== TASK & LEVEL LOGIC ====================
+        function selectLevel(level) {
+            currentLevel = level;
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.classList.contains(level)) btn.classList.add('active');
+            });
+
+            streak = 0;
+            pizzasDone = 0;
+            correctMatches = 0;
+            updateStats();
+
+            nextTask(true);
+
+            if (currentLevel === 'easy') {
+                speak('Easy level. Make halves and quarters with big clear slices.', 0.9);
+            } else if (currentLevel === 'medium') {
+                speak('Medium level. Use halves, thirds and sixths. Match picture to fraction.', 0.9);
+            } else {
+                speak('Hard level. Find which pizza shows the right fraction.', 0.9);
+            }
+        }
+
+        function nextTask(fromInit = false) {
+            if (currentLevel === 'easy') {
+                currentTask = EASY_TASKS[easyIndex % EASY_TASKS.length];
+                easyIndex++;
+            } else if (currentLevel === 'medium') {
+                currentTask = MEDIUM_TASKS[mediumIndex % MEDIUM_TASKS.length];
+                mediumIndex++;
+            } else {
+                currentTask = HARD_TASKS[hardIndex % HARD_TASKS.length];
+                hardIndex++;
+            }
+
+            setupTask(currentTask, fromInit);
+        }
+
+        function setupTask(task, fromInit) {
+            clearPizza();
+            document.getElementById('pizzaLabel').textContent = 'Pinch and drag to cut equal slices';
+
+            if (task.type === 'cut') {
+                cutEnabled = true;
+                shadedSlices = 0;
+                drawPizza();
+
+                fractionRowEl.classList.add('hidden');
+                multiPizzaSectionEl.classList.add('hidden');
+
+                promptHighlightEl.textContent = task.prompt;
+                explanationEl.textContent = 'Voice: ' + (task.explanation || '');
+                speak(task.prompt, 0.9);
+                setTimeout(() => speak('Make equal slices so everyone gets the same amount.', 0.85), 1000);
+
+                if (!fromInit) {
+                    pizzasDone++;
+                    updateStats();
+                }
+            } else if (task.type === 'tile') {
+                cutEnabled = false;
+                pizzaSlices = task.slices;
+                shadedSlices = task.shaded;
+                drawPizza();
+
+                fractionRowEl.classList.remove('hidden');
+                multiPizzaSectionEl.classList.add('hidden');
+
+                fractionTitleEl.textContent = 'Picture → fraction: Which fraction matches this shaded part?';
+                promptHighlightEl.textContent = task.prompt;
+                explanationEl.textContent = 'Voice: ' + (task.explanation || '');
+                setupFractionTiles(task.options, task.correctFraction);
+                speak(task.prompt, 0.9);
+                setTimeout(() => speak('Look at the shaded part. How many equal pieces? How many are shaded?', 0.85), 1200);
+
+                if (!fromInit) {
+                    pizzasDone++;
+                    updateStats();
+                }
+            } else if (task.type === 'multi') {
+                cutEnabled = false;
+                pizzaSlices = 4;
+                shadedSlices = 0;
+                drawPizza();
+                document.getElementById('pizzaLabel').textContent = 'Look at the pizzas below and choose the right one';
+
+                fractionRowEl.classList.add('hidden');
+                multiPizzaSectionEl.classList.remove('hidden');
+
+                multiPizzaPromptEl.innerHTML = `Which pizza shows <strong>${FRACTION_DISPLAY[task.fraction] || task.fraction}</strong>? Tap to choose.`;
+                promptHighlightEl.textContent = task.prompt;
+                explanationEl.textContent = 'Voice: ' + (task.explanation || '');
+                setupMultiPizzas(task.fraction);
+                speak(task.prompt, 0.9);
+                setTimeout(() => speak('Remember, this is ' + fractionSpoken(task.fraction) + '.', 0.85), 1200);
+
+                if (!fromInit) {
+                    pizzasDone++;
+                    updateStats();
+                }
+            }
+        }
+
+        function fractionSpoken(frac) {
+            if (frac === '1/2') return 'one half, two equal pieces';
+            if (frac === '1/3') return 'one third, three equal pieces';
+            if (frac === '1/4') return 'one quarter, four equal pieces';
+            if (frac === '1/6') return 'one sixth, six equal pieces';
+            if (frac === '3/4') return 'three quarters, three out of four equal pieces';
+            return frac;
+        }
+
+        function setupFractionTiles(options, correct) {
+            fractionTilesEl.innerHTML = '';
+            const shuffled = [...options].sort(() => Math.random() - 0.5);
+
+            shuffled.forEach(value => {
+                const tile = document.createElement('div');
+                tile.className = 'fraction-tile';
+                tile.dataset.value = value;
+                tile.textContent = FRACTION_DISPLAY[value] || value;
+
+                tile.addEventListener('click', () => {
+                    handleFractionTileSelection(tile, value, correct);
+                });
+
+                fractionTilesEl.appendChild(tile);
+            });
+        }
+
+        function handleFractionTileSelection(tile, chosen, correct) {
+            if (chosen === correct) {
+                tile.classList.add('correct');
+                score += 20;
+                streak++;
+                correctMatches++;
+                updateStats();
+                const spoken = fractionSpoken(correct);
+                showMessage('🎉 Correct!', 'success');
+                speak('Yes! This picture shows ' + spoken + '.', 0.9);
+                playSuccessJingle();
+
+                setTimeout(() => {
+                    nextTask();
+                }, 1200);
+            } else {
+                tile.classList.add('wrong');
+                streak = 0;
+                updateStats();
+                speak('Not quite. Try another fraction.', 0.9);
+                playErrorSound();
+                setTimeout(() => tile.classList.remove('wrong'), 900);
+            }
+        }
+
+        function setupMultiPizzas(targetFraction) {
+            multiPizzaRowEl.innerHTML = '';
+            const options = [];
+
+            if (targetFraction === '3/4') {
+                options.push({ slices: 4, shaded: 3, correct: true });
+                options.push({ slices: 4, shaded: 2, correct: false });
+                options.push({ slices: 6, shaded: 3, correct: false });
+            } else if (targetFraction === '1/2') {
+                options.push({ slices: 2, shaded: 1, correct: true });
+                options.push({ slices: 4, shaded: 1, correct: false });
+                options.push({ slices: 6, shaded: 3, correct: false });
+            } else {
+                options.push({ slices: 2, shaded: 1, correct: true });
+                options.push({ slices: 4, shaded: 1, correct: false });
+                options.push({ slices: 3, shaded: 1, correct: false });
+            }
+
+            const shuffled = [...options].sort(() => Math.random() - 0.5);
+
+            shuffled.forEach((cfg, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'pizza-option';
+                wrapper.dataset.correct = cfg.correct ? 'true' : 'false';
+
+                const canvas = document.createElement('canvas');
+                canvas.width = 120 * window.devicePixelRatio;
+                canvas.height = 100 * window.devicePixelRatio;
+                const ctx = canvas.getContext('2d');
+                ctx.setTransform(window.devicePixelRatio, 0, 0, window.devicePixelRatio, 0, 0);
+
+                drawMiniPizza(ctx, 120, 100, cfg.slices, cfg.shaded);
+
+                const label = document.createElement('div');
+                label.className = 'pizza-option-label';
+                label.textContent = 'Pizza ' + (idx + 1);
+
+                wrapper.appendChild(canvas);
+                wrapper.appendChild(label);
+
+                wrapper.addEventListener('click', () => {
+                    handlePizzaOptionSelection(wrapper);
+                });
+
+                multiPizzaRowEl.appendChild(wrapper);
+            });
+        }
+
+        function drawMiniPizza(ctx, w, h, slices, shaded) {
+            const cx = w / 2;
+            const cy = h / 2;
+            const r = Math.min(w, h) * 0.35;
+
+            ctx.clearRect(0, 0, w, h);
+
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.beginPath();
+            ctx.ellipse(cx, cy + r * 0.7, r * 1.1, r * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#e0a86a';
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * 1.05, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f5d6a1';
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            const baseColour = '#f6c26b';
+            const shadeColour = '#ff7675';
+            for (let i = 0; i < slices; i++) {
+                const startAngle = (i / slices) * Math.PI * 2 - Math.PI / 2;
+                const endAngle = ((i + 1) / slices) * Math.PI * 2 - Math.PI / 2;
+
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, r, startAngle, endAngle);
+                ctx.closePath();
+
+                ctx.fillStyle = i < shaded ? shadeColour : baseColour;
+                ctx.fill();
+            }
+
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < slices; i++) {
+                const angle = (i / slices) * Math.PI * 2 - Math.PI / 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = 'rgba(0,0,0,0.55)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        function handlePizzaOptionSelection(wrapper) {
+            const isCorrect = wrapper.dataset.correct === 'true';
+            if (isCorrect) {
+                wrapper.classList.add('correct');
+                score += 25;
+                streak++;
+                correctMatches++;
+                updateStats();
+                showMessage('🎉 Correct!', 'success');
+                speak('Yes! This pizza shows ' + fractionSpoken(currentTask.fraction) + '.', 0.9);
+                playSuccessJingle();
+                setTimeout(() => showLevelComplete(), 900);
+            } else {
+                wrapper.classList.add('wrong');
+                streak = 0;
+                updateStats();
+                speak('Not quite. Look again at how many equal pieces are shaded.', 0.9);
+                playErrorSound();
+                setTimeout(() => wrapper.classList.remove('wrong'), 900);
+            }
+        }
+
+        // ==================== TAPS VIA HAND OR MOUSE ====================
+        function handleTap(x, y) {
+            const elements = document.elementsFromPoint(x, y);
+
+            for (const el of elements) {
+                if (el.classList && el.classList.contains('fraction-tile')) {
+                    const value = el.dataset.value;
+                    if (currentTask && currentTask.type === 'tile') {
+                        handleFractionTileSelection(el, value, currentTask.correctFraction);
+                    }
+                    return;
+                }
+                if (el.classList && el.classList.contains('pizza-option')) {
+                    handlePizzaOptionSelection(el);
+                    return;
+                }
+            }
+        }
+
+        function handleCutGestureStart(x, y) {
+            if (!cutEnabled) {
+                // treat as tap instead
+                handleTap(x, y);
+                return;
+            }
+
+            const rect = pizzaCanvas.getBoundingClientRect();
+            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+                // maybe tap on tiles or options
+                handleTap(x, y);
+                return;
+            }
+
+            cutInProgress = true;
+            cutStart = { x, y };
+        }
+
+        function handleCutGestureMove(x, y) {
+            // we don't need to show live cut; only count when released
+        }
+
+        function handleCutGestureEnd(x, y) {
+            if (!cutInProgress || !cutStart) return;
+
+            const rect = pizzaCanvas.getBoundingClientRect();
+            if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+                cutInProgress = false;
+                cutStart = null;
+                return;
+            }
+
+            registerCut(cutStart.x, cutStart.y, x, y);
+            cutInProgress = false;
+            cutStart = null;
+        }
+
+        // ==================== MEDIAPIPE HANDS ====================
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('canvasOverlay');
+        const canvasCtx = canvasElement.getContext('2d');
+        const leftHandCursor = document.getElementById('leftHandCursor');
+        const rightHandCursor = document.getElementById('rightHandCursor');
+        const statusDot = document.getElementById('statusDot');
+
+        const HAND_CONNECTIONS = [
+            [0, 1], [1, 2], [2, 3], [3, 4],
+            [0, 5], [5, 6], [6, 7], [7, 8],
+            [0, 9], [9, 10], [10, 11], [11, 12],
+            [0, 13], [13, 14], [14, 15], [15, 16],
+            [0, 17], [17, 18], [18, 19], [19, 20],
+            [5, 9], [9, 13], [13, 17]
+        ];
+
+        const mpHands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        mpHands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.5
+        });
+
+        mpHands.onResults(onResults);
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: 'user' }
+                });
+                videoElement.srcObject = stream;
+                videoElement.onloadedmetadata = () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    statusDot.classList.add('active');
+                    detectLoop();
+                };
+            } catch (err) {
+                console.error('Camera error:', err);
+                document.getElementById('statusText').textContent = 'No cam';
+            }
+        }
+
+        async function detectLoop() {
+            if (videoElement.readyState >= 2) {
+                await mpHands.send({ image: videoElement });
+            }
+            requestAnimationFrame(detectLoop);
+        }
+
+        function onResults(results) {
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            let leftDetected = false;
+            let rightDetected = false;
+
+            if (results.multiHandLandmarks && results.multiHandedness) {
+                results.multiHandLandmarks.forEach((landmarks, index) => {
+                    const handedness = results.multiHandedness[index].label;
+
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {
+                        color: handedness === 'Left' ? '#ff6b9d' : '#00f2fe',
+                        lineWidth: 2
+                    });
+                    drawLandmarks(canvasCtx, landmarks, {
+                        color: handedness === 'Left' ? '#ff6b9d' : '#00f2fe',
+                        lineWidth: 1,
+                        radius: 3
+                    });
+
+                    if (handedness === 'Left') {
+                        rightDetected = true;
+                        processHand(landmarks, 'right');
+                    } else {
+                        leftDetected = true;
+                        processHand(landmarks, 'left');
+                    }
+                });
+            }
+
+            if (!leftDetected) {
+                leftHandCursor.style.display = 'none';
+                hands.left.pressing = false;
+            }
+            if (!rightDetected) {
+                rightHandCursor.style.display = 'none';
+                hands.right.pressing = false;
+            }
+        }
+
+        function processHand(landmarks, side) {
+            const indexTip = landmarks[8];
+            const thumbTip = landmarks[4];
+
+            const rawX = (1 - indexTip.x) * window.innerWidth;
+            const rawY = indexTip.y * window.innerHeight;
+
+            hands[side].x += (rawX - hands[side].x) * CONFIG.smoothingFactor;
+            hands[side].y += (rawY - hands[side].y) * CONFIG.smoothingFactor;
+
+            const cursor = side === 'left' ? leftHandCursor : rightHandCursor;
+            cursor.style.display = 'block';
+            cursor.style.left = (hands[side].x - 25) + 'px';
+            cursor.style.top = (hands[side].y - 25) + 'px';
+
+            const pinchDistance = Math.sqrt(
+                Math.pow(indexTip.x - thumbTip.x, 2) +
+                Math.pow(indexTip.y - thumbTip.y, 2) +
+                Math.pow(indexTip.z - thumbTip.z, 2)
+            );
+
+            hands[side].prevPressing = hands[side].pressing;
+            hands[side].pressing = pinchDistance < CONFIG.pinchThreshold;
+
+            cursor.classList.toggle('pressing', hands[side].pressing);
+
+            const x = hands[side].x;
+            const y = hands[side].y;
+
+            // Right hand is main interaction hand
+            if (side === 'right') {
+                if (hands[side].pressing && !hands[side].prevPressing) {
+                    handleCutGestureStart(x, y);
+                } else if (hands[side].pressing && hands[side].prevPressing) {
+                    handleCutGestureMove(x, y);
+                } else if (!hands[side].pressing && hands[side].prevPressing) {
+                    handleCutGestureEnd(x, y);
+                }
+            }
+        }
+
+        // ==================== MOUSE FALLBACK ====================
+        let mouseMode = false;
+        let mouseDown = false;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'm' || e.key === 'M') {
+                mouseMode = !mouseMode;
+                alert('Mouse mode: ' + (mouseMode ? 'ON' : 'OFF'));
+            }
+        });
+
+        pizzaCanvas.addEventListener('mousedown', (e) => {
+            if (!mouseMode) return;
+            mouseDown = true;
+            handleCutGestureStart(e.clientX, e.clientY);
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!mouseMode) return;
+            rightHandCursor.style.display = 'block';
+            rightHandCursor.style.left = (e.clientX - 25) + 'px';
+            rightHandCursor.style.top = (e.clientY - 25) + 'px';
+
+            if (mouseDown) {
+                handleCutGestureMove(e.clientX, e.clientY);
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!mouseMode) return;
+            if (mouseDown) {
+                handleCutGestureEnd(e.clientX, e.clientY);
+            } else {
+                // click selection outside pizza
+                handleTap(e.clientX, e.clientY);
+            }
+            mouseDown = false;
+        });
+
+        // Also allow click on tiles/options in mouse mode without dragging
+        fractionTilesEl.addEventListener('mousedown', (e) => {
+            if (!mouseMode) return;
+            handleTap(e.clientX, e.clientY);
+        });
+        multiPizzaRowEl.addEventListener('mousedown', (e) => {
+            if (!mouseMode) return;
+            handleTap(e.clientX, e.clientY);
+        });
+
+        // ==================== BACKGROUND ANIMATION ====================
+        function createMusicNotes() {
+            const container = document.getElementById('bgAnimation');
+            const notes = ['🍕', '🍰', '🍫', '🥧', '🍩', '📊'];
+            for (let i = 0; i < 15; i++) {
+                const note = document.createElement('div');
+                note.className = 'music-note';
+                note.textContent = notes[Math.floor(Math.random() * notes.length)];
+                note.style.left = Math.random() * 100 + 'vw';
+                note.style.animationDelay = Math.random() * 15 + 's';
+                note.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                container.appendChild(note);
+            }
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeNavigation();
+            createMusicNotes();
+            setupCamera();
+            resizePizzaCanvas();
+            updateStats();
+            nextTask(true);
+
+            document.addEventListener('click', () => { initAudio(); }, { once: true });
+            document.addEventListener('touchstart', () => { initAudio(); }, { once: true });
+        });
+    </script>
+</body>
+</html>

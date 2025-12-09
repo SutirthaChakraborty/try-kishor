@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Constellation Connect – Draw Real Night-Sky Shapes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Dyslexia-friendly font -->
+  <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+  <!-- Mediapipe -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+
+  <style>
+    :root {
+      --bg: #050816;
+      --sky: #0b1020;
+      --accent: #74B9FF;
+      --accent2: #A29BFE;
+      --text: #ECF0F1;
+      --star: #FFD700;
+      --error: #FF7675;
+      --success: #55EFC4;
+      --radius: 20px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'OpenDyslexic', system-ui, sans-serif;
+      background: radial-gradient(circle at top, #1b2845 0%, #050816 50%, #02010f 100%);
+      color: var(--text);
+      min-height: 100vh;
+      overflow: hidden;
+      letter-spacing: 0.05em;
+      word-spacing: 0.1em;
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+      padding: 16px;
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, #1e3a8a, #4c1d95);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      margin-bottom: 8px;
+    }
+
+    header p {
+      font-size: 1rem;
+      opacity: 0.9;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .sky-card {
+      background: linear-gradient(135deg, #050816, #0b1020);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      position: relative;
+    }
+
+    .controls-card {
+      background: rgba(5, 8, 22, 0.9);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+    }
+
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .title-row h2 {
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .level-buttons {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .level-btn {
+      border-radius: 999px;
+      border: 2px solid var(--accent2);
+      background: transparent;
+      color: var(--text);
+      padding: 6px 12px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .level-btn.active {
+      background: var(--accent2);
+      color: #050816;
+    }
+
+    .level-btn.completed::after {
+      content: ' ✓';
+    }
+
+    .instruction-text {
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      opacity: 0.9;
+    }
+
+    .sky-wrapper {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: radial-gradient(circle at top, #192447 0%, #050816 45%, #02010c 100%);
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .sky-canvas {
+      width: 100%;
+      height: 380px;
+      display: block;
+    }
+
+    .star-dots {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .star-dot {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 0%, var(--star) 40%, transparent 70%);
+      border: 2px solid rgba(255,255,255,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      font-weight: bold;
+      color: #050816;
+      text-shadow: 0 0 6px rgba(0,0,0,0.8);
+      pointer-events: auto;
+      box-shadow: 0 0 12px rgba(255,255,255,0.9);
+    }
+
+    .star-dot.current {
+      box-shadow: 0 0 18px var(--accent);
+      transform: scale(1.1);
+    }
+
+    .star-dot.done {
+      opacity: 0.6;
+    }
+
+    .status-row {
+      margin-top: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.9rem;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.2);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #e74c3c;
+      animation: pulse 1.5s infinite;
+    }
+
+    .status-dot.active {
+      background: #2ecc71;
+    }
+
+    @keyframes pulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.7; }
+    }
+
+    .progress {
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      overflow: hidden;
+      margin-top: 4px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--success), var(--accent));
+      transition: width 0.4s ease;
+    }
+
+    .hint-box {
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .hint-label {
+      font-weight: bold;
+      margin-bottom: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .hint-text {
+      font-style: italic;
+      opacity: 0.9;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 600px) {
+      .controls-grid { grid-template-columns: 1fr; }
+    }
+
+    .controls-item {
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .controls-item span {
+      display: block;
+      font-size: 1.4rem;
+      margin-bottom: 4px;
+    }
+
+    .primary-btn {
+      margin-top: 10px;
+      border-radius: 999px;
+      border: none;
+      padding: 8px 16px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #050816;
+      font-weight: bold;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+
+    .sound-btn {
+      position: fixed;
+      bottom: 16px;
+      right: 16px;
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent2);
+      font-size: 1.6rem;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.7);
+      z-index: 50;
+    }
+
+    .hand-cursor {
+      position: fixed;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 1000;
+      display: none;
+      border: 3px solid var(--accent);
+      background: radial-gradient(circle, rgba(116,185,255,0.5) 0%, transparent 70%);
+      transform: translate(-50%, -50%);
+    }
+
+    .hand-cursor.closed {
+      border-color: var(--success);
+      background: radial-gradient(circle, rgba(85,239,196,0.5) 0%, transparent 70%);
+      transform: translate(-50%, -50%) scale(0.9);
+    }
+
+    .camera-preview {
+      position: fixed;
+      bottom: 90px;
+      right: 16px;
+      width: 220px;
+      height: 165px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 3px solid var(--accent);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+      background: #000;
+      z-index: 40;
+    }
+
+    .camera-preview video,
+    .camera-preview canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+      display: block;
+    }
+
+    .feedback-bubble {
+      position: fixed;
+      left: 50%;
+      top: 8%;
+      transform: translateX(-50%);
+      padding: 10px 16px;
+      border-radius: 999px;
+      font-size: 1rem;
+      background: rgba(5,8,22,0.9);
+      border: 2px solid var(--success);
+      color: var(--text);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.8);
+      display: none;
+      z-index: 2000;
+    }
+
+    .feedback-bubble.error {
+      border-color: var(--error);
+    }
+  </style>
+</head>
+<body>
+  <!-- Hand cursor overlay -->
+  <div class="hand-cursor" id="handCursor"></div>
+
+  <!-- Small camera preview -->
+  <div class="camera-preview" id="cameraBox">
+    <video id="camVideo" autoplay playsinline></video>
+    <canvas id="camCanvas"></canvas>
+  </div>
+
+  <!-- Sound toggle + feedback -->
+  <button class="sound-btn" id="soundBtn">🔊</button>
+  <div class="feedback-bubble" id="feedbackBubble"></div>
+
+  <div class="app">
+    <header>
+      <h1>✨ Constellation Connect – Real Night-Sky Shapes</h1>
+      <p>
+        Use your hand to connect real constellations you can see in the night sky:
+        Orion, the Big Dipper, Cassiopeia, and Scorpius.
+      </p>
+    </header>
+
+    <div class="layout">
+      <!-- Sky / Game -->
+      <section class="sky-card">
+        <div class="title-row">
+          <h2>🌌 Draw the Constellation</h2>
+          <div class="level-buttons">
+            <button class="level-btn active" data-level="easy">🟢 Easy</button>
+            <button class="level-btn" data-level="medium">🟡 Medium</button>
+            <button class="level-btn" data-level="hard">🔴 Hard</button>
+          </div>
+        </div>
+
+        <p class="instruction-text">
+          ✋ Show your hand → 🤏 pinch on star 1 → move to star 2, 3, 4… in number order.
+        </p>
+
+        <div class="sky-wrapper">
+          <canvas id="skyCanvas" class="sky-canvas"></canvas>
+          <div class="star-dots" id="starDots"></div>
+        </div>
+
+        <div class="status-row">
+          <div class="status-badge">
+            <span class="status-dot" id="camStatusDot"></span>
+            <span id="statusText">Camera: starting…</span>
+          </div>
+          <div style="text-align:right; min-width: 120px;">
+            <div>Progress: <span id="progressLabel">0 / 0</span></div>
+            <div class="progress"><div class="progress-bar" id="progressBar"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Controls / Story -->
+      <section class="controls-card">
+        <div class="hint-box">
+          <div class="hint-label">💡 Hint / Clue:</div>
+          <div class="hint-text" id="hintText">
+            Pick a level, then connect the stars in number order.
+          </div>
+        </div>
+
+        <div class="hint-box">
+          <div class="hint-label">📖 Real-life fact:</div>
+          <div class="hint-text" id="storyText">
+            When you finish, I will say the real name of the constellation and a short fact about it.
+          </div>
+        </div>
+
+        <button class="primary-btn" id="nextBtn">▶️ New Constellation</button>
+
+        <h3 style="margin-top:16px; margin-bottom:8px;">🖐 How to move</h3>
+        <div class="controls-grid">
+          <div class="controls-item">
+            <span>✋</span>
+            Show your hand to move the glowing circle across the sky.
+          </div>
+          <div class="controls-item">
+            <span>🤏</span>
+            Pinch thumb and finger on star 1 to start drawing.
+          </div>
+          <div class="controls-item">
+            <span>🎯</span>
+            Move in order: 1 → 2 → 3… Lines glow when you connect correctly.
+          </div>
+          <div class="controls-item">
+            <span>🗣️</span>
+            When all stars are joined, I say the name and a real-life fact.
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ========== REAL CONSTELLATION DATA ==========
+    // Coordinates are in a simple 0–100% sky space (not real RA/Dec),
+    // but the shapes match how they look in the sky: belts, W-shape, spoon, curve.
+
+    const CONSTELLATIONS = [
+      // EASY – simple parts of real constellations
+      {
+        id: 'orionsBelt',
+        level: 'easy',
+        name: "Orion's Belt",
+        story: "Orion’s Belt is a line of three bright stars on the waist of Orion the Hunter. You can spot it on winter evenings in the night sky.",
+        clue: "Three bright stars in a straight line across the sky.",
+        stars: [
+          { x: 30, y: 50 },
+          { x: 50, y: 47 },
+          { x: 70, y: 44 }
+        ]
+      },
+      {
+        id: 'cassiopeiaMini',
+        level: 'easy',
+        name: 'Cassiopeia – little W',
+        story: "Cassiopeia is a constellation in the northern sky. Its brightest stars make a clear W shape that you can see on many nights.",
+        clue: "A tiny W shape made of stars.",
+        stars: [
+          { x: 20, y: 35 },
+          { x: 32, y: 30 },
+          { x: 44, y: 35 },
+          { x: 56, y: 30 },
+          { x: 68, y: 35 }
+        ]
+      },
+
+      // MEDIUM – bigger real asterisms
+      {
+        id: 'bigDipper',
+        level: 'medium',
+        name: 'Big Dipper – part of Ursa Major',
+        story: "The Big Dipper is made of seven bright stars. It is part of the constellation Ursa Major, the Great Bear, and looks like a bowl with a handle.",
+        clue: "Seven stars that make a spoon: a bowl and a handle.",
+        stars: [
+          // bowl
+          { x: 20, y: 60 }, // 1
+          { x: 35, y: 55 }, // 2
+          { x: 50, y: 58 }, // 3
+          { x: 62, y: 64 }, // 4
+          // handle
+          { x: 72, y: 55 }, // 5
+          { x: 82, y: 45 }, // 6
+          { x: 90, y: 40 }  // 7
+        ]
+      },
+      {
+        id: 'cassiopeiaFull',
+        level: 'medium',
+        name: 'Cassiopeia – the W',
+        story: "Cassiopeia’s five main stars draw a big W shape in the northern sky. Because of this, it is one of the easiest constellations to recognise.",
+        clue: "Five bright stars that draw a big W shape.",
+        stars: [
+          { x: 15, y: 40 },
+          { x: 30, y: 30 },
+          { x: 45, y: 40 },
+          { x: 60, y: 30 },
+          { x: 75, y: 40 }
+        ]
+      },
+
+      // HARD – more complete real constellations
+      {
+        id: 'orionHunter',
+        level: 'hard',
+        name: 'Orion – the Hunter',
+        story: "Orion is a famous constellation that looks like a hunter with a belt and a sword. The three stars of Orion’s Belt sit across his waist.",
+        clue: "A hunter in the sky, with a belt across his middle.",
+        stars: [
+          { x: 50, y: 20 }, // head
+          { x: 50, y: 35 }, // upper body
+          { x: 40, y: 45 }, // belt star 1
+          { x: 50, y: 47 }, // belt star 2
+          { x: 60, y: 49 }, // belt star 3
+          { x: 50, y: 65 }, // lower body
+          { x: 40, y: 80 }, // left leg
+          { x: 60, y: 80 }, // right leg
+          { x: 35, y: 32 }, // left shoulder / arm
+          { x: 65, y: 32 }  // right shoulder / arm
+        ]
+      },
+      {
+        id: 'scorpius',
+        level: 'hard',
+        name: 'Scorpius – the Scorpion',
+        story: "Scorpius is shaped like a scorpion. Near its middle is Antares, a huge, red supergiant star often called the heart of the scorpion.",
+        clue: "A long curve of stars with a hook at the tail, like a scorpion.",
+        stars: [
+          { x: 30, y: 25 }, // head
+          { x: 35, y: 35 },
+          { x: 40, y: 45 }, // Antares area
+          { x: 45, y: 55 },
+          { x: 52, y: 65 },
+          { x: 60, y: 74 },
+          { x: 70, y: 80 },
+          { x: 80, y: 72 }, // tail bend
+          { x: 85, y: 64 }  // stinger
+        ]
+      }
+    ];
+
+    // ========== STATE ==========
+    let currentLevel = 'easy';
+    let currentConstellation = null;
+    let currentIndex = 0;          // next star index to hit
+    let connectedSegments = [];    // {fromIndex,toIndex}
+    let isDrawing = false;
+
+    let handPos = { x: 0, y: 0 };
+    let isPinching = false;
+    let prevPinch = false;
+
+    const CONFIG = {
+      pinchThreshold: 0.08,
+      soundEnabled: true
+    };
+
+    // ========== DOM ==========
+    const skyCanvas   = document.getElementById('skyCanvas');
+    const skyCtx      = skyCanvas.getContext('2d');
+    const starDotsEl  = document.getElementById('starDots');
+    const progressBar = document.getElementById('progressBar');
+    const progressLabel = document.getElementById('progressLabel');
+    const hintText    = document.getElementById('hintText');
+    const storyText   = document.getElementById('storyText');
+    const nextBtn     = document.getElementById('nextBtn');
+    const soundBtn    = document.getElementById('soundBtn');
+    const feedbackBubble = document.getElementById('feedbackBubble');
+    const handCursor  = document.getElementById('handCursor');
+    const statusText  = document.getElementById('statusText');
+    const camStatusDot = document.getElementById('camStatusDot');
+
+    const camVideo  = document.getElementById('camVideo');
+    const camCanvas = document.getElementById('camCanvas');
+    const camCtx    = camCanvas.getContext('2d');
+
+    // ========== AUDIO / TTS ==========
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new AudioContextClass();
+      }
+    }
+
+    function playTone(freq, duration = 0.2) {
+      if (!CONFIG.soundEnabled || !audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function playSuccess() {
+      playTone(520,0.12);
+      setTimeout(()=>playTone(660,0.12),90);
+      setTimeout(()=>playTone(820,0.25),180);
+    }
+
+    function playError() {
+      playTone(200,0.3);
+    }
+
+    function speak(text, rate = 0.9) {
+      if (!CONFIG.soundEnabled) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = rate;
+      u.pitch = 1.05;
+      u.lang = 'en-US';
+      speechSynthesis.speak(u);
+    }
+
+    function showFeedback(msg, isError=false) {
+      feedbackBubble.textContent = msg;
+      feedbackBubble.classList.toggle('error', isError);
+      feedbackBubble.style.display = 'block';
+      setTimeout(()=>{ feedbackBubble.style.display = 'none'; }, 1200);
+    }
+
+    soundBtn.addEventListener('click', () => {
+      CONFIG.soundEnabled = !CONFIG.soundEnabled;
+      soundBtn.textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+    });
+
+    document.addEventListener('click', () => { initAudio(); }, { once: true });
+
+    // ========== LEVEL / CONSTELLATION LOGIC ==========
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random()* (i+1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function pickConstellation() {
+      const pool = CONSTELLATIONS.filter(c => c.level === currentLevel);
+      const picked = pool[Math.floor(Math.random() * pool.length)];
+      return picked;
+    }
+
+    function setLevel(level) {
+      currentLevel = level;
+      document.querySelectorAll('.level-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.level === level);
+      });
+      newRound();
+    }
+
+    function newRound() {
+      currentConstellation = pickConstellation();
+      currentIndex = 0;
+      connectedSegments = [];
+      updateProgress();
+      renderSky();
+      updateTexts();
+      if (currentLevel === 'hard') {
+        speak(currentConstellation.clue);
+      }
+    }
+
+    function updateProgress() {
+      const total = currentConstellation ? currentConstellation.stars.length : 0;
+      const done  = Math.min(currentIndex, total);
+      progressLabel.textContent = `${done} / ${total}`;
+      progressBar.style.width = total === 0 ? '0%' : ((done / total) * 100) + '%';
+    }
+
+    function updateTexts() {
+      if (!currentConstellation) return;
+      if (currentLevel === 'easy') {
+        hintText.textContent = 'Connect the stars in number order to see a simple part of a real constellation.';
+      } else if (currentLevel === 'medium') {
+        hintText.textContent = 'Connect the stars to draw: ' + currentConstellation.name + '.';
+      } else {
+        hintText.textContent = currentConstellation.clue;
+      }
+      storyText.textContent = 'When you join all the stars, you will draw ' +
+        currentConstellation.name + '. ' + currentConstellation.story;
+    }
+
+    // ========== SKY RENDERING ==========
+    function resizeCanvas() {
+      const rect = skyCanvas.getBoundingClientRect();
+      skyCanvas.width = rect.width;
+      skyCanvas.height = rect.height;
+      camCanvas.width = camVideo.videoWidth || 640;
+      camCanvas.height = camVideo.videoHeight || 480;
+      renderSky();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    function renderSky() {
+      const w = skyCanvas.width;
+      const h = skyCanvas.height;
+      skyCtx.clearRect(0,0,w,h);
+
+      // background stars
+      skyCtx.fillStyle = 'rgba(255,255,255,0.9)';
+      for (let i = 0; i < 60; i++) {
+        const x = Math.random() * w;
+        const y = Math.random() * h;
+        const r = Math.random() * 1.2;
+        skyCtx.globalAlpha = Math.random();
+        skyCtx.beginPath();
+        skyCtx.arc(x,y,r,0,Math.PI*2);
+        skyCtx.fill();
+      }
+      skyCtx.globalAlpha = 1;
+
+      // lines between connected stars
+      skyCtx.lineWidth = 3;
+      skyCtx.strokeStyle = '#74B9FF';
+      skyCtx.lineCap = 'round';
+      if (currentConstellation) {
+        connectedSegments.forEach(seg => {
+          const a = currentConstellation.stars[seg.from];
+          const b = currentConstellation.stars[seg.to];
+          const ax = a.x / 100 * w;
+          const ay = a.y / 100 * h;
+          const bx = b.x / 100 * w;
+          const by = b.y / 100 * h;
+          skyCtx.beginPath();
+          skyCtx.moveTo(ax, ay);
+          skyCtx.lineTo(bx, by);
+          skyCtx.stroke();
+        });
+      }
+
+      // numbered star dots as DOM
+      starDotsEl.innerHTML = '';
+      if (!currentConstellation) return;
+      currentConstellation.stars.forEach((star, idx) => {
+        const dot = document.createElement('div');
+        dot.className = 'star-dot';
+        if (idx < currentIndex) dot.classList.add('done');
+        if (idx === currentIndex) dot.classList.add('current');
+        dot.textContent = idx + 1;
+        const px = star.x / 100 * w;
+        const py = star.y / 100 * h;
+        dot.style.left = (px - 15) + 'px';
+        dot.style.top  = (py - 15) + 'px';
+        starDotsEl.appendChild(dot);
+      });
+    }
+
+    // ========== HAND + CONNECT LOGIC ==========
+    function distance(x1,y1,x2,y2) {
+      const dx = x1 - x2;
+      const dy = y1 - y2;
+      return Math.sqrt(dx*dx + dy*dy);
+    }
+
+    function updateHandCursor() {
+      handCursor.style.left = handPos.x + 'px';
+      handCursor.style.top  = handPos.y + 'px';
+      handCursor.style.display = 'block';
+      handCursor.classList.toggle('closed', isPinching);
+    }
+
+    function tickConnectLogic() {
+      if (!currentConstellation) {
+        requestAnimationFrame(tickConnectLogic);
+        return;
+      }
+      if (!skyCanvas.width) {
+        requestAnimationFrame(tickConnectLogic);
+        return;
+      }
+
+      updateHandCursor();
+
+      const rect = skyCanvas.getBoundingClientRect();
+      const x = handPos.x - rect.left;
+      const y = handPos.y - rect.top;
+
+      const total = currentConstellation.stars.length;
+      if (total === 0) {
+        requestAnimationFrame(tickConnectLogic);
+        return;
+      }
+
+      const nextIndex = currentIndex;
+      const nextStar = currentConstellation.stars[nextIndex];
+      const radiusPx = 40; // hit radius
+
+      const sx = nextStar.x / 100 * skyCanvas.width;
+      const sy = nextStar.y / 100 * skyCanvas.height;
+      const d  = distance(x,y,sx,sy);
+
+      // start drawing when we pinch near the next star
+      if (isPinching && !prevPinch && d <= radiusPx) {
+        isDrawing = true;
+        showFeedback('Start at star ' + (nextIndex + 1));
+      }
+
+      // while drawing, if we move into the next star in order
+      if (isDrawing && isPinching && d <= radiusPx && nextIndex < total) {
+        if (nextIndex > 0) {
+          connectedSegments.push({ from: nextIndex - 1, to: nextIndex });
+        }
+        currentIndex++;
+        updateProgress();
+        renderSky();
+
+        if (currentIndex >= total) {
+          isDrawing = false;
+          onFinishedConstellation();
+        }
+      }
+
+      // if we release pinch, stop drawing
+      if (!isPinching && prevPinch) {
+        isDrawing = false;
+      }
+
+      prevPinch = isPinching;
+      requestAnimationFrame(tickConnectLogic);
+    }
+
+    function onFinishedConstellation() {
+      playSuccess();
+      const msg = 'Great! You drew ' + currentConstellation.name + '.';
+      showFeedback('✨ Finished: ' + currentConstellation.name);
+      speak(currentConstellation.name + '. ' + currentConstellation.story);
+    }
+
+    // ========== MEDIAPIPE SETUP ==========
+    const holistic = new Holistic({
+      locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
+    });
+
+    holistic.setOptions({
+      modelComplexity: 1,
+      smoothLandmarks: true,
+      enableSegmentation: false,
+      refineFaceLandmarks: false,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+
+    holistic.onResults(onResults);
+
+    async function setupCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, facingMode: 'user' }
+        });
+        camVideo.srcObject = stream;
+        camVideo.onloadedmetadata = () => {
+          camCanvas.width = camVideo.videoWidth;
+          camCanvas.height = camVideo.videoHeight;
+          camStatusDot.classList.add('active');
+          statusText.textContent = 'Camera: on';
+          startDetectionLoop();
+          resizeCanvas();
+        };
+      } catch (err) {
+        console.error(err);
+        statusText.textContent = 'Camera: error';
+        camStatusDot.classList.remove('active');
+      }
+    }
+
+    async function startDetectionLoop() {
+      if (camVideo.readyState >= 2) {
+        await holistic.send({ image: camVideo });
+      }
+      requestAnimationFrame(startDetectionLoop);
+    }
+
+    function onResults(results) {
+      camCtx.save();
+      camCtx.clearRect(0,0,camCanvas.width,camCanvas.height);
+      camCtx.drawImage(results.image, 0, 0, camCanvas.width, camCanvas.height);
+
+      let handLandmarks = null;
+      if (results.rightHandLandmarks) handLandmarks = results.rightHandLandmarks;
+      else if (results.leftHandLandmarks) handLandmarks = results.leftHandLandmarks;
+
+      if (handLandmarks) {
+        drawConnectors(camCtx, handLandmarks, HAND_CONNECTIONS, { color: '#74B9FF', lineWidth: 2 });
+        drawLandmarks(camCtx, handLandmarks, { color: '#55EFC4', lineWidth: 1, radius: 3 });
+        processHand(handLandmarks);
+      } else {
+        handCursor.style.display = 'none';
+      }
+      camCtx.restore();
+    }
+
+    const HAND_CONNECTIONS = [
+      [0,1],[1,2],[2,3],[3,4],
+      [0,5],[5,6],[6,7],[7,8],
+      [0,9],[9,10],[10,11],[11,12],
+      [0,13],[13,14],[14,15],[15,16],
+      [0,17],[17,18],[18,19],[19,20],
+      [5,9],[9,13],[13,17]
+    ];
+
+    function processHand(landmarks) {
+      const indexTip = landmarks[8];
+      const thumbTip = landmarks[4];
+
+      const rawX = (1 - indexTip.x) * window.innerWidth;
+      const rawY = indexTip.y * window.innerHeight;
+      // light smoothing
+      handPos.x = handPos.x + (rawX - handPos.x) * 0.3;
+      handPos.y = handPos.y + (rawY - handPos.y) * 0.3;
+
+      const dx = indexTip.x - thumbTip.x;
+      const dy = indexTip.y - thumbTip.y;
+      const dz = indexTip.z - thumbTip.z;
+      const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+      isPinching = dist < CONFIG.pinchThreshold;
+    }
+
+    // ========== INIT ==========
+    document.querySelectorAll('.level-btn').forEach(btn => {
+      btn.addEventListener('click', () => setLevel(btn.dataset.level));
+    });
+
+    nextBtn.addEventListener('click', () => {
+      newRound();
+    });
+
+    window.addEventListener('load', () => {
+      setupCamera();
+      newRound();
+      requestAnimationFrame(tickConnectLogic);
+    });
+  </script>
+</body>
+</html>

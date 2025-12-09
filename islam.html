@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Learn Good Deeds - Islamic Kids</title>
+
+    <!-- OpenDyslexic Font for better readability -->
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-primary: #FFF8E7;
+            --bg-secondary: #FFE4C4;
+            --text-primary: #2D3436;
+            --text-secondary: #636E72;
+            --accent-blue: #74B9FF;
+            --accent-green: #55EFC4;
+            --accent-yellow: #FFEAA7;
+            --accent-pink: #FD79A8;
+            --accent-purple: #A29BFE;
+            --accent-orange: #FAB1A0;
+            --accent-red: #FF7675;
+            --shadow: 0 8px 32px rgba(0,0,0,0.1);
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', cursive, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.8;
+            letter-spacing: 0.05em;
+            word-spacing: 0.1em;
+        }
+
+        /* Floating Background Shapes */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.25;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .bg-shape:nth-child(1) {
+            width: 280px;
+            height: 280px;
+            background: var(--accent-blue);
+            top: -100px;
+            left: -80px;
+        }
+
+        .bg-shape:nth-child(2) {
+            width: 220px;
+            height: 220px;
+            background: var(--accent-green);
+            bottom: -120px;
+            right: 0;
+            animation-delay: -8s;
+        }
+
+        .bg-shape:nth-child(3) {
+            width: 200px;
+            height: 200px;
+            background: var(--accent-yellow);
+            top: 40%;
+            left: 50%;
+            transform: translateX(-50%);
+            animation-delay: -4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(5deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(20px) rotate(-5deg); }
+        }
+
+        /* Hand Cursors */
+        .hand-cursor {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10000;
+            transition: transform 0.05s ease-out;
+            display: none;
+        }
+
+        .hand-cursor.left {
+            background: radial-gradient(circle, var(--accent-pink) 0%, transparent 70%);
+            border: 3px solid var(--accent-pink);
+            box-shadow: 0 0 20px var(--accent-pink);
+        }
+
+        .hand-cursor.right {
+            background: radial-gradient(circle, var(--accent-blue) 0%, transparent 70%);
+            border: 3px solid var(--accent-blue);
+            box-shadow: 0 0 20px var(--accent-blue);
+        }
+
+        .hand-cursor.pressing {
+            transform: scale(0.7);
+        }
+
+        /* Main Container */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Nav Bar (simple) */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            padding: 12px 20px;
+            margin-bottom: 20px;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 25px 20px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-green) 100%);
+            border-radius: var(--radius);
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+        }
+
+        .header h1 {
+            font-size: 2.1rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.9);
+        }
+
+        /* Mode Toggle (Learn / Quiz) */
+        .mode-toggle {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 10px 25px;
+            border-radius: 25px;
+            border: 2px solid white;
+            background: rgba(255,255,255,0.6);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .mode-btn.active {
+            background: var(--accent-yellow);
+            border-color: var(--accent-orange);
+        }
+
+        /* Panels */
+        .panel {
+            background: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+
+        .panel.hidden {
+            display: none;
+        }
+
+        .panel-title {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .panel-subtitle {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* Learning Cards */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 20px;
+        }
+
+        .lesson-card {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            padding: 18px 16px;
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .lesson-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+        }
+
+        .lesson-badge {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            font-size: 1.4rem;
+        }
+
+        .lesson-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .lesson-arabic {
+            font-size: 1.1rem;
+            margin-bottom: 4px;
+        }
+
+        .lesson-translit {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 6px;
+        }
+
+        .lesson-meaning {
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+
+        .lesson-tip {
+            font-size: 0.9rem;
+            opacity: 0.95;
+        }
+
+        /* Quiz layout */
+        .quiz-layout {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .quiz-column {
+            flex: 1;
+            min-width: 260px;
+        }
+
+        .quiz-column-title {
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .items-container,
+        .drop-zones {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .draggable-item {
+            min-height: 70px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px 14px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: grab;
+            box-shadow: var(--shadow);
+            user-select: none;
+            background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+            color: white;
+            position: relative;
+        }
+
+        .draggable-item.dragging {
+            opacity: 0.8;
+            cursor: grabbing;
+            position: fixed;
+            z-index: 999;
+        }
+
+        .draggable-item.matched {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .drop-zone {
+            min-height: 80px;
+            border-radius: var(--radius);
+            border: 3px dashed var(--text-secondary);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: left;
+            font-size: 0.95rem;
+            background: var(--bg-secondary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone.highlight {
+            border-color: var(--accent-blue);
+            background: #e0f3ff;
+        }
+
+        .drop-zone.correct {
+            border-color: var(--accent-green);
+            background: #d9fdf0;
+        }
+
+        .drop-zone.incorrect {
+            border-color: var(--accent-red);
+            background: #ffe0e0;
+            animation: shake 0.3s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        /* Score & Hint */
+        .quiz-top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .score-badge {
+            background: var(--accent-yellow);
+            border-radius: 30px;
+            padding: 8px 18px;
+            font-weight: bold;
+            box-shadow: var(--shadow);
+        }
+
+        .hint-btn {
+            padding: 8px 16px;
+            border-radius: 25px;
+            border: none;
+            background: var(--accent-orange);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            font-family: inherit;
+        }
+
+        .hint-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 16px;
+            background: var(--bg-secondary);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+            transition: width 0.3s ease;
+        }
+
+        /* Feedback bubble */
+        .feedback-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            padding: 22px 32px;
+            border-radius: var(--radius);
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: white;
+            background: var(--accent-green);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.35);
+            z-index: 2000;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .feedback-message.show {
+            animation: popIn 0.6s ease forwards;
+        }
+
+        .feedback-message.error {
+            background: var(--accent-red);
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 8px;
+            height: 14px;
+            top: -10px;
+            animation: confettiFall 3s linear forwards;
+            z-index: 1500;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Camera Preview */
+        .camera-preview {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 3px solid var(--accent-purple);
+            box-shadow: var(--shadow);
+            z-index: 100;
+            background: #000;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .camera-preview canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.active {
+            background: #2ecc71;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Instructions Panel */
+        .instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 2px solid rgba(255,255,255,0.3);
+            max-width: 280px;
+            z-index: 100;
+            color: white;
+        }
+
+        .instructions h4 {
+            color: var(--accent-blue);
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .instructions p {
+            font-size: 0.9rem;
+            color: #ddd;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .instructions p span {
+            font-size: 1.2rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .header p {
+                font-size: 0.95rem;
+            }
+
+            .panel {
+                padding: 18px;
+            }
+
+            .lesson-card {
+                padding: 14px;
+            }
+
+            .quiz-layout {
+                flex-direction: column;
+            }
+
+            .camera-preview {
+                width: 160px;
+                height: 120px;
+            }
+
+            .instructions {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .nav-title {
+                font-size: 1rem;
+            }
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            .mode-btn {
+                padding: 8px 14px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background shapes -->
+    <div class="bg-shapes">
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+    </div>
+
+    <!-- Hand Cursors -->
+    <div class="hand-cursor left" id="leftHandCursor"></div>
+    <div class="hand-cursor right" id="rightHandCursor"></div>
+
+    <!-- Camera Preview -->
+    <div class="camera-preview">
+        <video id="videoElement" autoplay playsinline></video>
+        <canvas id="canvasOverlay"></canvas>
+        <div class="camera-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Camera</span>
+        </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+        <h4>🖐️ Hand Gestures</h4>
+        <p><span>👆</span> Point to move cursor</p>
+        <p><span>✊</span> Pinch to grab items</p>
+        <p><span>🤏</span> Drag and release to drop</p>
+        <p><span>⌨️</span> Press M for mouse mode</p>
+    </div>
+
+    <!-- Simple Nav -->
+    <div class="nav-bar">
+        <div class="nav-inner">
+            <div class="nav-title">🌙 Islamic Good Thoughts for Kids</div>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🌟 Learn Good Deeds with a Happy Heart 🌟</h1>
+            <p>First we learn beautiful Islamic manners, then we play a fun quiz!</p>
+        </header>
+
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+            <button class="mode-btn active" id="btnLearn">📖 Learn</button>
+            <button class="mode-btn" id="btnQuiz">🎯 Quiz</button>
+        </div>
+
+        <!-- LEARN PANEL -->
+        <section class="panel" id="learnPanel">
+            <h2 class="panel-title">📖 Learn Good Thoughts</h2>
+            <p class="panel-subtitle">
+                Tap on a card to read slowly with the child. You can explain with stories from your own life.
+            </p>
+            <div class="cards-grid" id="learnCards"></div>
+        </section>
+
+        <!-- QUIZ PANEL -->
+        <section class="panel hidden" id="quizPanel">
+            <h2 class="panel-title">🎯 Match the Good Deed to the Situation</h2>
+            <p class="panel-subtitle">
+                Drag a good deed from the left and drop it on the matching situation on the right.
+            </p>
+
+            <div class="quiz-top-bar">
+                <div class="score-badge">
+                    ⭐ Score: <span id="scoreValue">0</span>
+                </div>
+                <button class="hint-btn" id="hintBtn">💡 Hint</button>
+            </div>
+
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="quiz-layout">
+                <div class="quiz-column">
+                    <div class="quiz-column-title">Good Deeds</div>
+                    <div class="items-container" id="quizItems"></div>
+                </div>
+                <div class="quiz-column">
+                    <div class="quiz-column-title">Situations</div>
+                    <div class="drop-zones" id="quizZones"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Feedback bubble -->
+    <div class="feedback-message" id="feedbackMessage"></div>
+
+    <script>
+        // ---------- DATA ----------
+        const lessons = [
+            {
+                emoji: "🕋",
+                title: "Say “Bismillah” Before Starting",
+                arabic: "بِسْمِ اللهِ",
+                translit: "Bismillāh",
+                meaning: "I begin in the name of Allah.",
+                tip: "Say it before eating, writing, playing or starting any good work."
+            },
+            {
+                emoji: "🤲",
+                title: "Say “Alhamdulillah” After Blessings",
+                arabic: "الْحَمْدُ لِلّٰهِ",
+                translit: "Alhamdulillāh",
+                meaning: "All praise is for Allah.",
+                tip: "Teach the child to say it after eating, drinking water or getting something nice."
+            },
+            {
+                emoji: "👨‍👩‍👧",
+                title: "Be Kind to Parents",
+                arabic: "",
+                translit: "",
+                meaning: "Islam teaches us to speak softly and obey our parents.",
+                tip: "Use words like “yes mama”, “yes baba” and help them without complaining."
+            },
+            {
+                emoji: "😊",
+                title: "Smile – It’s a Charity",
+                arabic: "",
+                translit: "",
+                meaning: "The Prophet ﷺ taught that a smile is a good deed.",
+                tip: "Smiling at family and friends makes hearts happy and brings reward."
+            },
+            {
+                emoji: "🕊️",
+                title: "Give Salam",
+                arabic: "السلام عليكم",
+                translit: "As-salāmu ʿalaykum",
+                meaning: "Peace be upon you.",
+                tip: "Teach the child to say salam when entering home, seeing Muslims, or meeting elders."
+            },
+            {
+                emoji: "🧹",
+                title: "Keep Places Clean",
+                arabic: "",
+                translit: "",
+                meaning: "Cleanliness is loved by Allah.",
+                tip: "Put rubbish in the bin, keep room tidy, and respect the masjid or prayer area."
+            },
+            {
+                emoji: "🦋",
+                title: "Be Gentle with Animals",
+                arabic: "",
+                translit: "",
+                meaning: "Being kind to animals is also a good deed.",
+                tip: "Do not hurt birds or pets. Give water or food when possible."
+            },
+            {
+                emoji: "🗣️",
+                title: "Always Tell the Truth",
+                arabic: "",
+                translit: "",
+                meaning: "Honesty is a very important Islamic value.",
+                tip: "Even if you made a mistake, teach the child to admit it and say sorry."
+            },
+            {
+                emoji: "🤝",
+                title: "Share with Others",
+                arabic: "",
+                translit: "",
+                meaning: "Sharing toys and food is sadaqah (charity).",
+                tip: "Remind them that Allah loves when we give and share happily."
+            },
+            {
+                emoji: "🛏️",
+                title: "Dua Before Sleep",
+                arabic: "بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا",
+                translit: "Bismika Allāhumma amūtu wa aḥyā",
+                meaning: "O Allah, in Your name I live and die.",
+                tip: "Say the dua, blow on hands, and wipe over face to make a simple bedtime routine."
+            }
+        ];
+
+        const quizPairs = [
+            {
+                id: "truth",
+                deed: "🗣️ Tell the truth",
+                situation: "You broke a pencil by mistake. Your teacher asks, “Who did it?”"
+            },
+            {
+                id: "bismillah",
+                deed: "🕋 Say “Bismillah” before starting",
+                situation: "You are about to start eating your favourite food."
+            },
+            {
+                id: "parents",
+                deed: "👨‍👩‍👧 Obey and respect parents",
+                situation: "Your mother calls you to help carry the shopping bags."
+            },
+            {
+                id: "salam",
+                deed: "🕊️ Say “As-salāmu ʿalaykum”",
+                situation: "You enter your grandparents’ house and see them sitting."
+            },
+            {
+                id: "share",
+                deed: "🤝 Share what you have",
+                situation: "Your friend forgot their pencil in class and looks worried."
+            },
+            {
+                id: "clean",
+                deed: "🧹 Keep the place clean",
+                situation: "You see rubbish on the floor in the classroom."
+            },
+            {
+                id: "smile",
+                deed: "😊 Smile at others",
+                situation: "A new child joins your class and looks shy and alone."
+            },
+            {
+                id: "animals",
+                deed: "🦋 Be kind to animals",
+                situation: "You see a thirsty cat in the yard on a hot day."
+            }
+        ];
+
+        // ---------- STATE ----------
+        let score = 0;
+        let totalMatches = 0;
+        let matchesDone = 0;
+
+        let draggedItem = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        // ---------- HELPERS ----------
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function showFeedback(message, isError = false) {
+            const fb = document.getElementById('feedbackMessage');
+            fb.textContent = message;
+            fb.className = 'feedback-message ' + (isError ? 'error' : '');
+            fb.classList.add('show');
+
+            setTimeout(() => {
+                fb.classList.remove('show');
+            }, 1400);
+        }
+
+        function createConfetti() {
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e91e63'];
+
+            for (let i = 0; i < 40; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'confetti';
+                piece.style.left = Math.random() * 100 + 'vw';
+                piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+                piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+                piece.style.animationDelay = (Math.random() * 1) + 's';
+                document.body.appendChild(piece);
+
+                setTimeout(() => piece.remove(), 4000);
+            }
+        }
+
+        function updateScoreUI() {
+            document.getElementById('scoreValue').textContent = score;
+        }
+
+        function updateProgressUI() {
+            const percent = totalMatches === 0 ? 0 : (matchesDone / totalMatches) * 100;
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        // ---------- LEARN PANEL RENDER ----------
+        function renderLearnCards() {
+            const container = document.getElementById('learnCards');
+            container.innerHTML = '';
+            lessons.forEach(lesson => {
+                const card = document.createElement('div');
+                card.className = 'lesson-card';
+
+                card.innerHTML = `
+                    <div class="lesson-badge">${lesson.emoji}</div>
+                    <div class="lesson-title">${lesson.title}</div>
+                    ${lesson.arabic ? `<div class="lesson-arabic">${lesson.arabic}</div>` : ''}
+                    ${lesson.translit ? `<div class="lesson-translit">${lesson.translit}</div>` : ''}
+                    <div class="lesson-meaning">${lesson.meaning}</div>
+                    <div class="lesson-tip"><strong>Tip for adult:</strong> ${lesson.tip}</div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // ---------- QUIZ RENDER ----------
+        function setupQuiz() {
+            const itemsContainer = document.getElementById('quizItems');
+            const zonesContainer = document.getElementById('quizZones');
+
+            itemsContainer.innerHTML = '';
+            zonesContainer.innerHTML = '';
+
+            const shuffledPairs = shuffle(quizPairs);
+            totalMatches = shuffledPairs.length;
+            matchesDone = 0;
+            updateProgressUI();
+
+            // Left side: deeds
+            shuffledPairs.forEach(pair => {
+                const div = document.createElement('div');
+                div.className = 'draggable-item';
+                div.textContent = pair.deed;
+                div.dataset.match = pair.id;
+                itemsContainer.appendChild(div);
+            });
+
+            // Right side: situations (separately shuffled to break order)
+            shuffle(shuffledPairs).forEach(pair => {
+                const zone = document.createElement('div');
+                zone.className = 'drop-zone';
+                zone.dataset.match = pair.id;
+                zone.innerHTML = `<span>${pair.situation}</span>`;
+                zonesContainer.appendChild(zone);
+            });
+
+            attachDragEvents();
+        }
+
+        // ---------- DRAG & DROP (mouse + touch) ----------
+        function attachDragEvents() {
+            const items = document.querySelectorAll('.draggable-item');
+
+            items.forEach(item => {
+                item.addEventListener('mousedown', onDragStart);
+                item.addEventListener('touchstart', onDragStart, { passive: false });
+            });
+
+            document.addEventListener('mousemove', onDragMove);
+            document.addEventListener('touchmove', onDragMove, { passive: false });
+            document.addEventListener('mouseup', onDragEnd);
+            document.addEventListener('touchend', onDragEnd);
+        }
+
+        function getPointFromEvent(e) {
+            if (e.touches && e.touches.length > 0) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+            return { x: e.clientX, y: e.clientY };
+        }
+
+        function onDragStart(e) {
+            e.preventDefault();
+            const target = e.currentTarget;
+
+            if (target.classList.contains('matched')) return;
+
+            draggedItem = target;
+            isDragging = true;
+            draggedItem.classList.add('dragging');
+
+            const point = getPointFromEvent(e);
+            const rect = draggedItem.getBoundingClientRect();
+
+            dragOffset.x = point.x - rect.left;
+            dragOffset.y = point.y - rect.top;
+
+            draggedItem.style.left = rect.left + 'px';
+            draggedItem.style.top = rect.top + 'px';
+        }
+
+        function onDragMove(e) {
+            if (!isDragging || !draggedItem) return;
+
+            const point = getPointFromEvent(e);
+            const x = point.x - dragOffset.x;
+            const y = point.y - dragOffset.y;
+
+            draggedItem.style.left = x + 'px';
+            draggedItem.style.top = y + 'px';
+
+            // Highlight zones under cursor
+            const elementsUnder = document.elementsFromPoint(point.x, point.y);
+            document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('highlight'));
+
+            for (const el of elementsUnder) {
+                if (el.classList && el.classList.contains('drop-zone') && !el.classList.contains('correct')) {
+                    el.classList.add('highlight');
+                    break;
+                }
+            }
+        }
+
+        function onDragEnd(e) {
+            if (!isDragging || !draggedItem) return;
+
+            const point = e.changedTouches
+                ? { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY }
+                : { x: e.clientX, y: e.clientY };
+
+            const elementsUnder = document.elementsFromPoint(point.x, point.y);
+
+            let droppedZone = null;
+            for (const el of elementsUnder) {
+                if (el.classList && el.classList.contains('drop-zone') && !el.classList.contains('correct')) {
+                    droppedZone = el;
+                    break;
+                }
+            }
+
+            document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('highlight'));
+
+            if (droppedZone) {
+                const dragValue = draggedItem.dataset.match;
+                const dropValue = droppedZone.dataset.match;
+
+                if (dragValue === dropValue) {
+                    // Correct
+                    droppedZone.classList.add('correct');
+                    droppedZone.textContent = draggedItem.textContent;
+                    draggedItem.classList.add('matched');
+                    draggedItem.style.display = 'none';
+                    matchesDone++;
+                    score += 10;
+                    updateScoreUI();
+                    updateProgressUI();
+                    showFeedback('🌟 Great job!');
+
+                    if (matchesDone === totalMatches) {
+                        setTimeout(() => {
+                            showFeedback('🎉 Level complete! Maa shaa Allah!', false);
+                            createConfetti();
+                        }, 600);
+                    }
+                } else {
+                    // Wrong
+                    droppedZone.classList.add('incorrect');
+                    setTimeout(() => droppedZone.classList.remove('incorrect'), 400);
+                    showFeedback('❌ Try again!', true);
+                }
+            }
+
+            draggedItem.classList.remove('dragging');
+            draggedItem.style.position = '';
+            draggedItem.style.left = '';
+            draggedItem.style.top = '';
+
+            draggedItem = null;
+            isDragging = false;
+        }
+
+        // ---------- HINT ----------
+        function giveHint() {
+            const remaining = document.querySelectorAll('.draggable-item:not(.matched)');
+            if (remaining.length === 0) return;
+
+            const item = remaining[0];
+            const match = item.dataset.match;
+            const zone = document.querySelector(`.drop-zone[data-match="${match}"]:not(.correct)`);
+
+            if (zone) {
+                item.style.animation = 'shake 0.3s ease 2';
+                zone.style.animation = 'shake 0.3s ease 2';
+                setTimeout(() => {
+                    item.style.animation = '';
+                    zone.style.animation = '';
+                }, 800);
+            }
+        }
+
+        // ---------- MODE SWITCH ----------
+        function initModeSwitch() {
+            const btnLearn = document.getElementById('btnLearn');
+            const btnQuiz = document.getElementById('btnQuiz');
+            const learnPanel = document.getElementById('learnPanel');
+            const quizPanel = document.getElementById('quizPanel');
+
+            btnLearn.addEventListener('click', () => {
+                btnLearn.classList.add('active');
+                btnQuiz.classList.remove('active');
+                learnPanel.classList.remove('hidden');
+                quizPanel.classList.add('hidden');
+            });
+
+            btnQuiz.addEventListener('click', () => {
+                btnQuiz.classList.add('active');
+                btnLearn.classList.remove('active');
+                learnPanel.classList.add('hidden');
+                quizPanel.classList.remove('hidden');
+            });
+        }
+
+        // ---------- HAND TRACKING ----------
+        let useHandTracking = true;
+        let hands, camera;
+        const videoElement = document.getElementById('videoElement');
+        const canvasOverlay = document.getElementById('canvasOverlay');
+        const leftCursor = document.getElementById('leftHandCursor');
+        const rightCursor = document.getElementById('rightHandCursor');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+
+        let handState = {
+            left: { x: 0, y: 0, pinching: false, visible: false },
+            right: { x: 0, y: 0, pinching: false, visible: false }
+        };
+
+        function isPinching(landmarks) {
+            const thumb = landmarks[4];
+            const index = landmarks[8];
+            const distance = Math.sqrt(
+                Math.pow(thumb.x - index.x, 2) +
+                Math.pow(thumb.y - index.y, 2)
+            );
+            return distance < 0.05;
+        }
+
+        function onHandResults(results) {
+            handState.left.visible = false;
+            handState.right.visible = false;
+
+            if (results.multiHandLandmarks && results.multiHandedness) {
+                for (let i = 0; i < results.multiHandLandmarks.length; i++) {
+                    const landmarks = results.multiHandLandmarks[i];
+                    const handedness = results.multiHandedness[i].label;
+
+                    // MediaPipe labels are mirrored, so 'Left' = user's right hand
+                    const hand = handedness === 'Left' ? 'right' : 'left';
+
+                    const indexTip = landmarks[8];
+                    // Mirror the x coordinate to match screen orientation
+                    handState[hand].x = (1 - indexTip.x) * window.innerWidth;
+                    handState[hand].y = indexTip.y * window.innerHeight;
+                    handState[hand].pinching = isPinching(landmarks);
+                    handState[hand].visible = true;
+                }
+            }
+
+            updateHandCursors();
+            handleHandInteraction();
+        }
+
+        function updateHandCursors() {
+            ['left', 'right'].forEach(hand => {
+                const cursor = hand === 'left' ? leftCursor : rightCursor;
+                if (handState[hand].visible && useHandTracking) {
+                    cursor.style.display = 'block';
+                    cursor.style.left = handState[hand].x + 'px';
+                    cursor.style.top = handState[hand].y + 'px';
+                    cursor.classList.toggle('pressing', handState[hand].pinching);
+                } else {
+                    cursor.style.display = 'none';
+                }
+            });
+        }
+
+        let handDraggedItem = null;
+        let lastPinchState = { left: false, right: false };
+
+        function handleHandInteraction() {
+            if (!useHandTracking) return;
+
+            const hand = handState.right.visible ? 'right' : (handState.left.visible ? 'left' : null);
+            if (!hand) {
+                if (handDraggedItem) {
+                    simulateMouseEvent('mouseup', handState.right.x, handState.right.y);
+                    handDraggedItem = null;
+                }
+                lastPinchState = { left: false, right: false };
+                return;
+            }
+
+            const isPinchNow = handState[hand].pinching;
+            const wasPinching = lastPinchState[hand];
+
+            if (isPinchNow && !wasPinching) {
+                // Pinch started - check for draggable item
+                const element = document.elementFromPoint(handState[hand].x, handState[hand].y);
+                if (element && element.classList.contains('draggable-item') && !element.classList.contains('matched')) {
+                    handDraggedItem = element;
+                    simulateMouseEvent('mousedown', handState[hand].x, handState[hand].y, element);
+                }
+            } else if (!isPinchNow && wasPinching) {
+                // Pinch released
+                if (handDraggedItem) {
+                    simulateMouseEvent('mouseup', handState[hand].x, handState[hand].y);
+                    handDraggedItem = null;
+                }
+            } else if (isPinchNow && handDraggedItem) {
+                // Dragging
+                simulateMouseEvent('mousemove', handState[hand].x, handState[hand].y);
+            }
+
+            lastPinchState[hand] = isPinchNow;
+        }
+
+        function simulateMouseEvent(type, x, y, target = null) {
+            const element = target || document.elementFromPoint(x, y);
+            if (!element) return;
+
+            const event = new MouseEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+                clientX: x,
+                clientY: y,
+                buttons: type === 'mousedown' || type === 'mousemove' ? 1 : 0
+            });
+
+            element.dispatchEvent(event);
+        }
+
+        async function initHandTracking() {
+            try {
+                hands = new Hands({
+                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+                });
+
+                hands.setOptions({
+                    maxNumHands: 2,
+                    modelComplexity: 1,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+
+                hands.onResults(onHandResults);
+
+                camera = new Camera(videoElement, {
+                    onFrame: async () => {
+                        await hands.send({ image: videoElement });
+                    },
+                    width: 640,
+                    height: 480
+                });
+
+                await camera.start();
+                statusDot.classList.add('active');
+                statusText.textContent = 'Active';
+            } catch (error) {
+                console.error('Hand tracking error:', error);
+                statusText.textContent = 'Error';
+            }
+        }
+
+        // Toggle between hand and mouse mode
+        document.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'm') {
+                useHandTracking = !useHandTracking;
+                leftCursor.style.display = useHandTracking ? 'block' : 'none';
+                rightCursor.style.display = useHandTracking ? 'block' : 'none';
+                statusText.textContent = useHandTracking ? 'Active' : 'Mouse';
+            }
+        });
+
+        // ---------- INIT ----------
+        document.addEventListener('DOMContentLoaded', () => {
+            renderLearnCards();
+            setupQuiz();
+            initModeSwitch();
+            initHandTracking();
+
+            document.getElementById('hintBtn').addEventListener('click', giveHint);
+            score = 0;
+            updateScoreUI();
+        });
+    </script>
+</body>
+</html>

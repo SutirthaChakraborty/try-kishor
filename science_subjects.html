@@ -1,0 +1,1489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔬 Science Explorer - Discover the World!</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- MediaPipe -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0a192f;
+            --bg-secondary: #112240;
+            --bg-card: #1d3557;
+            --accent-primary: #06d6a0;
+            --accent-secondary: #118ab2;
+            --accent-yellow: #ffd166;
+            --accent-pink: #ef476f;
+            --accent-purple: #7b2cbf;
+            --accent-orange: #f77f00;
+            --text-primary: #e6f1ff;
+            --text-secondary: #8892b0;
+            --glow-green: 0 0 30px rgba(6, 214, 160, 0.4);
+            --shadow: 0 10px 40px rgba(0,0,0,0.5);
+            --radius: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Quicksand', 'OpenDyslexic', sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.7;
+            letter-spacing: 0.02em;
+            overflow-x: hidden;
+        }
+
+        /* Animated Particles Background */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--accent-primary);
+            border-radius: 50%;
+            animation: particleFloat 15s infinite ease-in-out;
+            opacity: 0.4;
+        }
+
+        @keyframes particleFloat {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.4; }
+            25% { transform: translateY(-100px) translateX(50px); opacity: 0.8; }
+            50% { transform: translateY(-50px) translateX(-30px); opacity: 0.4; }
+            75% { transform: translateY(-150px) translateX(20px); opacity: 0.6; }
+        }
+
+        /* Navigation */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            background: linear-gradient(135deg, var(--accent-secondary) 0%, var(--accent-purple) 100%);
+            padding: 15px 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-family: 'Bangers', cursive;
+            font-size: 1.8rem;
+            color: white;
+            letter-spacing: 0.1em;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.4);
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: white;
+            color: var(--accent-secondary);
+        }
+
+        /* Main Container */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-secondary) 100%);
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+            border: 2px solid var(--accent-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(6, 214, 160, 0.1) 0%, transparent 50%);
+            animation: rotate 20s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .header h1 {
+            font-family: 'Bangers', cursive;
+            font-size: 3.5rem;
+            color: var(--accent-primary);
+            letter-spacing: 0.1em;
+            text-shadow: 3px 3px 0 var(--accent-secondary);
+            position: relative;
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            position: relative;
+        }
+
+        /* Topic Cards */
+        .topic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .topic-card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .topic-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .topic-card:hover::before {
+            left: 100%;
+        }
+
+        .topic-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-primary);
+            box-shadow: var(--glow-green);
+        }
+
+        .topic-card.active {
+            border-color: var(--accent-yellow);
+            background: linear-gradient(135deg, var(--bg-card) 0%, rgba(255, 209, 102, 0.2) 100%);
+        }
+
+        .topic-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+        }
+
+        .topic-card h3 {
+            font-family: 'Bangers', cursive;
+            font-size: 1.3rem;
+            color: var(--accent-primary);
+            letter-spacing: 0.05em;
+        }
+
+        /* Mode Tabs */
+        .mode-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .mode-tab {
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-family: 'Bangers', cursive;
+            letter-spacing: 0.05em;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 3px solid var(--accent-secondary);
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-tab:hover {
+            transform: scale(1.05);
+        }
+
+        .mode-tab.active {
+            background: var(--accent-secondary);
+            color: white;
+        }
+
+        /* Game Area */
+        .game-area {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 40px;
+            min-height: 500px;
+            box-shadow: var(--shadow);
+            position: relative;
+            border: 2px solid var(--accent-secondary);
+        }
+
+        /* Stats */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat {
+            background: var(--bg-secondary);
+            padding: 12px 25px;
+            border-radius: 50px;
+            font-weight: 600;
+            border: 2px solid var(--accent-yellow);
+        }
+
+        .stat span {
+            color: var(--accent-yellow);
+        }
+
+        /* Progress */
+        .progress-wrap {
+            width: 100%;
+            height: 12px;
+            background: var(--bg-primary);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        /* Learn Section */
+        .learn-container {
+            display: none;
+        }
+
+        .learn-container.active {
+            display: block;
+        }
+
+        .fact-card {
+            background: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            border: 3px solid var(--accent-primary);
+            position: relative;
+        }
+
+        .fact-emoji {
+            font-size: 6rem;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite ease-in-out;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .fact-title {
+            font-family: 'Bangers', cursive;
+            font-size: 2rem;
+            color: var(--accent-primary);
+            margin-bottom: 20px;
+            letter-spacing: 0.05em;
+        }
+
+        .fact-text {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .fun-fact {
+            background: var(--bg-primary);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-top: 25px;
+            border-left: 5px solid var(--accent-yellow);
+        }
+
+        .fun-fact-label {
+            color: var(--accent-yellow);
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .nav-btn {
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-family: 'Bangers', cursive;
+            letter-spacing: 0.05em;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.prev {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 2px solid var(--accent-secondary);
+        }
+
+        .nav-btn.next {
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: var(--bg-primary);
+        }
+
+        .nav-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Quiz Section */
+        .quiz-container {
+            display: none;
+        }
+
+        .quiz-container.active {
+            display: block;
+        }
+
+        .question-box {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .q-number {
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .q-text {
+            font-family: 'Bangers', cursive;
+            font-size: 2.2rem;
+            color: var(--accent-primary);
+            letter-spacing: 0.03em;
+            margin-bottom: 20px;
+        }
+
+        .q-visual {
+            font-size: 5rem;
+            margin: 20px 0;
+        }
+
+        /* Answer Options */
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .option-btn {
+            padding: 25px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 3px solid var(--accent-purple);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .option-btn:hover {
+            transform: scale(1.03);
+            border-color: var(--accent-primary);
+            box-shadow: var(--glow-green);
+        }
+
+        .option-btn.correct {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+
+        .option-btn.wrong {
+            background: var(--accent-pink);
+            border-color: var(--accent-pink);
+        }
+
+        .option-btn.highlight {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 25px var(--accent-primary);
+            transform: scale(1.03);
+        }
+
+        /* Camera Preview */
+        .camera-box {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 4px solid var(--accent-primary);
+            box-shadow: var(--glow-green);
+            z-index: 100;
+            background: #000;
+        }
+
+        .camera-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .camera-box canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-indicator {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .indicator-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef476f;
+        }
+
+        .indicator-dot.on {
+            background: var(--accent-primary);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Hand Cursor */
+        .hand-pointer {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            transition: all 0.1s ease-out;
+        }
+
+        .hand-pointer.open {
+            background: radial-gradient(circle, var(--accent-primary) 0%, transparent 70%);
+            border: 3px solid var(--accent-primary);
+        }
+
+        .hand-pointer.closed {
+            background: radial-gradient(circle, var(--accent-yellow) 0%, transparent 70%);
+            border: 3px solid var(--accent-yellow);
+            transform: scale(0.7);
+        }
+
+        /* Feedback */
+        .feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            padding: 30px 50px;
+            border-radius: var(--radius);
+            font-family: 'Bangers', cursive;
+            font-size: 2.5rem;
+            z-index: 2000;
+            letter-spacing: 0.1em;
+        }
+
+        .feedback.show {
+            animation: popIn 0.5s ease forwards;
+        }
+
+        .feedback.success {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+        }
+
+        .feedback.error {
+            background: var(--accent-pink);
+            color: white;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Results Modal */
+        .results-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+
+        .results-content {
+            background: var(--bg-card);
+            padding: 50px;
+            border-radius: var(--radius);
+            text-align: center;
+            border: 4px solid var(--accent-primary);
+            box-shadow: 0 0 50px var(--accent-primary);
+        }
+
+        .results-content h2 {
+            font-family: 'Bangers', cursive;
+            font-size: 3rem;
+            color: var(--accent-primary);
+            letter-spacing: 0.1em;
+        }
+
+        .results-stars {
+            font-size: 4rem;
+            margin: 20px 0;
+        }
+
+        .results-score {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 30px;
+        }
+
+        .play-again-btn {
+            padding: 20px 50px;
+            font-size: 1.5rem;
+            font-family: 'Bangers', cursive;
+            letter-spacing: 0.05em;
+            background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+            color: var(--bg-primary);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .play-again-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Sound Button */
+        .sound-toggle {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sound-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2.5rem; }
+            .q-text { font-size: 1.6rem; }
+            .options-grid { grid-template-columns: 1fr; }
+            .option-btn { padding: 20px; font-size: 1.1rem; }
+            .camera-box { width: 150px; height: 112px; }
+            .game-area { padding: 20px; }
+            .topic-grid { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Particles Background -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Navigation -->
+    <nav class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-title">🔬 Science Explorer</div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">🔤 Letters</a>
+                <a href="maths_adventure.html" class="nav-link">🔢 Maths</a>
+                <a href="science_explorer.html" class="nav-link active">🔬 Science</a>
+                <a href="english_quest.html" class="nav-link">📖 English</a>
+                <a href="art_studio.html" class="nav-link">🎨 Arts</a>
+                <a href="geography_world.html" class="nav-link">🌍 Geography</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hand Pointer -->
+    <div class="hand-pointer" id="handPointer"></div>
+
+    <!-- Feedback -->
+    <div class="feedback" id="feedback"></div>
+
+    <!-- Results Modal -->
+    <div class="results-modal" id="resultsModal">
+        <div class="results-content">
+            <h2>🎉 Amazing Work! 🎉</h2>
+            <div class="results-stars" id="resultsStars">⭐⭐⭐</div>
+            <p class="results-score" id="resultsScore"></p>
+            <button class="play-again-btn" onclick="restartQuiz()">Play Again! 🚀</button>
+        </div>
+    </div>
+
+    <!-- Sound Toggle -->
+    <button class="sound-toggle" id="soundToggle" onclick="toggleSound()">🔊</button>
+
+    <!-- Camera Preview -->
+    <div class="camera-box">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+        <div class="camera-indicator">
+            <div class="indicator-dot" id="indicatorDot"></div>
+            <span>Camera</span>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔬 Science Explorer 🧪</h1>
+            <p>Discover amazing facts about our world!</p>
+        </header>
+
+        <!-- Topic Selection -->
+        <section class="topic-grid">
+            <div class="topic-card active" data-topic="animals" onclick="selectTopic('animals')">
+                <div class="topic-icon">🦁</div>
+                <h3>Animals</h3>
+            </div>
+            <div class="topic-card" data-topic="plants" onclick="selectTopic('plants')">
+                <div class="topic-icon">🌻</div>
+                <h3>Plants</h3>
+            </div>
+            <div class="topic-card" data-topic="body" onclick="selectTopic('body')">
+                <div class="topic-icon">🫀</div>
+                <h3>Human Body</h3>
+            </div>
+            <div class="topic-card" data-topic="weather" onclick="selectTopic('weather')">
+                <div class="topic-icon">🌈</div>
+                <h3>Weather</h3>
+            </div>
+            <div class="topic-card" data-topic="space" onclick="selectTopic('space')">
+                <div class="topic-icon">🚀</div>
+                <h3>Space</h3>
+            </div>
+        </section>
+
+        <!-- Mode Tabs -->
+        <div class="mode-tabs">
+            <button class="mode-tab active" onclick="setMode('learn')">📚 Learn</button>
+            <button class="mode-tab" onclick="setMode('quiz')">🎯 Quiz</button>
+        </div>
+
+        <!-- Game Area -->
+        <section class="game-area">
+            <!-- Stats -->
+            <div class="stats-bar">
+                <div class="stat">⭐ Score: <span id="score">0</span></div>
+                <div class="stat">🔥 Streak: <span id="streak">0</span></div>
+                <div class="stat">❤️ Lives: <span id="lives">3</span></div>
+            </div>
+
+            <!-- Progress -->
+            <div class="progress-wrap">
+                <div class="progress-fill" id="progress" style="width: 0%"></div>
+            </div>
+
+            <!-- Learn Container -->
+            <div class="learn-container active" id="learnContainer">
+                <div class="fact-card" id="factCard">
+                    <!-- Content loaded by JS -->
+                </div>
+                <div class="nav-buttons">
+                    <button class="nav-btn prev" onclick="prevFact()">← Back</button>
+                    <button class="nav-btn next" onclick="nextFact()">Next →</button>
+                </div>
+            </div>
+
+            <!-- Quiz Container -->
+            <div class="quiz-container" id="quizContainer">
+                <div class="question-box">
+                    <p class="q-number" id="qNumber">Question 1 of 10</p>
+                    <h2 class="q-text" id="qText"></h2>
+                    <div class="q-visual" id="qVisual"></div>
+                </div>
+                <div class="options-grid" id="optionsGrid"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // ==================== CONFIG ====================
+        const CONFIG = {
+            pinchThreshold: 0.08,
+            smoothingFactor: 0.3,
+            soundEnabled: true,
+            questionsPerRound: 10
+        };
+
+        // ==================== STATE ====================
+        let currentTopic = 'animals';
+        let currentMode = 'learn';
+        let currentFact = 0;
+        let currentQuestion = 0;
+        let score = 0;
+        let streak = 0;
+        let lives = 3;
+        let questions = [];
+        let handPos = { x: 0, y: 0 };
+        let isPinching = false;
+        let wasPinching = false;
+        let canAnswer = true;
+
+        // ==================== AUDIO ====================
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+        }
+
+        function playTone(freq, dur = 0.2, type = 'sine') {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = type;
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur);
+            osc.start();
+            osc.stop(audioCtx.currentTime + dur);
+        }
+
+        function playSuccess() {
+            playTone(523, 0.1);
+            setTimeout(() => playTone(659, 0.1), 100);
+            setTimeout(() => playTone(784, 0.2), 200);
+        }
+
+        function playError() {
+            playTone(200, 0.3, 'square');
+        }
+
+        function speak(text, rate = 0.9) {
+            if (!CONFIG.soundEnabled) return;
+            const u = new SpeechSynthesisUtterance(text);
+            u.rate = rate;
+            u.pitch = 1.1;
+            speechSynthesis.speak(u);
+        }
+
+        function toggleSound() {
+            CONFIG.soundEnabled = !CONFIG.soundEnabled;
+            document.getElementById('soundToggle').textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+        }
+
+        // ==================== LESSON DATA ====================
+        const lessons = {
+            animals: [
+                { emoji: '🦁', title: 'Lions - King of the Jungle', text: 'Lions live in groups called prides. Male lions have big manes around their heads. Lions can sleep up to 20 hours a day!', funFact: 'A lion\'s roar can be heard from 5 miles away!' },
+                { emoji: '🐘', title: 'Elephants - Gentle Giants', text: 'Elephants are the largest land animals. They use their trunks to breathe, smell, drink water, and grab things. Elephants are very smart!', funFact: 'Elephants can recognize themselves in a mirror!' },
+                { emoji: '🐬', title: 'Dolphins - Smart Swimmers', text: 'Dolphins are mammals that live in water. They breathe air through a blowhole on top of their heads. Dolphins are very playful!', funFact: 'Dolphins sleep with one eye open!' },
+                { emoji: '🦋', title: 'Butterflies - Beautiful Flyers', text: 'Butterflies start life as caterpillars. They go through metamorphosis to become butterflies with colorful wings.', funFact: 'Butterflies taste with their feet!' },
+                { emoji: '🐧', title: 'Penguins - Tuxedo Birds', text: 'Penguins are birds that cannot fly but are excellent swimmers. They live in cold places and huddle together to stay warm.', funFact: 'Emperor penguins can hold their breath for 20 minutes!' },
+                { emoji: '🦒', title: 'Giraffes - Tall Friends', text: 'Giraffes are the tallest animals on Earth. Their long necks help them eat leaves from tall trees. Each giraffe has unique spots!', funFact: 'Giraffe tongues are about 20 inches long and are purple!' },
+                { emoji: '🐙', title: 'Octopus - Eight Arms Wonder', text: 'Octopuses have eight arms and three hearts! They can change color to hide from predators and squeeze through tiny spaces.', funFact: 'Octopuses have blue blood!' }
+            ],
+            plants: [
+                { emoji: '🌳', title: 'Trees - Nature\'s Giants', text: 'Trees give us oxygen to breathe and provide homes for many animals. They have roots underground and branches with leaves up high.', funFact: 'The oldest tree is over 5,000 years old!' },
+                { emoji: '🌻', title: 'Sunflowers - Sun Trackers', text: 'Sunflowers turn their heads to follow the sun across the sky! This is called heliotropism. Their seeds are yummy and healthy.', funFact: 'A sunflower head can have up to 2,000 seeds!' },
+                { emoji: '🌵', title: 'Cacti - Desert Survivors', text: 'Cacti live in hot, dry deserts. They store water in their thick stems and have spines instead of leaves to protect themselves.', funFact: 'Some cacti can live for 200 years!' },
+                { emoji: '🍄', title: 'Mushrooms - Forest Floor', text: 'Mushrooms are not plants - they are fungi! They grow in damp, dark places and help break down dead plants and animals.', funFact: 'The largest living thing on Earth is a honey fungus!' },
+                { emoji: '🌸', title: 'Flowers - Nature\'s Beauty', text: 'Flowers help plants make seeds. Bees and butterflies visit flowers to drink nectar and spread pollen from flower to flower.', funFact: 'Roses are related to apples and strawberries!' },
+                { emoji: '🌿', title: 'Ferns - Ancient Plants', text: 'Ferns are very old plants that have been around since dinosaur times! They don\'t have flowers or seeds - they spread using spores.', funFact: 'Some ferns can grow as tall as trees!' }
+            ],
+            body: [
+                { emoji: '🫀', title: 'The Heart - Your Pump', text: 'Your heart pumps blood through your body! It beats about 100,000 times every day. The heart is about the size of your fist.', funFact: 'Your heart beats faster when you exercise!' },
+                { emoji: '🧠', title: 'The Brain - Control Center', text: 'Your brain controls everything you do - thinking, moving, feeling, and even breathing! It\'s protected by your skull.', funFact: 'Your brain uses 20% of your body\'s energy!' },
+                { emoji: '🦴', title: 'Bones - Your Frame', text: 'You have 206 bones in your body! Bones protect your organs and help you move. The smallest bone is in your ear.', funFact: 'Babies have about 300 bones, but some fuse together!' },
+                { emoji: '👁️', title: 'Eyes - Your Windows', text: 'Your eyes let you see the world! They work like cameras, taking in light and sending pictures to your brain.', funFact: 'Your eyes can see about 10 million different colors!' },
+                { emoji: '👂', title: 'Ears - Sound Catchers', text: 'Your ears catch sound waves and turn them into signals for your brain. The inner ear also helps you keep your balance!', funFact: 'Your ears never stop working, even when you sleep!' },
+                { emoji: '🫁', title: 'Lungs - Breathing Machines', text: 'Your lungs help you breathe! You breathe in oxygen and breathe out carbon dioxide. You take about 20,000 breaths every day.', funFact: 'Your right lung is bigger than your left!' },
+                { emoji: '💪', title: 'Muscles - Movement Power', text: 'You have over 600 muscles! Muscles work in pairs to move your bones. The strongest muscle is your jaw muscle.', funFact: 'It takes 17 muscles to smile but 43 to frown!' }
+            ],
+            weather: [
+                { emoji: '☀️', title: 'Sunshine - Heat & Light', text: 'The Sun gives us heat and light. It\'s a giant ball of hot gas far away in space. Without the Sun, Earth would be cold and dark!', funFact: 'Sunlight takes 8 minutes to reach Earth!' },
+                { emoji: '🌧️', title: 'Rain - Water Cycle', text: 'Rain comes from clouds! Water evaporates from oceans and lakes, forms clouds, then falls back down as rain. This is the water cycle.', funFact: 'A raindrop falls at about 14 miles per hour!' },
+                { emoji: '🌈', title: 'Rainbows - Light Magic', text: 'Rainbows appear when sunlight shines through raindrops! The light splits into 7 colors: red, orange, yellow, green, blue, indigo, violet.', funFact: 'You can never reach the end of a rainbow!' },
+                { emoji: '⛈️', title: 'Thunderstorms - Nature\'s Power', text: 'Thunder is the sound lightning makes! Lightning is a giant spark of electricity. Count the seconds between lightning and thunder to see how far away it is.', funFact: 'Lightning can be 5 times hotter than the Sun!' },
+                { emoji: '❄️', title: 'Snow - Frozen Crystals', text: 'Snow forms when water freezes in clouds. Every snowflake has six sides, and no two snowflakes are exactly alike!', funFact: 'The largest snowflake ever recorded was 15 inches wide!' },
+                { emoji: '🌪️', title: 'Tornadoes - Spinning Wind', text: 'Tornadoes are powerful spinning columns of air. They form from thunderstorms and can cause a lot of damage.', funFact: 'Tornadoes can spin at 300 miles per hour!' },
+                { emoji: '🌤️', title: 'Clouds - Sky Fluff', text: 'Clouds are made of tiny water droplets or ice crystals. Different cloud shapes tell us about the weather coming!', funFact: 'An average cloud weighs over a million pounds!' }
+            ],
+            space: [
+                { emoji: '🌍', title: 'Earth - Our Home', text: 'Earth is the third planet from the Sun and the only planet we know that has life! It takes 365 days to orbit the Sun.', funFact: 'Earth is tilted, which gives us seasons!' },
+                { emoji: '🌙', title: 'The Moon - Our Neighbor', text: 'The Moon orbits Earth and reflects light from the Sun. The Moon\'s gravity causes ocean tides. Astronauts have walked on it!', funFact: 'The Moon is slowly moving away from Earth!' },
+                { emoji: '☀️', title: 'The Sun - Our Star', text: 'The Sun is a star at the center of our solar system. It\'s so big that a million Earths could fit inside it!', funFact: 'The Sun is 4.6 billion years old!' },
+                { emoji: '🪐', title: 'Saturn - Ring Planet', text: 'Saturn is famous for its beautiful rings made of ice and rock. It\'s the second largest planet and could float on water!', funFact: 'Saturn has 83 moons!' },
+                { emoji: '⭐', title: 'Stars - Distant Suns', text: 'Stars are giant balls of hot gas, just like our Sun! They look tiny because they\'re so far away. The closest star is 4 light years away.', funFact: 'There are more stars than grains of sand on Earth!' },
+                { emoji: '🚀', title: 'Space Travel', text: 'Astronauts travel to space in rockets! In space, there\'s no gravity, so they float around. They wear special suits to survive.', funFact: 'You get taller in space because your spine stretches!' },
+                { emoji: '🌌', title: 'Galaxies - Star Cities', text: 'Our galaxy is called the Milky Way and contains billions of stars! There are billions of galaxies in the universe.', funFact: 'The Milky Way is on a collision course with Andromeda!' }
+            ]
+        };
+
+        // ==================== QUESTION GENERATORS ====================
+        function generateAnimalQuestions() {
+            const q = [];
+            const animals = [
+                { name: 'Lion', emoji: '🦁', habitat: 'Savanna', diet: 'Meat', group: 'Pride' },
+                { name: 'Elephant', emoji: '🐘', habitat: 'Savanna', diet: 'Plants', group: 'Herd' },
+                { name: 'Dolphin', emoji: '🐬', habitat: 'Ocean', diet: 'Fish', group: 'Pod' },
+                { name: 'Penguin', emoji: '🐧', habitat: 'Antarctica', diet: 'Fish', group: 'Colony' },
+                { name: 'Giraffe', emoji: '🦒', habitat: 'Savanna', diet: 'Plants', group: 'Tower' },
+                { name: 'Octopus', emoji: '🐙', habitat: 'Ocean', diet: 'Fish', group: 'Solitary' },
+                { name: 'Eagle', emoji: '🦅', habitat: 'Mountains', diet: 'Meat', group: 'Convocation' },
+                { name: 'Frog', emoji: '🐸', habitat: 'Pond', diet: 'Insects', group: 'Army' },
+                { name: 'Bear', emoji: '🐻', habitat: 'Forest', diet: 'Both', group: 'Sleuth' },
+                { name: 'Whale', emoji: '🐋', habitat: 'Ocean', diet: 'Plankton', group: 'Pod' }
+            ];
+
+            for (let i = 0; i < 20; i++) {
+                const animal = animals[Math.floor(Math.random() * animals.length)];
+                const others = animals.filter(a => a.name !== animal.name);
+                q.push({
+                    question: `What animal is this?`,
+                    visual: animal.emoji,
+                    answer: animal.name,
+                    options: shuffle([animal.name, ...shuffle(others).slice(0, 3).map(a => a.name)])
+                });
+            }
+
+            for (let i = 0; i < 15; i++) {
+                const animal = animals[Math.floor(Math.random() * animals.length)];
+                const habitats = ['Savanna', 'Ocean', 'Forest', 'Antarctica', 'Pond', 'Mountains'];
+                const wrongHabitats = habitats.filter(h => h !== animal.habitat);
+                q.push({
+                    question: `Where does a ${animal.name} live?`,
+                    visual: animal.emoji,
+                    answer: animal.habitat,
+                    options: shuffle([animal.habitat, ...shuffle(wrongHabitats).slice(0, 3)])
+                });
+            }
+
+            for (let i = 0; i < 15; i++) {
+                const animal = animals[Math.floor(Math.random() * animals.length)];
+                const diets = ['Meat', 'Plants', 'Fish', 'Insects', 'Both', 'Plankton'];
+                const wrongDiets = diets.filter(d => d !== animal.diet);
+                q.push({
+                    question: `What does a ${animal.name} eat?`,
+                    visual: animal.emoji,
+                    answer: animal.diet,
+                    options: shuffle([animal.diet, ...shuffle(wrongDiets).slice(0, 3)])
+                });
+            }
+
+            return q;
+        }
+
+        function generatePlantQuestions() {
+            const q = [];
+            const plants = [
+                { name: 'Sunflower', emoji: '🌻', part: 'Flower', needs: 'Lots of sun' },
+                { name: 'Cactus', emoji: '🌵', part: 'Stem', needs: 'Little water' },
+                { name: 'Oak Tree', emoji: '🌳', part: 'Trunk', needs: 'Soil and water' },
+                { name: 'Rose', emoji: '🌹', part: 'Flower', needs: 'Regular watering' },
+                { name: 'Fern', emoji: '🌿', part: 'Leaves', needs: 'Shade' },
+                { name: 'Tulip', emoji: '🌷', part: 'Flower', needs: 'Cool weather' }
+            ];
+
+            const plantFacts = [
+                { q: 'What do plants need to make food?', a: 'Sunlight', opts: ['Sunlight', 'Darkness', 'Ice', 'Salt'] },
+                { q: 'What do plants breathe out?', a: 'Oxygen', opts: ['Oxygen', 'Carbon Dioxide', 'Nitrogen', 'Smoke'] },
+                { q: 'What part of a plant is underground?', a: 'Roots', opts: ['Roots', 'Flowers', 'Leaves', 'Fruit'] },
+                { q: 'What do flowers make?', a: 'Seeds', opts: ['Seeds', 'Water', 'Rocks', 'Light'] },
+                { q: 'What carries water up a plant?', a: 'Stem', opts: ['Stem', 'Flower', 'Petal', 'Fruit'] },
+                { q: 'What process do plants use to make food?', a: 'Photosynthesis', opts: ['Photosynthesis', 'Digestion', 'Breathing', 'Swimming'] },
+                { q: 'What color pigment helps plants make food?', a: 'Green', opts: ['Green', 'Red', 'Blue', 'Yellow'] },
+                { q: 'Where do seeds grow into?', a: 'New plants', opts: ['New plants', 'Rocks', 'Water', 'Clouds'] }
+            ];
+
+            plantFacts.forEach(f => {
+                for (let i = 0; i < 3; i++) {
+                    q.push({ question: f.q, visual: '🌱', answer: f.a, options: shuffle([...f.opts]) });
+                }
+            });
+
+            plants.forEach(p => {
+                q.push({
+                    question: `What plant is this?`,
+                    visual: p.emoji,
+                    answer: p.name,
+                    options: shuffle([p.name, ...shuffle(plants.filter(x => x.name !== p.name)).slice(0, 3).map(x => x.name)])
+                });
+            });
+
+            return q;
+        }
+
+        function generateBodyQuestions() {
+            const q = [];
+            const organs = [
+                { name: 'Heart', emoji: '🫀', job: 'Pumps blood', system: 'Circulatory' },
+                { name: 'Brain', emoji: '🧠', job: 'Controls body', system: 'Nervous' },
+                { name: 'Lungs', emoji: '🫁', job: 'Help breathing', system: 'Respiratory' },
+                { name: 'Stomach', emoji: '🫃', job: 'Digests food', system: 'Digestive' },
+                { name: 'Eyes', emoji: '👁️', job: 'Help seeing', system: 'Sensory' },
+                { name: 'Ears', emoji: '👂', job: 'Help hearing', system: 'Sensory' }
+            ];
+
+            const bodyFacts = [
+                { q: 'How many bones do adults have?', a: '206', opts: ['206', '106', '306', '56'] },
+                { q: 'What carries oxygen in blood?', a: 'Red blood cells', opts: ['Red blood cells', 'White blood cells', 'Water', 'Air'] },
+                { q: 'How many teeth do adults have?', a: '32', opts: ['32', '20', '50', '10'] },
+                { q: 'What protects your brain?', a: 'Skull', opts: ['Skull', 'Skin', 'Hair', 'Ears'] },
+                { q: 'What is your largest organ?', a: 'Skin', opts: ['Skin', 'Heart', 'Brain', 'Liver'] },
+                { q: 'How many senses do humans have?', a: '5', opts: ['5', '3', '7', '10'] },
+                { q: 'What do muscles help you do?', a: 'Move', opts: ['Move', 'Sleep', 'Think', 'See'] },
+                { q: 'What pumps blood through your body?', a: 'Heart', opts: ['Heart', 'Brain', 'Lungs', 'Stomach'] }
+            ];
+
+            bodyFacts.forEach(f => {
+                for (let i = 0; i < 3; i++) {
+                    q.push({ question: f.q, visual: '🏃', answer: f.a, options: shuffle([...f.opts]) });
+                }
+            });
+
+            organs.forEach(o => {
+                q.push({
+                    question: `What does the ${o.name} do?`,
+                    visual: o.emoji,
+                    answer: o.job,
+                    options: shuffle([o.job, ...shuffle(organs.filter(x => x.name !== o.name)).slice(0, 3).map(x => x.job)])
+                });
+            });
+
+            return q;
+        }
+
+        function generateWeatherQuestions() {
+            const q = [];
+            const weather = [
+                { type: 'Sunny', emoji: '☀️', temp: 'Warm' },
+                { type: 'Rainy', emoji: '🌧️', temp: 'Cool' },
+                { type: 'Snowy', emoji: '❄️', temp: 'Cold' },
+                { type: 'Cloudy', emoji: '☁️', temp: 'Mild' },
+                { type: 'Stormy', emoji: '⛈️', temp: 'Varies' },
+                { type: 'Windy', emoji: '💨', temp: 'Varies' }
+            ];
+
+            const weatherFacts = [
+                { q: 'What makes a rainbow?', a: 'Sun and rain', opts: ['Sun and rain', 'Wind', 'Snow', 'Darkness'] },
+                { q: 'How many colors in a rainbow?', a: '7', opts: ['7', '5', '10', '3'] },
+                { q: 'What causes thunder?', a: 'Lightning', opts: ['Lightning', 'Rain', 'Wind', 'Snow'] },
+                { q: 'What is frozen rain called?', a: 'Hail', opts: ['Hail', 'Snow', 'Sleet', 'Frost'] },
+                { q: 'What forms in very cold clouds?', a: 'Snow', opts: ['Snow', 'Rain', 'Sunshine', 'Wind'] },
+                { q: 'What measures temperature?', a: 'Thermometer', opts: ['Thermometer', 'Ruler', 'Clock', 'Scale'] },
+                { q: 'What is water vapor in air called?', a: 'Humidity', opts: ['Humidity', 'Rain', 'Snow', 'Fog'] },
+                { q: 'What season is hottest?', a: 'Summer', opts: ['Summer', 'Winter', 'Spring', 'Fall'] }
+            ];
+
+            weatherFacts.forEach(f => {
+                for (let i = 0; i < 3; i++) {
+                    q.push({ question: f.q, visual: '🌤️', answer: f.a, options: shuffle([...f.opts]) });
+                }
+            });
+
+            weather.forEach(w => {
+                q.push({
+                    question: `What type of weather is this?`,
+                    visual: w.emoji,
+                    answer: w.type,
+                    options: shuffle([w.type, ...shuffle(weather.filter(x => x.type !== w.type)).slice(0, 3).map(x => x.type)])
+                });
+            });
+
+            return q;
+        }
+
+        function generateSpaceQuestions() {
+            const q = [];
+            const planets = [
+                { name: 'Earth', emoji: '🌍', position: 3, moons: 1 },
+                { name: 'Mars', emoji: '🔴', position: 4, moons: 2 },
+                { name: 'Saturn', emoji: '🪐', position: 6, moons: 83 },
+                { name: 'Jupiter', emoji: '🟤', position: 5, moons: 95 }
+            ];
+
+            const spaceFacts = [
+                { q: 'What is at the center of our solar system?', a: 'The Sun', opts: ['The Sun', 'Earth', 'Moon', 'Mars'] },
+                { q: 'How many planets in our solar system?', a: '8', opts: ['8', '9', '7', '10'] },
+                { q: 'What planet is known for its rings?', a: 'Saturn', opts: ['Saturn', 'Mars', 'Earth', 'Venus'] },
+                { q: 'What planet do we live on?', a: 'Earth', opts: ['Earth', 'Mars', 'Venus', 'Jupiter'] },
+                { q: 'What is Earth\'s natural satellite?', a: 'The Moon', opts: ['The Moon', 'The Sun', 'Mars', 'Stars'] },
+                { q: 'What is a shooting star?', a: 'Meteor', opts: ['Meteor', 'Comet', 'Star', 'Planet'] },
+                { q: 'Which planet is closest to the Sun?', a: 'Mercury', opts: ['Mercury', 'Venus', 'Earth', 'Mars'] },
+                { q: 'What galaxy do we live in?', a: 'Milky Way', opts: ['Milky Way', 'Andromeda', 'Spiral', 'Orion'] },
+                { q: 'What do astronauts wear in space?', a: 'Space suit', opts: ['Space suit', 'Swimsuit', 'Pajamas', 'Coat'] },
+                { q: 'Which planet is the largest?', a: 'Jupiter', opts: ['Jupiter', 'Saturn', 'Earth', 'Mars'] }
+            ];
+
+            spaceFacts.forEach(f => {
+                for (let i = 0; i < 3; i++) {
+                    q.push({ question: f.q, visual: '🚀', answer: f.a, options: shuffle([...f.opts]) });
+                }
+            });
+
+            return q;
+        }
+
+        function shuffle(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        // ==================== GAME LOGIC ====================
+        function selectTopic(topic) {
+            currentTopic = topic;
+            currentFact = 0;
+
+            document.querySelectorAll('.topic-card').forEach(c => {
+                c.classList.remove('active');
+                if (c.dataset.topic === topic) c.classList.add('active');
+            });
+
+            if (currentMode === 'learn') showFact();
+            else startQuiz();
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.querySelectorAll('.mode-tab').forEach(t => {
+                t.classList.remove('active');
+                if (t.textContent.toLowerCase().includes(mode)) t.classList.add('active');
+            });
+
+            document.getElementById('learnContainer').classList.toggle('active', mode === 'learn');
+            document.getElementById('quizContainer').classList.toggle('active', mode === 'quiz');
+
+            if (mode === 'learn') {
+                currentFact = 0;
+                showFact();
+            } else {
+                startQuiz();
+            }
+        }
+
+        function showFact() {
+            const lesson = lessons[currentTopic][currentFact];
+            if (!lesson) return;
+
+            document.getElementById('factCard').innerHTML = `
+                <div class="fact-emoji">${lesson.emoji}</div>
+                <h2 class="fact-title">${lesson.title}</h2>
+                <p class="fact-text">${lesson.text}</p>
+                <div class="fun-fact">
+                    <p class="fun-fact-label">🌟 Fun Fact:</p>
+                    <p>${lesson.funFact}</p>
+                </div>
+            `;
+
+            speak(lesson.title + '. ' + lesson.text);
+        }
+
+        function nextFact() {
+            initAudio();
+            if (currentFact < lessons[currentTopic].length - 1) {
+                currentFact++;
+                showFact();
+            }
+        }
+
+        function prevFact() {
+            initAudio();
+            if (currentFact > 0) {
+                currentFact--;
+                showFact();
+            }
+        }
+
+        function startQuiz() {
+            score = 0;
+            streak = 0;
+            lives = 3;
+            currentQuestion = 0;
+
+            switch(currentTopic) {
+                case 'animals': questions = shuffle(generateAnimalQuestions()).slice(0, CONFIG.questionsPerRound); break;
+                case 'plants': questions = shuffle(generatePlantQuestions()).slice(0, CONFIG.questionsPerRound); break;
+                case 'body': questions = shuffle(generateBodyQuestions()).slice(0, CONFIG.questionsPerRound); break;
+                case 'weather': questions = shuffle(generateWeatherQuestions()).slice(0, CONFIG.questionsPerRound); break;
+                case 'space': questions = shuffle(generateSpaceQuestions()).slice(0, CONFIG.questionsPerRound); break;
+            }
+
+            updateStats();
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentQuestion >= questions.length || lives <= 0) {
+                showResults();
+                return;
+            }
+
+            const q = questions[currentQuestion];
+            document.getElementById('qNumber').textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
+            document.getElementById('qText').textContent = q.question;
+            document.getElementById('qVisual').textContent = q.visual;
+
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = opt;
+                btn.onclick = () => checkAnswer(opt, btn);
+                btn.dataset.answer = opt;
+                grid.appendChild(btn);
+            });
+
+            updateProgress();
+            canAnswer = true;
+            speak(q.question);
+        }
+
+        function checkAnswer(selected, btn) {
+            if (!canAnswer) return;
+            canAnswer = false;
+            initAudio();
+
+            const q = questions[currentQuestion];
+            const correct = selected === q.answer;
+
+            if (correct) {
+                btn.classList.add('correct');
+                playSuccess();
+                score += 10 + streak * 2;
+                streak++;
+                showFeedback('🎉 Correct!', 'success');
+                speak('Great job!');
+            } else {
+                btn.classList.add('wrong');
+                document.querySelectorAll('.option-btn').forEach(b => {
+                    if (b.dataset.answer === q.answer) b.classList.add('correct');
+                });
+                playError();
+                streak = 0;
+                lives--;
+                showFeedback('❌ Try Again!', 'error');
+                speak('The answer was ' + q.answer);
+            }
+
+            updateStats();
+
+            setTimeout(() => {
+                currentQuestion++;
+                showQuestion();
+            }, 1500);
+        }
+
+        function showFeedback(msg, type) {
+            const fb = document.getElementById('feedback');
+            fb.textContent = msg;
+            fb.className = 'feedback ' + type + ' show';
+            setTimeout(() => fb.className = 'feedback', 1200);
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('streak').textContent = streak;
+            document.getElementById('lives').textContent = lives;
+        }
+
+        function updateProgress() {
+            const pct = (currentQuestion / questions.length) * 100;
+            document.getElementById('progress').style.width = pct + '%';
+        }
+
+        function showResults() {
+            const pct = (score / (questions.length * 10)) * 100;
+            let stars = '⭐';
+            if (pct >= 70) stars = '⭐⭐';
+            if (pct >= 90) stars = '⭐⭐⭐';
+
+            document.getElementById('resultsStars').textContent = stars;
+            document.getElementById('resultsScore').textContent = `You scored ${score} points!`;
+            document.getElementById('resultsModal').style.display = 'flex';
+
+            playSuccess();
+            speak('Amazing! You scored ' + score + ' points!');
+            createConfetti();
+        }
+
+        function restartQuiz() {
+            document.getElementById('resultsModal').style.display = 'none';
+            startQuiz();
+        }
+
+        function createConfetti() {
+            const colors = ['#06d6a0', '#118ab2', '#ffd166', '#ef476f', '#7b2cbf'];
+            for (let i = 0; i < 50; i++) {
+                const c = document.createElement('div');
+                c.style.cssText = `
+                    position: fixed;
+                    width: 10px;
+                    height: 10px;
+                    background: ${colors[Math.floor(Math.random() * colors.length)]};
+                    left: ${Math.random() * 100}vw;
+                    top: -10px;
+                    border-radius: 50%;
+                    animation: confettiFall ${2 + Math.random() * 2}s linear forwards;
+                    z-index: 4000;
+                `;
+                document.body.appendChild(c);
+                setTimeout(() => c.remove(), 4000);
+            }
+        }
+
+        // ==================== MEDIAPIPE ====================
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const handPointer = document.getElementById('handPointer');
+        const indicatorDot = document.getElementById('indicatorDot');
+
+        const hands = new Hands({
+            locateFile: file => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 } });
+                video.srcObject = stream;
+                video.onloadedmetadata = () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    indicatorDot.classList.add('on');
+                    detect();
+                };
+            } catch (e) {
+                console.error('Camera error:', e);
+            }
+        }
+
+        async function detect() {
+            if (video.readyState >= 2) await hands.send({ image: video });
+            requestAnimationFrame(detect);
+        }
+
+        function onResults(results) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const lm = results.multiHandLandmarks[0];
+                drawConnectors(ctx, lm, HAND_CONNECTIONS, { color: '#06d6a0', lineWidth: 2 });
+                drawLandmarks(ctx, lm, { color: '#ffd166', lineWidth: 1, radius: 3 });
+                processHand(lm);
+            } else {
+                handPointer.style.display = 'none';
+            }
+        }
+
+        function processHand(lm) {
+            const indexTip = lm[8];
+            const thumbTip = lm[4];
+
+            const rawX = (1 - indexTip.x) * window.innerWidth;
+            const rawY = indexTip.y * window.innerHeight;
+
+            handPos.x += (rawX - handPos.x) * CONFIG.smoothingFactor;
+            handPos.y += (rawY - handPos.y) * CONFIG.smoothingFactor;
+
+            handPointer.style.display = 'block';
+            handPointer.style.left = (handPos.x - 25) + 'px';
+            handPointer.style.top = (handPos.y - 25) + 'px';
+
+            const dist = Math.sqrt(
+                Math.pow(indexTip.x - thumbTip.x, 2) +
+                Math.pow(indexTip.y - thumbTip.y, 2) +
+                Math.pow(indexTip.z - thumbTip.z, 2)
+            );
+
+            isPinching = dist < CONFIG.pinchThreshold;
+            handPointer.className = 'hand-pointer ' + (isPinching ? 'closed' : 'open');
+
+            if (isPinching && !wasPinching) {
+                const els = document.elementsFromPoint(handPos.x, handPos.y);
+                for (const el of els) {
+                    if (el.classList.contains('option-btn') && canAnswer) { el.click(); break; }
+                    if (el.classList.contains('topic-card')) { el.click(); break; }
+                    if (el.classList.contains('mode-tab')) { el.click(); break; }
+                    if (el.classList.contains('nav-btn')) { el.click(); break; }
+                }
+            }
+
+            document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('highlight'));
+            const hovered = document.elementsFromPoint(handPos.x, handPos.y);
+            for (const el of hovered) {
+                if (el.classList.contains('option-btn')) { el.classList.add('highlight'); break; }
+            }
+
+            wasPinching = isPinching;
+        }
+
+        const HAND_CONNECTIONS = [
+            [0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],
+            [0,9],[9,10],[10,11],[11,12],[0,13],[13,14],[14,15],[15,16],
+            [0,17],[17,18],[18,19],[19,20],[5,9],[9,13],[13,17]
+        ];
+
+        // ==================== PARTICLES ====================
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const colors = ['#06d6a0', '#118ab2', '#ffd166', '#ef476f'];
+
+            for (let i = 0; i < 30; i++) {
+                const p = document.createElement('div');
+                p.className = 'particle';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.top = Math.random() * 100 + 'vh';
+                p.style.background = colors[Math.floor(Math.random() * colors.length)];
+                p.style.animationDelay = Math.random() * 15 + 's';
+                p.style.width = (3 + Math.random() * 5) + 'px';
+                p.style.height = p.style.width;
+                container.appendChild(p);
+            }
+        }
+
+        // ==================== INIT ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            setupCamera();
+            showFact();
+        });
+
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes confettiFall {
+                0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+                100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

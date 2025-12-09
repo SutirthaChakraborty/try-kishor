@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎨 Art Studio - Creative Learning Adventure</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #16213e;
+            --bg-card: #0f3460;
+            --text-primary: #ffffff;
+            --text-secondary: #a0a0a0;
+            --accent-pink: #e94560;
+            --accent-yellow: #f9ed69;
+            --accent-blue: #08d9d6;
+            --accent-purple: #b83dba;
+            --accent-orange: #ff6b35;
+            --accent-green: #7ed957;
+            --shadow: 0 10px 40px rgba(233, 69, 96, 0.3);
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Nunito', 'OpenDyslexic', sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.8;
+            letter-spacing: 0.03em;
+            color: var(--text-primary);
+        }
+
+        /* Paint Splatter Background */
+        .paint-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .paint-splatter {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.4;
+            animation: floatPaint 15s infinite ease-in-out;
+        }
+
+        .paint-splatter:nth-child(1) {
+            width: 400px;
+            height: 400px;
+            background: var(--accent-pink);
+            top: -100px;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .paint-splatter:nth-child(2) {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-yellow);
+            top: 30%;
+            right: -50px;
+            animation-delay: -3s;
+        }
+
+        .paint-splatter:nth-child(3) {
+            width: 350px;
+            height: 350px;
+            background: var(--accent-blue);
+            bottom: -100px;
+            left: 20%;
+            animation-delay: -6s;
+        }
+
+        .paint-splatter:nth-child(4) {
+            width: 250px;
+            height: 250px;
+            background: var(--accent-purple);
+            top: 60%;
+            right: 30%;
+            animation-delay: -9s;
+        }
+
+        .paint-splatter:nth-child(5) {
+            width: 200px;
+            height: 200px;
+            background: var(--accent-orange);
+            top: 10%;
+            left: 50%;
+            animation-delay: -12s;
+        }
+
+        @keyframes floatPaint {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -20px) scale(1.1); }
+            50% { transform: translate(-20px, 30px) scale(0.9); }
+            75% { transform: translate(20px, 20px) scale(1.05); }
+        }
+
+        /* Navigation Bar */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            background: linear-gradient(135deg, var(--accent-pink) 0%, var(--accent-purple) 100%);
+            padding: 15px 20px;
+            box-shadow: 0 4px 30px rgba(233, 69, 96, 0.4);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-family: 'Pacifico', cursive;
+            font-size: 1.5rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 25px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: white;
+            color: var(--accent-pink);
+        }
+
+        /* Main Container */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, rgba(233, 69, 96, 0.2) 0%, rgba(184, 61, 186, 0.2) 100%);
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            border: 2px solid rgba(233, 69, 96, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-family: 'Pacifico', cursive;
+            font-size: 3rem;
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-yellow), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+        }
+
+        /* Mode Selection */
+        .mode-selection {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 18px 45px;
+            font-size: 1.3rem;
+            font-family: inherit;
+            font-weight: 700;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mode-btn.learn {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-green));
+            color: var(--bg-primary);
+        }
+
+        .mode-btn.quiz {
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-orange));
+            color: white;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .mode-btn.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px currentColor;
+        }
+
+        /* Topic Selection */
+        .topic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .topic-card {
+            background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+            border-radius: var(--radius);
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .topic-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-pink);
+            box-shadow: 0 10px 30px rgba(233, 69, 96, 0.3);
+        }
+
+        .topic-card.active {
+            border-color: var(--accent-yellow);
+            background: linear-gradient(145deg, rgba(233, 69, 96, 0.2), rgba(184, 61, 186, 0.2));
+        }
+
+        .topic-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .topic-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Game Area */
+        .game-area {
+            background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+            border-radius: var(--radius);
+            padding: 40px;
+            min-height: 500px;
+            border: 2px solid rgba(233, 69, 96, 0.2);
+            position: relative;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 30px;
+            font-weight: 700;
+        }
+
+        .stat-item.score { color: var(--accent-yellow); }
+        .stat-item.streak { color: var(--accent-orange); }
+        .stat-item.lives { color: var(--accent-pink); }
+        .stat-item.progress { color: var(--accent-blue); }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 15px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-pink), var(--accent-yellow), var(--accent-blue));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Learn Mode Cards */
+        .learn-container {
+            display: none;
+        }
+
+        .learn-container.active {
+            display: block;
+        }
+
+        .learn-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            border-radius: var(--radius);
+            padding: 35px;
+            margin-bottom: 25px;
+            border-left: 5px solid var(--accent-pink);
+            transition: all 0.3s ease;
+        }
+
+        .learn-card:hover {
+            transform: translateX(10px);
+            border-left-color: var(--accent-yellow);
+        }
+
+        .learn-card h3 {
+            font-size: 1.6rem;
+            color: var(--accent-yellow);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .learn-card p {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            line-height: 1.9;
+        }
+
+        .learn-card .fun-fact {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(249, 237, 105, 0.1);
+            border-radius: 12px;
+            font-style: italic;
+            color: var(--accent-yellow);
+        }
+
+        .learn-nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .learn-nav-btn {
+            padding: 15px 35px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .learn-nav-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .learn-nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Quiz Mode */
+        .quiz-container {
+            display: none;
+        }
+
+        .quiz-container.active {
+            display: block;
+        }
+
+        .question-display {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .question-number {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .question-emoji {
+            font-size: 5rem;
+            margin: 20px 0;
+            display: block;
+        }
+
+        /* Answer Options */
+        .answers-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .answer-btn {
+            padding: 25px;
+            font-size: 1.3rem;
+            font-family: inherit;
+            font-weight: 600;
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            color: var(--text-primary);
+            border: 3px solid rgba(255,255,255,0.2);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .answer-btn:hover {
+            border-color: var(--accent-blue);
+            background: rgba(8, 217, 214, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .answer-btn.correct {
+            background: linear-gradient(135deg, var(--accent-green), #2ecc71) !important;
+            border-color: var(--accent-green) !important;
+            animation: correctPulse 0.5s ease;
+        }
+
+        .answer-btn.incorrect {
+            background: linear-gradient(135deg, var(--accent-pink), #c0392b) !important;
+            border-color: var(--accent-pink) !important;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        /* Results Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+            border-radius: var(--radius);
+            padding: 50px;
+            text-align: center;
+            max-width: 500px;
+            border: 3px solid var(--accent-pink);
+            animation: modalPop 0.5s ease;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0) rotate(-10deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .modal-content h2 {
+            font-family: 'Pacifico', cursive;
+            font-size: 2.5rem;
+            color: var(--accent-yellow);
+            margin-bottom: 20px;
+        }
+
+        .modal-stars {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-score {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+        }
+
+        .modal-btn {
+            padding: 18px 40px;
+            font-size: 1.3rem;
+            font-family: inherit;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-pink), var(--accent-orange));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Camera Preview */
+        .camera-preview {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 4px solid var(--accent-pink);
+            box-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+            z-index: 100;
+            background: #000;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .camera-preview canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 5px 10px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+            font-size: 0.75rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e74c3c;
+        }
+
+        .status-dot.active {
+            background: #2ecc71;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Hand Cursor */
+        .hand-cursor {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            transition: transform 0.1s ease-out;
+        }
+
+        .hand-cursor.open {
+            background: radial-gradient(circle, var(--accent-blue) 0%, transparent 70%);
+            border: 3px solid var(--accent-blue);
+        }
+
+        .hand-cursor.closed {
+            background: radial-gradient(circle, var(--accent-pink) 0%, transparent 70%);
+            border: 3px solid var(--accent-pink);
+            transform: scale(0.7);
+        }
+
+        /* Sound Button */
+        .sound-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-pink));
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(184, 61, 186, 0.4);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sound-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .topic-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .answers-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .game-area {
+                padding: 20px;
+            }
+
+            .question-text {
+                font-size: 1.4rem;
+            }
+
+            .camera-preview {
+                width: 150px;
+                height: 112px;
+                bottom: 80px;
+            }
+
+            .mode-btn {
+                padding: 15px 30px;
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .topic-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .topic-icon {
+                font-size: 2.5rem;
+            }
+
+            .stats-bar {
+                justify-content: center;
+            }
+
+            .stat-item {
+                padding: 8px 15px;
+                font-size: 0.9rem;
+            }
+
+            .camera-preview {
+                width: 120px;
+                height: 90px;
+            }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            z-index: 3000;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Paint Splatter Background -->
+    <div class="paint-bg">
+        <div class="paint-splatter"></div>
+        <div class="paint-splatter"></div>
+        <div class="paint-splatter"></div>
+        <div class="paint-splatter"></div>
+        <div class="paint-splatter"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-title">🎨 Learning Games</div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link">🔤 Letters</a>
+                <a href="maths_adventure.html" class="nav-link">🔢 Maths</a>
+                <a href="science_explorer.html" class="nav-link">🔬 Science</a>
+                <a href="english_quest.html" class="nav-link">📚 English</a>
+                <a href="art_studio.html" class="nav-link active">🎨 Art</a>
+                <a href="fun_facts.html" class="nav-link">🌟 Fun Facts</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hand Cursor -->
+    <div class="hand-cursor" id="handCursor"></div>
+
+    <!-- Results Modal -->
+    <div class="modal-overlay" id="resultsModal">
+        <div class="modal-content">
+            <h2>🎨 Amazing Art!</h2>
+            <div class="modal-stars" id="modalStars">⭐⭐⭐</div>
+            <div class="modal-score" id="modalScore">You scored 8/10!</div>
+            <button class="modal-btn" onclick="restartQuiz()">Try Again 🔄</button>
+            <button class="modal-btn" onclick="selectTopic(null)">New Topic 🎯</button>
+        </div>
+    </div>
+
+    <!-- Camera Preview -->
+    <div class="camera-preview" id="cameraPreview">
+        <video id="videoElement" autoplay playsinline></video>
+        <canvas id="canvasOverlay"></canvas>
+        <div class="camera-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span>Camera</span>
+        </div>
+    </div>
+
+    <!-- Sound Button -->
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🎨 Art Studio Adventure 🖌️</h1>
+            <p>Discover colors, famous artists, and creative techniques!</p>
+        </header>
+
+        <!-- Mode Selection -->
+        <div class="mode-selection">
+            <button class="mode-btn learn active" onclick="setMode('learn')">
+                📖 Learn Mode
+            </button>
+            <button class="mode-btn quiz" onclick="setMode('quiz')">
+                🎯 Quiz Mode
+            </button>
+        </div>
+
+        <!-- Topic Selection -->
+        <div class="topic-grid" id="topicGrid">
+            <div class="topic-card active" data-topic="colors" onclick="selectTopic('colors')">
+                <span class="topic-icon">🌈</span>
+                <div class="topic-name">Colors & Mixing</div>
+            </div>
+            <div class="topic-card" data-topic="artists" onclick="selectTopic('artists')">
+                <span class="topic-icon">🖼️</span>
+                <div class="topic-name">Famous Artists</div>
+            </div>
+            <div class="topic-card" data-topic="techniques" onclick="selectTopic('techniques')">
+                <span class="topic-icon">🖌️</span>
+                <div class="topic-name">Art Techniques</div>
+            </div>
+            <div class="topic-card" data-topic="elements" onclick="selectTopic('elements')">
+                <span class="topic-icon">📐</span>
+                <div class="topic-name">Art Elements</div>
+            </div>
+            <div class="topic-card" data-topic="styles" onclick="selectTopic('styles')">
+                <span class="topic-icon">🎭</span>
+                <div class="topic-name">Art Styles</div>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div class="game-area">
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-item score">⭐ Score: <span id="scoreValue">0</span></div>
+                <div class="stat-item streak">🔥 Streak: <span id="streakValue">0</span></div>
+                <div class="stat-item lives">❤️ Lives: <span id="livesValue">3</span></div>
+                <div class="stat-item progress">📊 <span id="progressText">0/10</span></div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+
+            <!-- Learn Container -->
+            <div class="learn-container active" id="learnContainer">
+                <div id="learnContent"></div>
+                <div class="learn-nav">
+                    <button class="learn-nav-btn" id="prevBtn" onclick="prevLesson()">← Previous</button>
+                    <button class="learn-nav-btn" id="nextBtn" onclick="nextLesson()">Next →</button>
+                </div>
+            </div>
+
+            <!-- Quiz Container -->
+            <div class="quiz-container" id="quizContainer">
+                <div class="question-display">
+                    <div class="question-number" id="questionNumber">Question 1 of 10</div>
+                    <div class="question-text" id="questionText">Loading question...</div>
+                    <div id="questionVisual"></div>
+                </div>
+                <div class="answers-grid" id="answersGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        const CONFIG = {
+            pinchThreshold: 0.08,
+            smoothingFactor: 0.3,
+            soundEnabled: true,
+            questionsPerQuiz: 10
+        };
+
+        // ==================== GAME STATE ====================
+        let currentMode = 'learn';
+        let currentTopic = 'colors';
+        let currentLessonIndex = 0;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let streak = 0;
+        let lives = 3;
+        let currentQuizQuestions = [];
+        let isAnswering = false;
+
+        // Hand tracking state
+        let handPosition = { x: 0, y: 0 };
+        let isPinching = false;
+        let previousPinchState = false;
+
+        // ==================== LEARNING CONTENT ====================
+        const learnContent = {
+            colors: [
+                {
+                    title: "🔴🔵🟡 Primary Colors",
+                    content: "The three PRIMARY colors are RED, BLUE, and YELLOW. These are special because you cannot make them by mixing other colors - they are the starting colors for all other colors!",
+                    funFact: "🎨 Fun fact: Painters have used primary colors for thousands of years! Ancient cave paintings used red and yellow pigments."
+                },
+                {
+                    title: "🟠🟢🟣 Secondary Colors",
+                    content: "When you mix two primary colors, you get SECONDARY colors! RED + YELLOW = ORANGE, YELLOW + BLUE = GREEN, BLUE + RED = PURPLE (or VIOLET).",
+                    funFact: "🌈 Fun fact: The rainbow contains all the primary and secondary colors in order: red, orange, yellow, green, blue, violet!"
+                },
+                {
+                    title: "🎨 Warm and Cool Colors",
+                    content: "WARM colors are RED, ORANGE, and YELLOW - they remind us of fire and sunshine! COOL colors are BLUE, GREEN, and PURPLE - they remind us of water and ice.",
+                    funFact: "🏠 Fun fact: Restaurants often use warm colors because they make people feel hungry and happy!"
+                },
+                {
+                    title: "⬛⬜ Black and White",
+                    content: "BLACK is made by mixing all colors together (in paint). WHITE is the absence of color in paint, but in light, white is ALL colors combined! This is why a rainbow appears when light goes through water.",
+                    funFact: "🐼 Fun fact: Zebras and pandas use black and white for camouflage - it helps them blend in!"
+                },
+                {
+                    title: "🎭 Complementary Colors",
+                    content: "COMPLEMENTARY colors are opposite each other on the color wheel: RED & GREEN, BLUE & ORANGE, YELLOW & PURPLE. When placed together, they make each other look brighter!",
+                    funFact: "🎄 Fun fact: That's why Christmas uses red and green - they're complementary colors that look extra festive together!"
+                },
+                {
+                    title: "🌊 Tints and Shades",
+                    content: "A TINT is when you add WHITE to a color to make it lighter (like light blue). A SHADE is when you add BLACK to make it darker (like navy blue). This is how artists create depth!",
+                    funFact: "🌅 Fun fact: Sunrise and sunset have so many beautiful tints because sunlight passes through more atmosphere!"
+                }
+            ],
+            artists: [
+                {
+                    title: "🌻 Vincent van Gogh",
+                    content: "Vincent van Gogh was a Dutch painter famous for his swirly, expressive paintings. His most famous works include 'Starry Night' and 'Sunflowers'. He used thick brushstrokes and bright colors!",
+                    funFact: "⭐ Fun fact: Van Gogh painted 'Starry Night' while looking out his window at a mental health hospital. He made over 2,100 artworks in just 10 years!"
+                },
+                {
+                    title: "😊 Leonardo da Vinci",
+                    content: "Leonardo da Vinci was an Italian artist AND inventor! He painted the 'Mona Lisa' - the world's most famous painting. He also drew designs for flying machines and tanks hundreds of years before they existed!",
+                    funFact: "🔬 Fun fact: Leonardo wrote his notes backwards so they could only be read in a mirror! He was left-handed and this kept his hands clean while writing."
+                },
+                {
+                    title: "💙 Pablo Picasso",
+                    content: "Pablo Picasso was a Spanish artist who invented CUBISM - a style where objects are broken into geometric shapes and shown from multiple angles at once. He could paint realistically as a child!",
+                    funFact: "🎨 Fun fact: Picasso made over 50,000 artworks in his lifetime! He had a 'Blue Period' where he only painted in shades of blue."
+                },
+                {
+                    title: "🌸 Claude Monet",
+                    content: "Claude Monet was a French painter who started IMPRESSIONISM - a style that captures light and movement with quick, visible brushstrokes. He loved painting water lilies, haystacks, and cathedrals!",
+                    funFact: "🏡 Fun fact: Monet created a beautiful garden at his home in Giverny, France, and painted it over 250 times!"
+                },
+                {
+                    title: "🇲🇽 Frida Kahlo",
+                    content: "Frida Kahlo was a Mexican artist famous for her colorful self-portraits. She often included flowers, animals, and symbols from Mexican culture. She expressed her feelings and experiences through art.",
+                    funFact: "🦜 Fun fact: Frida had pet monkeys, parrots, and even a deer! They often appeared in her paintings."
+                },
+                {
+                    title: "🎯 Andy Warhol",
+                    content: "Andy Warhol was an American artist who created POP ART - art inspired by popular culture, advertisements, and celebrities. He famously painted Campbell's soup cans and portraits of Marilyn Monroe!",
+                    funFact: "🥫 Fun fact: Andy Warhol ate the same lunch every day for 20 years - Campbell's tomato soup and a sandwich!"
+                }
+            ],
+            techniques: [
+                {
+                    title: "🖌️ Brushstrokes",
+                    content: "Different brushstrokes create different effects! Short, dabby strokes create texture. Long, smooth strokes create calm feelings. Swirly strokes show movement. Artists choose brushstrokes carefully!",
+                    funFact: "🌊 Fun fact: Van Gogh's swirly brushstrokes in 'Starry Night' actually match real patterns of turbulence studied by scientists!"
+                },
+                {
+                    title: "💧 Watercolor Painting",
+                    content: "Watercolor uses special paint mixed with water. It creates soft, dreamy effects. Artists paint from light to dark and let colors blend together while wet. White areas are left unpainted!",
+                    funFact: "📜 Fun fact: Watercolor has been used for over 4,000 years! Ancient Egyptians used it to decorate scrolls."
+                },
+                {
+                    title: "🎨 Acrylic Painting",
+                    content: "Acrylic paint dries quickly and can be used thick or thin. You can layer it, mix it, and even add texture. It's great for beginners because mistakes can be painted over!",
+                    funFact: "🚀 Fun fact: Acrylic paint was invented in the 1940s - it's one of the newest types of paint!"
+                },
+                {
+                    title: "✏️ Sketching",
+                    content: "Sketching is drawing quickly to capture an idea. Artists use pencils, charcoal, or pens. Light lines are used first, then darker lines add detail. Many masterpieces started as simple sketches!",
+                    funFact: "📓 Fun fact: Leonardo da Vinci's sketchbooks contain over 13,000 pages of drawings and notes!"
+                },
+                {
+                    title: "🏺 Sculpting",
+                    content: "Sculpture is 3D art made by shaping materials like clay, stone, metal, or wood. Artists can ADD material (like clay) or REMOVE material (like carving stone). Sculptures can be tiny or HUGE!",
+                    funFact: "🗽 Fun fact: The Statue of Liberty is a sculpture made of copper sheets on an iron frame - she's 305 feet tall!"
+                },
+                {
+                    title: "📰 Collage",
+                    content: "Collage is art made by gluing different materials together - paper, fabric, photos, and more! It was made famous by Picasso and Braque. It's a great way to recycle and create!",
+                    funFact: "✂️ Fun fact: The word 'collage' comes from the French word 'coller' which means 'to glue'!"
+                }
+            ],
+            elements: [
+                {
+                    title: "➖ Line",
+                    content: "Lines are the most basic element of art! They can be straight, curved, thick, thin, zigzag, or wavy. Lines create shapes, show movement, and guide your eyes around a picture.",
+                    funFact: "🌀 Fun fact: The longest line ever drawn was 143 miles long - drawn by a British artist over 5 days!"
+                },
+                {
+                    title: "🔷 Shape",
+                    content: "Shapes are 2D areas with edges. GEOMETRIC shapes are regular (circles, squares, triangles). ORGANIC shapes are irregular like clouds or leaves. Everything can be simplified into shapes!",
+                    funFact: "📐 Fun fact: The most common shape in nature is the hexagon - bees use it in their honeycombs!"
+                },
+                {
+                    title: "🎨 Color",
+                    content: "Color has three parts: HUE (the name, like red), VALUE (how light or dark), and SATURATION (how bright or dull). Colors create mood - warm colors feel energetic, cool colors feel calm.",
+                    funFact: "👀 Fun fact: Humans can see about 10 million different colors! But some animals, like mantis shrimp, can see colors we can't!"
+                },
+                {
+                    title: "🧱 Texture",
+                    content: "Texture is how something FEELS or LOOKS like it feels. Real texture can be touched. Visual texture is drawn or painted to LOOK textured. Artists use texture to make art interesting!",
+                    funFact: "🐘 Fun fact: Some artists add real materials like sand or fabric to their paintings to create actual texture!"
+                },
+                {
+                    title: "🌓 Value",
+                    content: "Value is how light or dark something is. It goes from white to black with all the grays in between. Value creates depth and shows where light hits objects. It makes flat pictures look 3D!",
+                    funFact: "🖤 Fun fact: Black-and-white photos can be more dramatic than color because they focus entirely on value!"
+                },
+                {
+                    title: "📦 Space",
+                    content: "Space is the area around, between, and within objects. POSITIVE space is where objects are. NEGATIVE space is the empty area around them. Both are important in good art!",
+                    funFact: "🏛️ Fun fact: The FedEx logo has a hidden arrow in its negative space between the E and X!"
+                }
+            ],
+            styles: [
+                {
+                    title: "📸 Realism",
+                    content: "REALISM is art that looks exactly like real life! Artists carefully study light, shadow, and detail to make paintings look like photographs. It takes incredible skill and patience.",
+                    funFact: "🖼️ Fun fact: Some realist paintings are so detailed that people have tried to reach into them, thinking they're real!"
+                },
+                {
+                    title: "🌅 Impressionism",
+                    content: "IMPRESSIONISM captures a moment with visible brushstrokes and bright colors. It focuses on light and atmosphere rather than details. Monet, Renoir, and Degas were famous Impressionists.",
+                    funFact: "🎭 Fun fact: 'Impressionism' was originally an insult! A critic used it to mock Monet's painting 'Impression, Sunrise'."
+                },
+                {
+                    title: "🔶 Cubism",
+                    content: "CUBISM shows objects from many angles at once, breaking them into geometric shapes. Picasso and Braque invented it. It changed how people thought about art forever!",
+                    funFact: "🎸 Fun fact: Picasso once made a famous sculpture of a bull using just a bicycle seat and handlebars!"
+                },
+                {
+                    title: "🌀 Abstract Art",
+                    content: "ABSTRACT art uses shapes, colors, and lines to create pictures that don't look like real things. It expresses feelings and ideas instead. Kandinsky and Mondrian were famous abstract artists.",
+                    funFact: "💰 Fun fact: An abstract painting by Mark Rothko sold for $86 million - it's basically two rectangles of color!"
+                },
+                {
+                    title: "🍔 Pop Art",
+                    content: "POP ART uses images from popular culture - ads, comics, celebrities, and products. It's bold, colorful, and fun! Andy Warhol and Roy Lichtenstein made it famous in the 1960s.",
+                    funFact: "🎪 Fun fact: Roy Lichtenstein painted huge pictures that look like comic book panels, complete with dots!"
+                },
+                {
+                    title: "😱 Surrealism",
+                    content: "SURREALISM creates dreamlike, impossible scenes! It combines realistic detail with bizarre, unexpected elements. Salvador Dalí painted melting clocks and elephants on spider legs!",
+                    funFact: "😴 Fun fact: Dalí would nap holding a key over a plate - when he fell asleep and dropped it, the noise would wake him so he could paint his dreams!"
+                }
+            ]
+        };
+
+        // ==================== QUIZ QUESTIONS ====================
+        const quizQuestions = {
+            colors: [
+                { q: "What are the THREE primary colors?", a: "Red, Blue, Yellow", wrong: ["Red, Green, Blue", "Orange, Green, Purple", "Pink, Blue, Yellow"], emoji: "🔴🔵🟡" },
+                { q: "What color do you get when you mix RED and YELLOW?", a: "Orange", wrong: ["Green", "Purple", "Brown"], emoji: "🔴 + 🟡 = ?" },
+                { q: "What color do you get when you mix BLUE and YELLOW?", a: "Green", wrong: ["Orange", "Purple", "Brown"], emoji: "🔵 + 🟡 = ?" },
+                { q: "What color do you get when you mix RED and BLUE?", a: "Purple", wrong: ["Orange", "Green", "Brown"], emoji: "🔴 + 🔵 = ?" },
+                { q: "Which colors are WARM colors?", a: "Red, Orange, Yellow", wrong: ["Blue, Green, Purple", "Black, White, Gray", "Pink, Brown, Tan"], emoji: "🔥" },
+                { q: "Which colors are COOL colors?", a: "Blue, Green, Purple", wrong: ["Red, Orange, Yellow", "Black, White, Gray", "Pink, Brown, Tan"], emoji: "❄️" },
+                { q: "What is a TINT?", a: "Color + White", wrong: ["Color + Black", "Color + Gray", "Two colors mixed"], emoji: "⬜" },
+                { q: "What is a SHADE?", a: "Color + Black", wrong: ["Color + White", "Color + Gray", "Two colors mixed"], emoji: "⬛" },
+                { q: "What is the complementary color of RED?", a: "Green", wrong: ["Blue", "Yellow", "Orange"], emoji: "🔴 ↔️ ?" },
+                { q: "What is the complementary color of BLUE?", a: "Orange", wrong: ["Red", "Yellow", "Purple"], emoji: "🔵 ↔️ ?" },
+                { q: "What is the complementary color of YELLOW?", a: "Purple", wrong: ["Red", "Blue", "Green"], emoji: "🟡 ↔️ ?" },
+                { q: "What are SECONDARY colors made from?", a: "Two primary colors", wrong: ["Three primary colors", "One primary + black", "White + any color"], emoji: "🎨" },
+                { q: "What happens when you mix all paint colors?", a: "You get dark/black", wrong: ["You get white", "You get rainbow", "You get gray"], emoji: "🖤" },
+                { q: "Which color combination is NOT complementary?", a: "Red and Blue", wrong: ["Red and Green", "Blue and Orange", "Yellow and Purple"], emoji: "🤔" },
+                { q: "What type of colors remind us of fire?", a: "Warm colors", wrong: ["Cool colors", "Neutral colors", "Dark colors"], emoji: "🔥" },
+                { q: "Adding white to red makes...", a: "Pink", wrong: ["Maroon", "Orange", "Brown"], emoji: "🔴 + ⬜ = ?" },
+                { q: "What color wheel position are complementary colors?", a: "Opposite each other", wrong: ["Next to each other", "Three spaces apart", "Same position"], emoji: "🎡" },
+                { q: "Black and white are called...", a: "Neutral colors", wrong: ["Primary colors", "Secondary colors", "Warm colors"], emoji: "⬛⬜" },
+                { q: "Why do restaurants use warm colors?", a: "They make people hungry", wrong: ["They're cheaper", "They last longer", "They're brighter"], emoji: "🍔" },
+                { q: "The rainbow shows colors in what order?", a: "Red, Orange, Yellow, Green, Blue, Violet", wrong: ["Blue, Green, Yellow, Orange, Red, Violet", "Random order", "Warm then cool"], emoji: "🌈" }
+            ],
+            artists: [
+                { q: "Who painted 'Starry Night'?", a: "Vincent van Gogh", wrong: ["Pablo Picasso", "Claude Monet", "Leonardo da Vinci"], emoji: "🌙" },
+                { q: "Who painted the 'Mona Lisa'?", a: "Leonardo da Vinci", wrong: ["Michelangelo", "Vincent van Gogh", "Pablo Picasso"], emoji: "😊" },
+                { q: "Who invented CUBISM?", a: "Pablo Picasso", wrong: ["Claude Monet", "Andy Warhol", "Vincent van Gogh"], emoji: "🔷" },
+                { q: "Who started IMPRESSIONISM?", a: "Claude Monet", wrong: ["Pablo Picasso", "Andy Warhol", "Frida Kahlo"], emoji: "🌸" },
+                { q: "Who created POP ART?", a: "Andy Warhol", wrong: ["Pablo Picasso", "Claude Monet", "Frida Kahlo"], emoji: "🥫" },
+                { q: "Which artist loved painting water lilies?", a: "Claude Monet", wrong: ["Vincent van Gogh", "Pablo Picasso", "Andy Warhol"], emoji: "🪷" },
+                { q: "Which artist painted Campbell's soup cans?", a: "Andy Warhol", wrong: ["Pablo Picasso", "Claude Monet", "Vincent van Gogh"], emoji: "🥫" },
+                { q: "Frida Kahlo was from which country?", a: "Mexico", wrong: ["Spain", "France", "Italy"], emoji: "🇲🇽" },
+                { q: "Van Gogh was from which country?", a: "Netherlands (Dutch)", wrong: ["France", "Spain", "Italy"], emoji: "🇳🇱" },
+                { q: "Which artist was also an inventor?", a: "Leonardo da Vinci", wrong: ["Pablo Picasso", "Claude Monet", "Andy Warhol"], emoji: "💡" },
+                { q: "What did Picasso have a period of?", a: "Blue Period", wrong: ["Red Period", "Green Period", "Yellow Period"], emoji: "💙" },
+                { q: "Where did Monet create his famous garden?", a: "Giverny, France", wrong: ["Paris, France", "London, England", "Rome, Italy"], emoji: "🏡" },
+                { q: "What animals did Frida Kahlo have as pets?", a: "Monkeys and parrots", wrong: ["Dogs and cats", "Fish and turtles", "Horses and cows"], emoji: "🐒" },
+                { q: "How did Leonardo write his notes?", a: "Backwards (mirror writing)", wrong: ["In code", "In Latin only", "Very small"], emoji: "🔄" },
+                { q: "What style uses thick, swirly brushstrokes?", a: "Van Gogh's style", wrong: ["Warhol's style", "Da Vinci's style", "Monet's style"], emoji: "🌀" },
+                { q: "Andy Warhol made portraits of which celebrity?", a: "Marilyn Monroe", wrong: ["Elvis only", "Michael Jackson", "The Queen"], emoji: "👱‍♀️" },
+                { q: "What did Van Gogh famously paint many of?", a: "Sunflowers", wrong: ["Roses", "Tulips", "Daisies"], emoji: "🌻" },
+                { q: "Which artist could paint realistically as a child?", a: "Pablo Picasso", wrong: ["Claude Monet", "Andy Warhol", "Frida Kahlo"], emoji: "👶" },
+                { q: "Frida Kahlo was famous for painting...", a: "Self-portraits", wrong: ["Landscapes", "Animals only", "Buildings"], emoji: "🖼️" },
+                { q: "How many artworks did Picasso make?", a: "Over 50,000", wrong: ["About 100", "Around 1,000", "Exactly 5,000"], emoji: "🎨" }
+            ],
+            techniques: [
+                { q: "What painting technique uses water?", a: "Watercolor", wrong: ["Acrylic", "Oil painting", "Sculpture"], emoji: "💧" },
+                { q: "Which paint type dries the FASTEST?", a: "Acrylic", wrong: ["Oil paint", "Watercolor", "Tempera"], emoji: "⚡" },
+                { q: "What is SKETCHING?", a: "Quick drawing to capture ideas", wrong: ["Slow detailed painting", "3D art", "Using only colors"], emoji: "✏️" },
+                { q: "What is SCULPTURE?", a: "3D art made by shaping materials", wrong: ["2D drawings", "Painting only", "Photography"], emoji: "🏺" },
+                { q: "What is COLLAGE?", a: "Art made by gluing materials together", wrong: ["Painting with fingers", "Drawing with charcoal", "Sculpting clay"], emoji: "📰" },
+                { q: "Short, dabby brushstrokes create...", a: "Texture", wrong: ["Smoothness", "Shadows only", "Nothing special"], emoji: "🖌️" },
+                { q: "In watercolor, white areas are...", a: "Left unpainted", wrong: ["Painted white", "Painted last", "Added with chalk"], emoji: "⬜" },
+                { q: "Where does 'collage' come from?", a: "French word for 'to glue'", wrong: ["Latin word for 'art'", "Greek word for 'paper'", "Spanish word for 'cut'"], emoji: "🇫🇷" },
+                { q: "What did Leonardo's sketchbooks contain?", a: "Over 13,000 pages", wrong: ["About 100 pages", "Only 50 pages", "Just paintings"], emoji: "📓" },
+                { q: "What is the Statue of Liberty made of?", a: "Copper and iron", wrong: ["Solid gold", "Pure marble", "Concrete"], emoji: "🗽" },
+                { q: "Which technique is best for beginners?", a: "Acrylic painting", wrong: ["Oil painting", "Sculpture", "Fresco"], emoji: "🎨" },
+                { q: "What can you add to paint for texture?", a: "Sand or fabric", wrong: ["Only water", "Nothing", "Air"], emoji: "🏖️" },
+                { q: "When was acrylic paint invented?", a: "1940s", wrong: ["1800s", "1600s", "Ancient times"], emoji: "🆕" },
+                { q: "Long smooth brushstrokes create...", a: "Calm feeling", wrong: ["Angry feeling", "No feeling", "Confusion"], emoji: "😌" },
+                { q: "Swirly brushstrokes show...", a: "Movement", wrong: ["Stillness", "Darkness", "Nothing"], emoji: "🌀" },
+                { q: "What is charcoal used for?", a: "Sketching", wrong: ["Painting", "Sculpting", "Collage"], emoji: "⬛" },
+                { q: "Artists paint from light to dark in...", a: "Watercolor", wrong: ["Acrylic", "Oil", "All painting"], emoji: "🌅" },
+                { q: "What can you sculpt with?", a: "Clay, stone, metal, or wood", wrong: ["Only clay", "Only stone", "Only metal"], emoji: "🗿" },
+                { q: "Who made collage famous?", a: "Picasso and Braque", wrong: ["Monet and Renoir", "Warhol and Lichtenstein", "Da Vinci and Michelangelo"], emoji: "✂️" },
+                { q: "How old is watercolor painting?", a: "Over 4,000 years", wrong: ["About 100 years", "About 500 years", "About 50 years"], emoji: "📜" }
+            ],
+            elements: [
+                { q: "What is the most BASIC element of art?", a: "Line", wrong: ["Color", "Shape", "Texture"], emoji: "➖" },
+                { q: "Circles, squares, and triangles are...", a: "Geometric shapes", wrong: ["Organic shapes", "Random shapes", "Natural shapes"], emoji: "🔷" },
+                { q: "Shapes like clouds and leaves are...", a: "Organic shapes", wrong: ["Geometric shapes", "Perfect shapes", "Square shapes"], emoji: "☁️" },
+                { q: "The three parts of color are...", a: "Hue, Value, Saturation", wrong: ["Red, Blue, Yellow", "Light, Medium, Dark", "Warm, Cool, Neutral"], emoji: "🎨" },
+                { q: "What is TEXTURE in art?", a: "How something feels or looks like it feels", wrong: ["The size of art", "The color used", "The shape only"], emoji: "🧱" },
+                { q: "What is VALUE in art?", a: "How light or dark something is", wrong: ["How much it costs", "How big it is", "What color it is"], emoji: "🌓" },
+                { q: "POSITIVE space is...", a: "Where objects are", wrong: ["Empty area", "The background", "White space"], emoji: "➕" },
+                { q: "NEGATIVE space is...", a: "Empty area around objects", wrong: ["Where objects are", "Black areas only", "Filled space"], emoji: "➖" },
+                { q: "The most common shape in nature is...", a: "Hexagon", wrong: ["Circle", "Square", "Triangle"], emoji: "⬡" },
+                { q: "Lines can guide your...", a: "Eyes around a picture", wrong: ["Hands only", "Nothing", "Feet"], emoji: "👀" },
+                { q: "What makes flat pictures look 3D?", a: "Value (light and dark)", wrong: ["Only color", "Only lines", "Only shapes"], emoji: "📦" },
+                { q: "The FedEx logo has a hidden...", a: "Arrow in negative space", wrong: ["Star", "Heart", "Circle"], emoji: "📦" },
+                { q: "HUE means...", a: "The name of a color", wrong: ["How bright", "How dark", "How big"], emoji: "🏷️" },
+                { q: "SATURATION means...", a: "How bright or dull a color is", wrong: ["How light or dark", "The color name", "The size"], emoji: "✨" },
+                { q: "Real texture can be...", a: "Touched and felt", wrong: ["Only seen", "Only imagined", "Only drawn"], emoji: "🖐️" },
+                { q: "Visual texture is...", a: "Drawn or painted to look textured", wrong: ["Always real", "Made of fabric", "3D only"], emoji: "👁️" },
+                { q: "Both positive and negative space are...", a: "Important in good art", wrong: ["Not important", "Only for experts", "Always equal"], emoji: "⚖️" },
+                { q: "Black-and-white photos focus on...", a: "Value", wrong: ["Color", "Texture only", "Nothing special"], emoji: "📷" },
+                { q: "Zigzag lines create a feeling of...", a: "Energy or excitement", wrong: ["Calm", "Sadness", "Boredom"], emoji: "⚡" },
+                { q: "Curved lines often feel...", a: "Soft and flowing", wrong: ["Sharp and angry", "Boring", "Nothing"], emoji: "🌊" }
+            ],
+            styles: [
+                { q: "Which art style looks exactly like real life?", a: "Realism", wrong: ["Abstract", "Cubism", "Surrealism"], emoji: "📸" },
+                { q: "Which style uses visible brushstrokes and bright colors?", a: "Impressionism", wrong: ["Realism", "Cubism", "Pop Art"], emoji: "🌅" },
+                { q: "Which style breaks objects into geometric shapes?", a: "Cubism", wrong: ["Impressionism", "Realism", "Pop Art"], emoji: "🔶" },
+                { q: "Which style uses images from popular culture?", a: "Pop Art", wrong: ["Impressionism", "Realism", "Cubism"], emoji: "🍔" },
+                { q: "Which style creates dreamlike, impossible scenes?", a: "Surrealism", wrong: ["Realism", "Impressionism", "Pop Art"], emoji: "😱" },
+                { q: "Which style expresses feelings with shapes and colors?", a: "Abstract Art", wrong: ["Realism", "Pop Art", "Impressionism"], emoji: "🌀" },
+                { q: "'Impressionism' was originally...", a: "An insult from a critic", wrong: ["A compliment", "A French word", "An artist's name"], emoji: "😠" },
+                { q: "Salvador Dalí painted...", a: "Melting clocks", wrong: ["Soup cans", "Water lilies", "Sunflowers"], emoji: "🕰️" },
+                { q: "Roy Lichtenstein's art looks like...", a: "Comic book panels", wrong: ["Photographs", "Classical paintings", "Sculptures"], emoji: "💥" },
+                { q: "Mondrian painted with...", a: "Lines and rectangles of color", wrong: ["Only circles", "Only triangles", "Realistic scenes"], emoji: "🟥" },
+                { q: "Kandinsky was a famous...", a: "Abstract artist", wrong: ["Realist", "Pop artist", "Impressionist"], emoji: "🎨" },
+                { q: "How did Dalí capture his dreams?", a: "Napping and waking quickly", wrong: ["Writing them down", "Photographing them", "Asking friends"], emoji: "😴" },
+                { q: "A Rothko painting sold for how much?", a: "$86 million", wrong: ["$100", "$1,000", "$10,000"], emoji: "💰" },
+                { q: "Impressionism focuses on...", a: "Light and atmosphere", wrong: ["Perfect details", "Dark shadows", "Only people"], emoji: "☀️" },
+                { q: "Realism requires...", a: "Incredible skill and patience", wrong: ["Only imagination", "No training", "Just luck"], emoji: "🎯" },
+                { q: "Cubism shows objects from...", a: "Many angles at once", wrong: ["One angle only", "No angles", "Moving angles"], emoji: "👁️‍🗨️" },
+                { q: "Pop Art became famous in the...", a: "1960s", wrong: ["1800s", "1700s", "2000s"], emoji: "📅" },
+                { q: "Abstract art doesn't look like...", a: "Real things", wrong: ["Art", "Paintings", "Colors"], emoji: "❓" },
+                { q: "Surrealism combines realistic detail with...", a: "Bizarre, unexpected elements", wrong: ["More realism", "Only nature", "Geometric shapes"], emoji: "🦋" },
+                { q: "Who invented Cubism with Picasso?", a: "Georges Braque", wrong: ["Claude Monet", "Andy Warhol", "Salvador Dalí"], emoji: "🤝" }
+            ]
+        };
+
+        // ==================== AUDIO SYSTEM ====================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playTone(frequency, duration = 0.2, type = 'sine') {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playCorrectSound() {
+            playTone(523.25, 0.15);
+            setTimeout(() => playTone(659.25, 0.15), 100);
+            setTimeout(() => playTone(783.99, 0.3), 200);
+        }
+
+        function playWrongSound() {
+            playTone(200, 0.3, 'square');
+        }
+
+        function speak(text) {
+            if (!CONFIG.soundEnabled) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            utterance.pitch = 1.1;
+            speechSynthesis.speak(utterance);
+        }
+
+        function toggleSound() {
+            CONFIG.soundEnabled = !CONFIG.soundEnabled;
+            document.getElementById('soundBtn').textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+        }
+
+        // ==================== GAME FUNCTIONS ====================
+        function setMode(mode) {
+            currentMode = mode;
+
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.mode-btn.${mode}`).classList.add('active');
+
+            if (mode === 'learn') {
+                document.getElementById('learnContainer').classList.add('active');
+                document.getElementById('quizContainer').classList.remove('active');
+                currentLessonIndex = 0;
+                showLesson();
+            } else {
+                document.getElementById('learnContainer').classList.remove('active');
+                document.getElementById('quizContainer').classList.add('active');
+                startQuiz();
+            }
+        }
+
+        function selectTopic(topic) {
+            if (topic) currentTopic = topic;
+
+            document.querySelectorAll('.topic-card').forEach(card => {
+                card.classList.remove('active');
+                if (card.dataset.topic === currentTopic) {
+                    card.classList.add('active');
+                }
+            });
+
+            currentLessonIndex = 0;
+            currentQuestionIndex = 0;
+
+            if (currentMode === 'learn') {
+                showLesson();
+            } else {
+                startQuiz();
+            }
+        }
+
+        // ==================== LEARN MODE ====================
+        function showLesson() {
+            const lessons = learnContent[currentTopic];
+            const lesson = lessons[currentLessonIndex];
+
+            const container = document.getElementById('learnContent');
+            container.innerHTML = `
+                <div class="learn-card">
+                    <h3>${lesson.title}</h3>
+                    <p>${lesson.content}</p>
+                    <div class="fun-fact">${lesson.funFact}</div>
+                </div>
+            `;
+
+            document.getElementById('prevBtn').disabled = currentLessonIndex === 0;
+            document.getElementById('nextBtn').disabled = currentLessonIndex === lessons.length - 1;
+
+            const progress = ((currentLessonIndex + 1) / lessons.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `${currentLessonIndex + 1}/${lessons.length}`;
+
+            speak(lesson.title.replace(/[^\w\s]/g, '') + '. ' + lesson.content);
+        }
+
+        function nextLesson() {
+            initAudio();
+            if (currentLessonIndex < learnContent[currentTopic].length - 1) {
+                currentLessonIndex++;
+                showLesson();
+                playTone(440, 0.1);
+            }
+        }
+
+        function prevLesson() {
+            initAudio();
+            if (currentLessonIndex > 0) {
+                currentLessonIndex--;
+                showLesson();
+                playTone(330, 0.1);
+            }
+        }
+
+        // ==================== QUIZ MODE ====================
+        function startQuiz() {
+            score = 0;
+            streak = 0;
+            lives = 3;
+            currentQuestionIndex = 0;
+            isAnswering = false;
+
+            const allQuestions = [...quizQuestions[currentTopic]];
+            shuffleArray(allQuestions);
+            currentQuizQuestions = allQuestions.slice(0, CONFIG.questionsPerQuiz);
+
+            updateStats();
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentQuestionIndex >= currentQuizQuestions.length || lives <= 0) {
+                showResults();
+                return;
+            }
+
+            const question = currentQuizQuestions[currentQuestionIndex];
+
+            document.getElementById('questionNumber').textContent = `Question ${currentQuestionIndex + 1} of ${currentQuizQuestions.length}`;
+            document.getElementById('questionText').textContent = question.q;
+            document.getElementById('questionVisual').innerHTML = `<span class="question-emoji">${question.emoji}</span>`;
+
+            const answers = [question.a, ...question.wrong];
+            shuffleArray(answers);
+
+            const grid = document.getElementById('answersGrid');
+            grid.innerHTML = '';
+
+            answers.forEach(answer => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = answer;
+                btn.onclick = () => checkAnswer(answer, question.a, btn);
+                grid.appendChild(btn);
+            });
+
+            const progress = (currentQuestionIndex / currentQuizQuestions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+
+            speak(question.q);
+        }
+
+        function checkAnswer(selected, correct, btn) {
+            if (isAnswering) return;
+            isAnswering = true;
+            initAudio();
+
+            const buttons = document.querySelectorAll('.answer-btn');
+
+            if (selected === correct) {
+                btn.classList.add('correct');
+                playCorrectSound();
+                streak++;
+                score += 10 + (streak * 2);
+                speak('Correct! ' + correct);
+            } else {
+                btn.classList.add('incorrect');
+                buttons.forEach(b => {
+                    if (b.textContent === correct) b.classList.add('correct');
+                });
+                playWrongSound();
+                streak = 0;
+                lives--;
+                speak('The answer was ' + correct);
+            }
+
+            updateStats();
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                isAnswering = false;
+                showQuestion();
+            }, 2000);
+        }
+
+        function updateStats() {
+            document.getElementById('scoreValue').textContent = score;
+            document.getElementById('streakValue').textContent = streak;
+            document.getElementById('livesValue').textContent = lives;
+            document.getElementById('progressText').textContent = `${currentQuestionIndex}/${CONFIG.questionsPerQuiz}`;
+        }
+
+        function showResults() {
+            const total = currentQuizQuestions.length;
+            const percentage = (score / (total * 10)) * 100;
+
+            let stars = '⭐';
+            if (percentage >= 70) stars = '⭐⭐';
+            if (percentage >= 90) stars = '⭐⭐⭐';
+
+            document.getElementById('modalStars').textContent = stars;
+            document.getElementById('modalScore').textContent = `You scored ${score} points!`;
+            document.getElementById('resultsModal').classList.add('active');
+
+            if (percentage >= 70) {
+                createConfetti();
+                playCorrectSound();
+                speak('Great job! You did amazing!');
+            } else {
+                speak('Good try! Keep practicing!');
+            }
+        }
+
+        function restartQuiz() {
+            document.getElementById('resultsModal').classList.remove('active');
+            startQuiz();
+        }
+
+        function createConfetti() {
+            const colors = ['#e94560', '#f9ed69', '#08d9d6', '#b83dba', '#ff6b35', '#7ed957'];
+
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+
+                setTimeout(() => confetti.remove(), 4000);
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // ==================== MEDIAPIPE SETUP ====================
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('canvasOverlay');
+        const canvasCtx = canvasElement.getContext('2d');
+        const handCursor = document.getElementById('handCursor');
+        const statusDot = document.getElementById('statusDot');
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: 'user' }
+                });
+                videoElement.srcObject = stream;
+
+                videoElement.onloadedmetadata = () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    statusDot.classList.add('active');
+                    detectLoop();
+                };
+            } catch (err) {
+                console.error('Camera error:', err);
+            }
+        }
+
+        async function detectLoop() {
+            if (videoElement.readyState >= 2) {
+                await hands.send({ image: videoElement });
+            }
+            requestAnimationFrame(detectLoop);
+        }
+
+        function onResults(results) {
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, { color: '#e94560', lineWidth: 2 });
+                drawLandmarks(canvasCtx, landmarks, { color: '#08d9d6', lineWidth: 1, radius: 3 });
+
+                processHand(landmarks);
+            } else {
+                handCursor.style.display = 'none';
+            }
+        }
+
+        function processHand(landmarks) {
+            const indexTip = landmarks[8];
+            const thumbTip = landmarks[4];
+
+            const rawX = (1 - indexTip.x) * window.innerWidth;
+            const rawY = indexTip.y * window.innerHeight;
+
+            handPosition.x += (rawX - handPosition.x) * CONFIG.smoothingFactor;
+            handPosition.y += (rawY - handPosition.y) * CONFIG.smoothingFactor;
+
+            handCursor.style.display = 'block';
+            handCursor.style.left = (handPosition.x - 30) + 'px';
+            handCursor.style.top = (handPosition.y - 30) + 'px';
+
+            const pinchDistance = Math.sqrt(
+                Math.pow(indexTip.x - thumbTip.x, 2) +
+                Math.pow(indexTip.y - thumbTip.y, 2)
+            );
+
+            isPinching = pinchDistance < CONFIG.pinchThreshold;
+
+            handCursor.classList.toggle('open', !isPinching);
+            handCursor.classList.toggle('closed', isPinching);
+
+            if (isPinching && !previousPinchState) {
+                const elements = document.elementsFromPoint(handPosition.x, handPosition.y);
+                for (const el of elements) {
+                    if (el.onclick || el.tagName === 'BUTTON' || el.tagName === 'A' || el.classList.contains('topic-card') || el.classList.contains('answer-btn')) {
+                        el.click();
+                        break;
+                    }
+                }
+            }
+
+            previousPinchState = isPinching;
+        }
+
+        const HAND_CONNECTIONS = [
+            [0, 1], [1, 2], [2, 3], [3, 4],
+            [0, 5], [5, 6], [6, 7], [7, 8],
+            [0, 9], [9, 10], [10, 11], [11, 12],
+            [0, 13], [13, 14], [14, 15], [15, 16],
+            [0, 17], [17, 18], [18, 19], [19, 20],
+            [5, 9], [9, 13], [13, 17]
+        ];
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            setupCamera();
+            selectTopic('colors');
+            setMode('learn');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,2087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real Happiness & True Success - Learn with Hands</title>
+
+    <!-- OpenDyslexic Font for better readability -->
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-primary: #FFF8E7;
+            --bg-secondary: #FFE4C4;
+            --text-primary: #2D3436;
+            --text-secondary: #636E72;
+            --accent-blue: #74B9FF;
+            --accent-green: #55EFC4;
+            --accent-yellow: #FFEAA7;
+            --accent-pink: #FD79A8;
+            --accent-purple: #A29BFE;
+            --accent-orange: #FAB1A0;
+            --accent-red: #FF7675;
+            --shadow: 0 8px 32px rgba(0,0,0,0.1);
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'OpenDyslexic', 'Comic Sans MS', cursive, sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.8;
+            letter-spacing: 0.05em;
+            word-spacing: 0.1em;
+        }
+
+        /* Floating Background Shapes */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .bg-shape:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-blue);
+            top: -100px;
+            left: -100px;
+            animation-delay: 0s;
+        }
+
+        .bg-shape:nth-child(2) {
+            width: 200px;
+            height: 200px;
+            background: var(--accent-pink);
+            top: 50%;
+            right: -50px;
+            animation-delay: -5s;
+        }
+
+        .bg-shape:nth-child(3) {
+            width: 250px;
+            height: 250px;
+            background: var(--accent-green);
+            bottom: -100px;
+            left: 30%;
+            animation-delay: -10s;
+        }
+
+        .bg-shape:nth-child(4) {
+            width: 180px;
+            height: 180px;
+            background: var(--accent-yellow);
+            top: 20%;
+            left: 60%;
+            animation-delay: -15s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-30px) rotate(5deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(30px) rotate(-5deg); }
+        }
+
+        /* Main Container */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Dynamic Navigation Bar */
+        .nav-bar {
+            position: sticky;
+            top: 0;
+            z-index: 500;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 0 0 var(--radius) var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .nav-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .nav-menu {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .nav-link {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .nav-link.active {
+            background: white;
+            color: var(--accent-blue);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            color: rgba(255,255,255,0.9);
+        }
+
+        /* Camera Section */
+        .camera-section {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .camera-container {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+            background: #000;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            display: none; /* main view hidden, using preview only */
+        }
+
+        /* Camera Preview - Fixed */
+        .camera-preview {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 240px;
+            height: 180px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 4px solid var(--accent-blue);
+            box-shadow: 0 0 30px rgba(116, 185, 255, 0.6);
+            z-index: 100;
+            background: #000;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            display: block;
+        }
+
+        .camera-preview canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #e74c3c;
+            animation: pulse 1.5s infinite;
+        }
+
+        .status-dot.active {
+            background: #2ecc71;
+        }
+
+        .hand-cursor {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            transition: transform 0.1s ease-out;
+            display: none;
+        }
+
+        .hand-cursor.open {
+            background: radial-gradient(circle, var(--accent-blue) 0%, transparent 70%);
+            border: 4px solid var(--accent-blue);
+            transform: scale(1);
+        }
+
+        .hand-cursor.closed {
+            background: radial-gradient(circle, var(--accent-green) 0%, transparent 70%);
+            border: 4px solid var(--accent-green);
+            transform: scale(0.7);
+        }
+
+        /* Instructions Panel */
+        .instructions-panel {
+            flex: 0 0 auto;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 232, 196, 0.95) 100%);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow);
+            max-width: 380px;
+        }
+
+        .instructions-panel h3 {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+        }
+
+        .instructions-panel ul {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .instructions-panel li {
+            padding: 10px 12px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: white;
+            text-align: center;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(116, 185, 255, 0.3);
+        }
+
+        .instructions-panel li span {
+            font-size: 1.8rem;
+            display: block;
+        }
+
+        /* Status Indicator */
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 15px;
+            background: var(--accent-yellow);
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+
+        /* Game Selection */
+        .game-selection {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow);
+            border: 4px solid transparent;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-blue);
+        }
+
+        .game-card.active {
+            border-color: var(--accent-green);
+            background: linear-gradient(135deg, white 0%, var(--accent-green) 100%);
+        }
+
+        .game-card-icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+
+        .game-card h3 {
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .game-card p {
+            font-size: 1rem;
+            color: var(--text-secondary);
+        }
+
+        /* Game Area */
+        .game-area {
+            background: white;
+            border-radius: var(--radius);
+            padding: 40px;
+            min-height: 500px;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .game-title {
+            text-align: center;
+            font-size: 1.8rem;
+            color: var(--text-primary);
+            margin-bottom: 30px;
+        }
+
+        /* Draggable Items */
+        .items-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .draggable-item {
+            min-width: 120px;
+            min-height: 100px;
+            max-width: 220px;
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: grab;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow);
+            user-select: none;
+            position: relative;
+            padding: 10px;
+            word-break: break-word;
+            overflow: hidden;
+            text-align: center;
+            line-height: 1.3;
+            background: linear-gradient(135deg, var(--accent-orange) 0%, var(--accent-pink) 100%);
+            color: white;
+        }
+
+        .draggable-item:hover {
+            transform: scale(1.05);
+        }
+
+        .draggable-item.dragging {
+            opacity: 0.7;
+            cursor: grabbing;
+            z-index: 100;
+            position: fixed;
+            pointer-events: none;
+        }
+
+        .draggable-item.matched {
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        /* Drop Zones */
+        .drop-zones {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .drop-zone {
+            min-width: 160px;
+            min-height: 120px;
+            max-width: 260px;
+            border: 4px dashed var(--text-secondary);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 12px;
+            word-break: break-word;
+            text-align: center;
+            overflow: hidden;
+            line-height: 1.3;
+            background: rgba(255,255,255,0.8);
+        }
+
+        .drop-zone.highlight {
+            border-color: var(--accent-blue);
+            background: rgba(116, 185, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .drop-zone.correct {
+            border-color: var(--accent-green);
+            background: var(--accent-green);
+            color: white;
+            animation: celebrate 0.5s ease;
+        }
+
+        .drop-zone.incorrect {
+            border-color: var(--accent-red);
+            background: rgba(255, 118, 117, 0.3);
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.1) rotate(5deg); }
+            75% { transform: scale(1.1) rotate(-5deg); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        /* Score Display */
+        .score-display {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: var(--accent-yellow);
+            padding: 15px 25px;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            box-shadow: var(--shadow);
+        }
+
+        /* Feedback Messages */
+        .feedback-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 30px 50px;
+            border-radius: var(--radius);
+            font-size: 2rem;
+            font-weight: bold;
+            z-index: 1000;
+            animation: popIn 0.5s ease;
+            display: none;
+        }
+
+        .feedback-message.success {
+            background: var(--accent-green);
+            color: white;
+        }
+
+        .feedback-message.error {
+            background: var(--accent-red);
+            color: white;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* Level Complete */
+        .level-complete {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .level-complete-content {
+            background: white;
+            padding: 50px;
+            border-radius: var(--radius);
+            text-align: center;
+            animation: bounceIn 0.5s ease;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0) rotate(-10deg); }
+            50% { transform: scale(1.1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .level-complete h2 {
+            font-size: 2.5rem;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+        }
+
+        .level-complete .stars {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .next-level-btn {
+            padding: 20px 40px;
+            font-size: 1.3rem;
+            font-family: inherit;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .next-level-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Sound Button */
+        .sound-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--accent-purple);
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sound-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 20px;
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-green) 0%, var(--accent-blue) 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        /* Hint Button */
+        .hint-btn {
+            position: absolute;
+            top: 20px;
+            left: 30px;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            background: var(--accent-orange);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .hint-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Level Selection Styles */
+        .level-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .level-btn {
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            background: white;
+            color: var(--text-primary);
+            border: 3px solid var(--text-secondary);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .level-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .level-btn.active {
+            background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
+            color: white;
+            border-color: var(--accent-blue);
+        }
+
+        .level-btn.easy {
+            border-color: var(--accent-green);
+        }
+
+        .level-btn.easy.active {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+        }
+
+        .level-btn.medium {
+            border-color: var(--accent-yellow);
+        }
+
+        .level-btn.medium.active {
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+        }
+
+        .level-btn.hard {
+            border-color: var(--accent-red);
+        }
+
+        .level-btn.hard.active {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+        }
+
+        .level-btn.completed::after {
+            content: ' ✓';
+            font-size: 1.2rem;
+        }
+
+        /* Confetti Animation */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            animation: confettiFall 3s linear infinite;
+            z-index: 3000;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+
+        /* Hide initially */
+        .game-content {
+            display: none;
+        }
+
+        .game-content.active {
+            display: block;
+        }
+
+        /* Responsive tweaks (shortened) */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.7rem;
+            }
+            .game-area {
+                padding: 15px;
+                min-height: 400px;
+            }
+            .score-display {
+                font-size: 1rem;
+                padding: 10px 15px;
+                top: 10px;
+                right: 10px;
+            }
+            .hint-btn {
+                top: 10px;
+                left: 10px;
+                font-size: 0.9rem;
+            }
+            .camera-preview {
+                width: 180px;
+                height: 135px;
+                bottom: 90px;
+                right: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.3rem;
+            }
+            .draggable-item {
+                min-width: 110px;
+                min-height: 90px;
+                font-size: 0.9rem;
+            }
+            .drop-zone {
+                min-width: 140px;
+                min-height: 100px;
+                font-size: 0.85rem;
+            }
+            .camera-preview {
+                width: 140px;
+                height: 105px;
+                bottom: 80px;
+                right: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Dynamic Navigation Bar -->
+    <div class="nav-bar">
+        <div class="nav-container">
+            <div class="nav-title">💛 Real Happiness & True Success</div>
+            <div class="nav-menu" id="navMenu"></div>
+        </div>
+    </div>
+
+    <!-- Background Shapes -->
+    <div class="bg-shapes">
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+    </div>
+
+    <!-- Hand Cursor -->
+    <div class="hand-cursor" id="handCursor"></div>
+
+    <!-- Feedback Message -->
+    <div class="feedback-message" id="feedbackMessage"></div>
+
+    <!-- Level Complete Modal -->
+    <div class="level-complete" id="levelComplete">
+        <div class="level-complete-content">
+            <h2>🎉 Great Job! 🎉</h2>
+            <div class="stars">⭐⭐⭐</div>
+            <p style="font-size: 1.3rem; margin-bottom: 20px;">You completed this level!</p>
+            <button class="next-level-btn" onclick="nextLevel()">Next Game →</button>
+        </div>
+    </div>
+
+    <!-- Sound Toggle Button -->
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🧠 Train Your Happy Mind 🧠</h1>
+            <p>Use your hands to drag and match cards that teach real happiness and healthy success.</p>
+        </header>
+
+        <!-- Camera Section -->
+        <section class="camera-section">
+            <div class="camera-container">
+                <video id="videoElement" autoplay playsinline></video>
+                <canvas id="canvasOverlay"></canvas>
+            </div>
+            <div class="instructions-panel">
+                <h3>📋 How to Play</h3>
+                <ul>
+                    <li><span>✋</span> Show Hand</li>
+                    <li><span>👆</span> Move Pointer</li>
+                    <li><span>✊</span> Pinch to Grab</li>
+                    <li><span>🎯</span> Drop on Match</li>
+                    <li><span>🔊</span> Tap to Hear</li>
+                    <li><span>💖</span> Fill Your Happy Mind</li>
+                </ul>
+                <div class="status-indicator">
+                    <div class="status-dot active" id="cameraStatusDot"></div>
+                    <span style="font-weight:bold;">Camera & Happy-Hands Active</span>
+                </div>
+                <p style="margin-top:10px; font-size:0.9rem; color:var(--text-secondary);">
+                    Tip: Press <strong>M</strong> on keyboard to use mouse-mode for testing.
+                </p>
+            </div>
+        </section>
+
+        <!-- Camera Preview -->
+        <div class="camera-preview" id="cameraPreview">
+            <video id="previewVideoElement" autoplay playsinline></video>
+            <canvas id="previewCanvasOverlay"></canvas>
+            <div class="camera-status">
+                <div class="status-dot active"></div>
+                <span>Camera Active</span>
+            </div>
+        </div>
+
+        <!-- Game Selection -->
+        <section class="game-selection">
+            <div class="game-card active" data-game="happiness" onclick="selectGame('happiness')">
+                <div class="game-card-icon">😊</div>
+                <h3>Happiness Choices</h3>
+                <p>Match moments to real happiness messages.</p>
+            </div>
+            <div class="game-card" data-game="success" onclick="selectGame('success')">
+                <div class="game-card-icon">🏆</div>
+                <h3>True Success Steps</h3>
+                <p>Match actions to healthy success habits.</p>
+            </div>
+            <div class="game-card" data-game="gratitude" onclick="selectGame('gratitude')">
+                <div class="game-card-icon">🌱</div>
+                <h3>Gratitude Garden</h3>
+                <p>Grow happy thoughts with gratitude cards.</p>
+            </div>
+        </section>
+
+        <!-- Game Area -->
+        <section class="game-area" id="gameArea">
+            <button class="hint-btn" onclick="giveHint()">💡 Hint</button>
+            <div class="score-display">⭐ Score: <span id="scoreValue">0</span></div>
+
+            <!-- Level Selector -->
+            <div class="level-selector">
+                <button class="level-btn easy active" onclick="selectLevel('easy')">🟢 Easy</button>
+                <button class="level-btn medium" onclick="selectLevel('medium')">🟡 Medium</button>
+                <button class="level-btn hard" onclick="selectLevel('hard')">🔴 Hard</button>
+            </div>
+
+            <!-- Happiness Game -->
+            <div class="game-content active" id="happinessGame">
+                <h2 class="game-title">😊 Match Moments to Real Happiness</h2>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar1" style="width: 0%"></div>
+                </div>
+                <div class="items-container" id="happinessItems"></div>
+                <div class="drop-zones" id="happinessZones"></div>
+            </div>
+
+            <!-- Success Game -->
+            <div class="game-content" id="successGame">
+                <h2 class="game-title">🏆 Match Actions to True Success</h2>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar2" style="width: 0%"></div>
+                </div>
+                <div class="items-container" id="successItems"></div>
+                <div class="drop-zones" id="successZones"></div>
+            </div>
+
+            <!-- Gratitude Game -->
+            <div class="game-content" id="gratitudeGame">
+                <h2 class="game-title">🌱 Match Moments to Gratitude Thoughts</h2>
+                <div class="progress-container">
+                    <div class="progress-bar" id="progressBar3" style="width: 0%"></div>
+                </div>
+                <div class="items-container" id="gratitudeItems"></div>
+                <div class="drop-zones" id="gratitudeZones"></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // ==================== DYNAMIC NAVIGATION SYSTEM ====================
+        const GAMES_CONFIG = {
+            'index.html': { name: '🔤 Alphabet & Colors', description: 'Learn letters and colors' },
+            'happiness_success.html': { name: '💛 Happiness & Success', description: 'Train a positive mind' },
+            'planets.html': { name: '🪐 Planets', description: 'Explore our solar system' },
+            'exploring_body.html': { name: '🧬 Body Explorer', description: 'Learn about body parts' },
+            'frost_discovery.html': { name: '❄️ Frost Discovery', description: 'Reveal and learn hidden items' },
+            'hand_music.html': { name: '🎵 Music Hands', description: 'Learn music with hand gestures' },
+            'melt_the_ice.html': { name: '🌈 Melt the Ice', description: 'Melt ice to discover pictures' },
+            'science-lab.html': { name: '🧪 Science Lab', description: 'Perform fun experiments' }
+        };
+
+        function initializeNavigation() {
+            const navMenu = document.getElementById('navMenu');
+            const currentFile = window.location.pathname.split('/').pop() || 'happiness_success.html';
+            navMenu.innerHTML = '';
+
+            for (const [file, config] of Object.entries(GAMES_CONFIG)) {
+                const link = document.createElement('a');
+                link.className = 'nav-link';
+                link.href = file;
+                link.textContent = config.name;
+                link.title = config.description;
+
+                if (currentFile === file) {
+                    link.classList.add('active');
+                }
+                navMenu.appendChild(link);
+            }
+        }
+
+        // ==================== CONFIGURATION ====================
+        const CONFIG = {
+            pinchThreshold: 0.08,
+            smoothingFactor: 0.3,
+            soundEnabled: true
+        };
+
+        // ==================== GAME STATE ====================
+        let currentGame = 'happiness';
+        let currentLevel = 'easy';
+        let score = 0;
+        let matchesCompleted = 0;
+        let totalMatches = 0;
+        let draggedItem = null;
+        let isDragging = false;
+        let handPosition = { x: 0, y: 0 };
+        let isPinching = false;
+        let previousPinchState = false;
+        let levelsCompleted = {
+            happiness: { easy: false, medium: false, hard: false },
+            success: { easy: false, medium: false, hard: false },
+            gratitude: { easy: false, medium: false, hard: false }
+        };
+
+        // ==================== AUDIO SYSTEM ====================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playTone(frequency, duration = 0.3, type = 'sine') {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playSuccessSound() {
+            playTone(523.25, 0.15); // C5
+            setTimeout(() => playTone(659.25, 0.15), 100); // E5
+            setTimeout(() => playTone(783.99, 0.3), 200); // G5
+        }
+
+        function playErrorSound() {
+            playTone(200, 0.3, 'square');
+        }
+
+        function playPickupSound() {
+            playTone(400, 0.1);
+        }
+
+        function playDropSound() {
+            playTone(300, 0.1);
+        }
+
+        function speak(text, rate = 0.85) {
+            if (!CONFIG.soundEnabled) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = rate;
+            utterance.pitch = 1.1;
+            utterance.lang = 'en-US';
+            speechSynthesis.speak(utterance);
+        }
+
+        function toggleSound() {
+            CONFIG.soundEnabled = !CONFIG.soundEnabled;
+            document.getElementById('soundBtn').textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+        }
+
+        // ==================== GAME DATA ====================
+        // Each item has id, card (what child drags), expl (what appears in drop zone / is matched), speak text.
+        const gameData = {
+            happiness: {
+                easy: [
+                    {
+                        id: 'h1',
+                        card: '😊 Playing and laughing with my best friend',
+                        expl: 'Real happiness: sharing time with people we love.',
+                        speak: 'Playing and laughing with my best friend makes my heart happy.'
+                    },
+                    {
+                        id: 'h2',
+                        card: '🤗 Big family hug at the end of the day',
+                        expl: 'Real happiness: feeling safe and loved with family.',
+                        speak: 'Family hugs give deep happiness inside.'
+                    },
+                    {
+                        id: 'h3',
+                        card: '🧁 Sharing my snack with a friend',
+                        expl: 'Real happiness: giving and being kind.',
+                        speak: 'Sharing with a friend is real happiness.'
+                    },
+                    {
+                        id: 'h4',
+                        card: '🙏 Saying “thank you” for small things',
+                        expl: 'Real happiness: being thankful for little moments.',
+                        speak: 'Thank you makes happiness grow.'
+                    },
+                    {
+                        id: 'h5',
+                        card: '🎮 Winning every game and bragging',
+                        expl: 'This looks cool, but real happiness is about kindness, not bragging.',
+                        speak: 'Winning is fun, but real happiness is being kind.'
+                    },
+                    {
+                        id: 'h6',
+                        card: '💸 Wanting more toys than everyone else',
+                        expl: 'Toys are fun, but real happiness lives in the heart, not in things.',
+                        speak: 'Stuff is fun, but love and kindness are real happiness.'
+                    }
+                ],
+                medium: [
+                    {
+                        id: 'h7',
+                        card: '👂 Listening to a friend who feels sad',
+                        expl: 'Real happiness: being there for someone who needs us.',
+                        speak: 'Listening to a sad friend is a big happy kindness.'
+                    },
+                    {
+                        id: 'h8',
+                        card: '🎨 Creating art just because it feels good',
+                        expl: 'Real happiness: enjoying what we do, not just the result.',
+                        speak: 'Doing art for fun is real happiness.'
+                    },
+                    {
+                        id: 'h9',
+                        card: '🏃‍♂️ Playing outside and feeling fresh air',
+                        expl: 'Real happiness: a healthy body and a free mind.',
+                        speak: 'Playing outside is healthy and happy.'
+                    },
+                    {
+                        id: 'h10',
+                        card: '📱 Counting likes on my pictures again and again',
+                        expl: 'Likes fade, but real happiness comes from inside, not screens.',
+                        speak: 'Likes are small, inside happiness is big.'
+                    },
+                    {
+                        id: 'h11',
+                        card: '💬 Saying something nice to myself in the mirror',
+                        expl: 'Real happiness: being a kind friend to ourselves.',
+                        speak: 'Talking kindly to myself grows happiness.'
+                    },
+                    {
+                        id: 'h12',
+                        card: '😡 Getting angry when a friend wins a game',
+                        expl: 'This is a normal feeling, but real happiness is cheering for friends too.',
+                        speak: 'It is okay to feel upset, but cheering for friends brings more happiness.'
+                    }
+                ],
+                hard: [
+                    {
+                        id: 'h13',
+                        card: '🧩 Trying again after making a mistake',
+                        expl: 'Real happiness: growing and learning, not being perfect.',
+                        speak: 'Trying again grows my happy brave mind.'
+                    },
+                    {
+                        id: 'h14',
+                        card: '🕊 Forgiving someone after a small fight',
+                        expl: 'Real happiness: peace in the heart, not holding anger.',
+                        speak: 'Forgiving can make my heart feel light and happy.'
+                    },
+                    {
+                        id: 'h15',
+                        card: '🎁 Doing a secret good deed for someone',
+                        expl: 'Real happiness: kindness even when nobody sees.',
+                        speak: 'Secret kindness makes deep happiness.'
+                    },
+                    {
+                        id: 'h16',
+                        card: '🏅 Only feeling happy when I get a big prize',
+                        expl: 'Prizes are nice, but real happiness is also in the journey and effort.',
+                        speak: 'Prizes are nice, but my effort also matters.'
+                    },
+                    {
+                        id: 'h17',
+                        card: '🧘‍♀️ Taking a calm breath when I feel worried',
+                        expl: 'Real happiness: learning to calm my mind gently.',
+                        speak: 'Calm breathing helps my mind feel safe and happy.'
+                    },
+                    {
+                        id: 'h18',
+                        card: '📣 Comparing myself to others all the time',
+                        expl: 'Real happiness grows when I cheer for myself, not compare.',
+                        speak: 'I can be proud of myself without comparing.'
+                    },
+                    {
+                        id: 'h19',
+                        card: '📚 Reading a story that makes me feel warm inside',
+                        expl: 'Real happiness: stories that touch our heart and imagination.',
+                        speak: 'Good stories can fill my heart with happy pictures.'
+                    },
+                    {
+                        id: 'h20',
+                        card: '👑 Thinking I am better than everyone else',
+                        expl: 'This feeling separates us, but real happiness connects hearts.',
+                        speak: 'Real happiness comes from being kind, not feeling above others.'
+                    }
+                ]
+            },
+            success: {
+                easy: [
+                    {
+                        id: 's1',
+                        card: '📝 Practising a little every day',
+                        expl: 'True success: small steps every day.',
+                        speak: 'Practising a little every day is a super success power.'
+                    },
+                    {
+                        id: 's2',
+                        card: '❓ Asking for help when I don’t understand',
+                        expl: 'True success: being brave to ask questions.',
+                        speak: 'Asking for help is a smart success step.'
+                    },
+                    {
+                        id: 's3',
+                        card: '😴 Sleeping late and skipping homework',
+                        expl: 'This feels easy now, but it does not help real success.',
+                        speak: 'Skipping work may feel easy, but it does not build success.'
+                    },
+                    {
+                        id: 's4',
+                        card: '📚 Doing my best even if the marks are not perfect',
+                        expl: 'True success: effort and learning, not only marks.',
+                        speak: 'Doing my best is real success, even without perfect marks.'
+                    },
+                    {
+                        id: 's5',
+                        card: '🕵️‍♂️ Copying answers from a friend',
+                        expl: 'This looks like success, but it isn’t real or honest.',
+                        speak: 'Copying is not real success.'
+                    },
+                    {
+                        id: 's6',
+                        card: '👍 Saying “I will try again next time!”',
+                        expl: 'True success: a never-give-up attitude.',
+                        speak: 'Trying again is a true success habit.'
+                    }
+                ],
+                medium: [
+                    {
+                        id: 's7',
+                        card: '🎯 Making a small goal I can reach today',
+                        expl: 'True success: tiny goals that build big dreams.',
+                        speak: 'Small goals today grow big success tomorrow.'
+                    },
+                    {
+                        id: 's8',
+                        card: '📺 Watching videos instead of practicing before an exam',
+                        expl: 'This may feel fun now, but it steals future success.',
+                        speak: 'Too much screen before study can steal my success.'
+                    },
+                    {
+                        id: 's9',
+                        card: '🧮 Checking my work and fixing mistakes',
+                        expl: 'True success: learning from every mistake.',
+                        speak: 'Fixing mistakes makes my success stronger.'
+                    },
+                    {
+                        id: 's10',
+                        card: '🏁 Trying to be “better than everyone” all the time',
+                        expl: 'True success: being better than yesterday, not others.',
+                        speak: 'Real success is becoming a better me, not beating everyone.'
+                    },
+                    {
+                        id: 's11',
+                        card: '🤝 Helping a classmate understand a problem',
+                        expl: 'True success: lifting others up with us.',
+                        speak: 'Helping others learn is a beautiful success.'
+                    },
+                    {
+                        id: 's12',
+                        card: '🥇 Only counting prizes, not effort',
+                        expl: 'Prizes are nice, but true success lives in the effort.',
+                        speak: 'Effort is the heart of success, not only prizes.'
+                    }
+                ],
+                hard: [
+                    {
+                        id: 's13',
+                        card: '🧠 Staying curious and asking “why?”',
+                        expl: 'True success: a curious mind that loves learning.',
+                        speak: 'Curiosity makes my success bright and strong.'
+                    },
+                    {
+                        id: 's14',
+                        card: '💔 Giving up because I failed once',
+                        expl: 'This feels heavy, but real success comes from standing up again.',
+                        speak: 'A fall is not the end. Standing up again is success.'
+                    },
+                    {
+                        id: 's15',
+                        card: '🧹 Helping at home even when nobody claps',
+                        expl: 'True success: responsibility and kindness without needing applause.',
+                        speak: 'Helping at home quietly is a strong success habit.'
+                    },
+                    {
+                        id: 's16',
+                        card: '🕒 Managing my time: work, play, and rest',
+                        expl: 'True success: a balanced life, not only work.',
+                        speak: 'Balancing work, play, and rest makes life successful.'
+                    },
+                    {
+                        id: 's17',
+                        card: '😰 Being scared to try new things',
+                        expl: 'Everyone feels scared, but true success is trying little by little.',
+                        speak: 'It is okay to be scared; trying a little is success.'
+                    },
+                    {
+                        id: 's18',
+                        card: '🎉 Celebrating small wins and efforts',
+                        expl: 'True success: noticing and celebrating small steps.',
+                        speak: 'Small wins deserve a happy celebration too.'
+                    },
+                    {
+                        id: 's19',
+                        card: '🗣 Talking kindly to myself after mistakes',
+                        expl: 'True success: a gentle inner voice that helps us grow.',
+                        speak: 'Kind self-talk is a powerful success tool.'
+                    },
+                    {
+                        id: 's20',
+                        card: '🏃‍♂️ Trying to do everything perfectly and fast',
+                        expl: 'Real success: steady, kind effort – not rushing to be perfect.',
+                        speak: 'Slow, steady and kind to myself is better than rushed perfect.'
+                    }
+                ]
+            },
+            gratitude: {
+                easy: [
+                    {
+                        id: 'g1',
+                        card: '☀️ Waking up and saying “Thank you for a new day”',
+                        expl: 'Gratitude thought: I am glad for this fresh new start.',
+                        speak: 'Thank you for this new day.'
+                    },
+                    {
+                        id: 'g2',
+                        card: '🍽 Having tasty food on my plate',
+                        expl: 'Gratitude thought: I am thankful for this food.',
+                        speak: 'I am thankful for my food.'
+                    },
+                    {
+                        id: 'g3',
+                        card: '🏫 Going to school and meeting my friends',
+                        expl: 'Gratitude thought: I am lucky to learn and play today.',
+                        speak: 'I am lucky to learn and play at school.'
+                    },
+                    {
+                        id: 'g4',
+                        card: '👟 Having shoes to run and play in',
+                        expl: 'Gratitude thought: My body and shoes help me move and play.',
+                        speak: 'I am thankful that I can run and play.'
+                    },
+                    {
+                        id: 'g5',
+                        card: '💧 Drinking clean water when I am thirsty',
+                        expl: 'Gratitude thought: Clean water keeps me healthy.',
+                        speak: 'I am thankful for clean water.'
+                    },
+                    {
+                        id: 'g6',
+                        card: '📱 Wanting a new gadget because a friend has it',
+                        expl: 'Gratitude reminder: I can be happy for what I already have.',
+                        speak: 'I can be happy with what I have right now.'
+                    }
+                ],
+                medium: [
+                    {
+                        id: 'g7',
+                        card: '📖 Reading a favourite story again and again',
+                        expl: 'Gratitude thought: I am glad I have stories that I love.',
+                        speak: 'I am thankful for my favourite stories.'
+                    },
+                    {
+                        id: 'g8',
+                        card: '🎵 Listening to music that makes me smile',
+                        expl: 'Gratitude thought: Music can make my heart dance.',
+                        speak: 'I am happy I can hear music.'
+                    },
+                    {
+                        id: 'g9',
+                        card: '💌 Getting a kind note or message from someone',
+                        expl: 'Gratitude thought: I am loved and cared for.',
+                        speak: 'I am thankful that people care about me.'
+                    },
+                    {
+                        id: 'g10',
+                        card: '🪟 Looking out of the window at the sky',
+                        expl: 'Gratitude thought: The world is big and beautiful.',
+                        speak: 'The big sky makes me feel thankful and small in a nice way.'
+                    },
+                    {
+                        id: 'g11',
+                        card: '🙃 Comparing my toys with my friend’s toys',
+                        expl: 'Gratitude reminder: I can enjoy what I have without comparing.',
+                        speak: 'I can enjoy my own toys without comparing.'
+                    },
+                    {
+                        id: 'g12',
+                        card: '🩹 Someone helping me when I feel hurt or sick',
+                        expl: 'Gratitude thought: I am not alone when I need help.',
+                        speak: 'I am thankful for people who help me when I am hurt.'
+                    }
+                ],
+                hard: [
+                    {
+                        id: 'g13',
+                        card: '🌧 Having a rainy day when plans change',
+                        expl: 'Gratitude thought: I can find new cosy fun even on rainy days.',
+                        speak: 'Even rainy days can bring cosy fun.'
+                    },
+                    {
+                        id: 'g14',
+                        card: '❌ Getting an answer wrong in class',
+                        expl: 'Gratitude thought: I am thankful for chances to learn and try again.',
+                        speak: 'I am thankful I can learn from wrong answers.'
+                    },
+                    {
+                        id: 'g15',
+                        card: '🧩 A puzzle that is hard but interesting',
+                        expl: 'Gratitude thought: My brain is growing when things are hard.',
+                        speak: 'Hard puzzles help my brain grow.'
+                    },
+                    {
+                        id: 'g16',
+                        card: '🧸 Remembering a favourite childhood toy',
+                        expl: 'Gratitude thought: Good memories can still warm my heart.',
+                        speak: 'Happy memories are a gift I can keep.'
+                    },
+                    {
+                        id: 'g17',
+                        card: '🚶‍♂️ Being able to walk, jump and move',
+                        expl: 'Gratitude thought: My body lets me explore the world.',
+                        speak: 'I am thankful my body lets me move.'
+                    },
+                    {
+                        id: 'g18',
+                        card: '😕 Feeling jealous of someone else’s marks',
+                        expl: 'Gratitude reminder: I can be glad for my own progress.',
+                        speak: 'I can be thankful for my own progress.'
+                    },
+                    {
+                        id: 'g19',
+                        card: '🌙 Lying in bed and thinking of three good things from the day',
+                        expl: 'Gratitude habit: Ending the day with “thank you” thoughts.',
+                        speak: 'Thinking of three good things makes my mind sleep happily.'
+                    },
+                    {
+                        id: 'g20',
+                        card: '👪 Spending fun time with family with no screens',
+                        expl: 'Gratitude thought: Presence is a precious gift.',
+                        speak: 'Time with family is a gift I can be thankful for.'
+                    }
+                ]
+            }
+        };
+
+        // ==================== MEDIAPIPE SETUP ====================
+        const videoElement = document.getElementById('previewVideoElement');
+        const canvasElement = document.getElementById('previewCanvasOverlay');
+        const canvasCtx = canvasElement.getContext('2d');
+        const handCursor = document.getElementById('handCursor');
+        const cameraStatusDot = document.getElementById('cameraStatusDot');
+
+        const holistic = new Holistic({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
+            }
+        });
+
+        holistic.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            enableSegmentation: false,
+            smoothSegmentation: false,
+            refineFaceLandmarks: false,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        holistic.onResults(onResults);
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: 640,
+                        height: 480,
+                        facingMode: 'user'
+                    }
+                });
+                videoElement.srcObject = stream;
+
+                videoElement.onloadedmetadata = () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    cameraStatusDot.classList.add('active');
+                    detectLoop();
+                };
+            } catch (err) {
+                console.error('Camera error:', err);
+                cameraStatusDot.classList.remove('active');
+            }
+        }
+
+        async function detectLoop() {
+            if (videoElement.readyState >= 2) {
+                await holistic.send({ image: videoElement });
+            }
+            requestAnimationFrame(detectLoop);
+        }
+
+        function onResults(results) {
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.rightHandLandmarks) {
+                drawConnectors(canvasCtx, results.rightHandLandmarks, HAND_CONNECTIONS, {
+                    color: '#74B9FF',
+                    lineWidth: 3
+                });
+                drawLandmarks(canvasCtx, results.rightHandLandmarks, {
+                    color: '#55EFC4',
+                    lineWidth: 2,
+                    radius: 5
+                });
+                processHand(results.rightHandLandmarks);
+            } else if (results.leftHandLandmarks) {
+                drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS, {
+                    color: '#74B9FF',
+                    lineWidth: 3
+                });
+                drawLandmarks(canvasCtx, results.leftHandLandmarks, {
+                    color: '#55EFC4',
+                    lineWidth: 2,
+                    radius: 5
+                });
+                processHand(results.leftHandLandmarks);
+            } else {
+                handCursor.style.display = 'none';
+            }
+        }
+
+        function processHand(landmarks) {
+            const indexTip = landmarks[8];
+            const thumbTip = landmarks[4];
+
+            const rawX = (1 - indexTip.x) * window.innerWidth;
+            const rawY = indexTip.y * window.innerHeight;
+
+            handPosition.x = handPosition.x + (rawX - handPosition.x) * CONFIG.smoothingFactor;
+            handPosition.y = handPosition.y + (rawY - handPosition.y) * CONFIG.smoothingFactor;
+
+            handCursor.style.display = 'block';
+            handCursor.style.left = (handPosition.x - 30) + 'px';
+            handCursor.style.top = (handPosition.y - 30) + 'px';
+
+            const pinchDistance = Math.sqrt(
+                Math.pow(indexTip.x - thumbTip.x, 2) +
+                Math.pow(indexTip.y - thumbTip.y, 2) +
+                Math.pow(indexTip.z - thumbTip.z, 2)
+            );
+
+            isPinching = pinchDistance < CONFIG.pinchThreshold;
+
+            if (isPinching) {
+                handCursor.classList.remove('open');
+                handCursor.classList.add('closed');
+            } else {
+                handCursor.classList.remove('closed');
+                handCursor.classList.add('open');
+            }
+
+            handleDragDrop();
+            previousPinchState = isPinching;
+        }
+
+        // ==================== DRAG AND DROP ====================
+        function handleDragDrop() {
+            const elementsAtPoint = document.elementsFromPoint(handPosition.x, handPosition.y);
+
+            if (isPinching && !previousPinchState && !isDragging) {
+                for (const el of elementsAtPoint) {
+                    if (el.classList.contains('draggable-item') && !el.classList.contains('matched')) {
+                        startDrag(el);
+                        break;
+                    }
+                }
+            }
+
+            if (isDragging && draggedItem) {
+                draggedItem.style.left = (handPosition.x - 60) + 'px';
+                draggedItem.style.top = (handPosition.y - 60) + 'px';
+                highlightDropZones(elementsAtPoint);
+            }
+
+            if (!isPinching && previousPinchState && isDragging) {
+                endDrag(elementsAtPoint);
+            }
+        }
+
+        function startDrag(element) {
+            isDragging = true;
+            draggedItem = element;
+            draggedItem.classList.add('dragging');
+
+            playPickupSound();
+            initAudio();
+
+            const speakText = draggedItem.dataset.speak || draggedItem.dataset.value;
+            if (speakText) {
+                speak(speakText);
+            }
+        }
+
+        function highlightDropZones(elements) {
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.classList.remove('highlight');
+            });
+
+            for (const el of elements) {
+                if (el.classList.contains('drop-zone') && !el.classList.contains('correct')) {
+                    el.classList.add('highlight');
+                    break;
+                }
+            }
+        }
+
+        function endDrag(elements) {
+            if (!draggedItem) return;
+
+            playDropSound();
+
+            let dropped = false;
+
+            for (const el of elements) {
+                if (el.classList.contains('drop-zone') && !el.classList.contains('correct')) {
+                    const dragValue = draggedItem.dataset.match;
+                    const dropValue = el.dataset.match;
+
+                    if (dragValue === dropValue) {
+                        handleCorrectMatch(el);
+                    } else {
+                        handleWrongMatch(el);
+                    }
+                    dropped = true;
+                    break;
+                }
+            }
+
+            if (!dropped || !draggedItem.classList.contains('matched')) {
+                draggedItem.classList.remove('dragging');
+                draggedItem.style.position = '';
+                draggedItem.style.left = '';
+                draggedItem.style.top = '';
+            }
+
+            isDragging = false;
+            draggedItem = null;
+        }
+
+        function handleCorrectMatch(dropZone) {
+            playSuccessSound();
+            speak('Beautiful choice! This grows your happy, strong mind.', 0.9);
+
+            showFeedback('💛 Beautiful Choice!', 'success');
+
+            dropZone.classList.add('correct');
+            dropZone.innerHTML = dropZone.dataset.text;
+
+            draggedItem.classList.add('matched');
+            draggedItem.classList.remove('dragging');
+            draggedItem.style.display = 'none';
+
+            score += 10;
+            matchesCompleted++;
+            updateScore();
+            updateProgress();
+
+            if (matchesCompleted >= totalMatches) {
+                setTimeout(() => showLevelComplete(), 800);
+            }
+        }
+
+        function handleWrongMatch(dropZone) {
+            playErrorSound();
+            speak('Nice try, let’s try another match.', 0.9);
+
+            showFeedback('❌ Try a Different Match', 'error');
+
+            dropZone.classList.add('incorrect');
+            setTimeout(() => {
+                dropZone.classList.remove('incorrect');
+            }, 500);
+
+            draggedItem.classList.remove('dragging');
+            draggedItem.style.position = '';
+            draggedItem.style.left = '';
+            draggedItem.style.top = '';
+        }
+
+        function showFeedback(message, type) {
+            const feedbackEl = document.getElementById('feedbackMessage');
+            feedbackEl.textContent = message;
+            feedbackEl.className = 'feedback-message ' + type;
+            feedbackEl.style.display = 'block';
+
+            setTimeout(() => {
+                feedbackEl.style.display = 'none';
+            }, 1500);
+        }
+
+        function updateScore() {
+            document.getElementById('scoreValue').textContent = score;
+        }
+
+        function updateProgress() {
+            const progress = (matchesCompleted / totalMatches) * 100;
+            const progressBars = document.querySelectorAll('.progress-bar');
+            progressBars.forEach(bar => {
+                bar.style.width = progress + '%';
+            });
+        }
+
+        function showLevelComplete() {
+            const levelCompleteEl = document.getElementById('levelComplete');
+
+            levelsCompleted[currentGame][currentLevel] = true;
+            updateLevelButtons();
+
+            let gameName = currentGame === 'happiness' ? 'Happiness Choices'
+                          : currentGame === 'success' ? 'True Success Steps'
+                          : 'Gratitude Garden';
+
+            let nextText;
+            if (currentLevel === 'easy') nextText = 'Go to Medium Level →';
+            else if (currentLevel === 'medium') nextText = 'Go to Hard Level →';
+            else nextText = 'Go to Next Game →';
+
+            levelCompleteEl.querySelector('.level-complete-content').innerHTML = `
+                <h2>🎉 Well Done! 🎉</h2>
+                <div class="stars">⭐ ⭐ ⭐</div>
+                <p style="font-size:1.3rem; margin-bottom:20px;">
+                    You completed the <strong>${currentLevel.toUpperCase()}</strong> level of <strong>${gameName}</strong>!
+                </p>
+                <button class="next-level-btn" onclick="nextLevel()">${nextText}</button>
+            `;
+
+            levelCompleteEl.style.display = 'flex';
+            createConfetti();
+            playSuccessSound();
+            speak('Great work! Your mind is learning real happiness and true success.', 0.9);
+        }
+
+        function createConfetti() {
+            const colors = ['#e74c3c', '#3498db', '#2ecc71', '#f1c40f', '#9b59b6', '#e91e63'];
+
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(confetti);
+
+                setTimeout(() => confetti.remove(), 5000);
+            }
+        }
+
+        // ==================== GAME SETUP ====================
+        function selectGame(game) {
+            currentGame = game;
+
+            document.querySelectorAll('.game-card').forEach(card => {
+                card.classList.remove('active');
+                if (card.dataset.game === game) {
+                    card.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.game-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(game + 'Game').classList.add('active');
+
+            updateLevelButtons();
+            setupGame(game, currentLevel);
+        }
+
+        function selectLevel(level) {
+            currentLevel = level;
+
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector('.level-btn.' + level).classList.add('active');
+
+            setupGame(currentGame, level);
+        }
+
+        function updateLevelButtons() {
+            document.querySelectorAll('.level-btn').forEach(btn => {
+                const level = btn.classList.contains('easy') ? 'easy' :
+                              btn.classList.contains('medium') ? 'medium' : 'hard';
+
+                if (levelsCompleted[currentGame][level]) {
+                    btn.classList.add('completed');
+                } else {
+                    btn.classList.remove('completed');
+                }
+            });
+        }
+
+        function setupGame(game, level) {
+            matchesCompleted = 0;
+            updateProgress();
+
+            let itemCount;
+            if (level === 'easy') itemCount = 4;
+            else if (level === 'medium') itemCount = 6;
+            else itemCount = 8;
+
+            switch(game) {
+                case 'happiness':
+                    setupHappinessGame(level, itemCount);
+                    break;
+                case 'success':
+                    setupSuccessGame(level, itemCount);
+                    break;
+                case 'gratitude':
+                    setupGratitudeGame(level, itemCount);
+                    break;
+            }
+        }
+
+        function setupHappinessGame(level, itemCount) {
+            const pool = [...gameData.happiness[level]];
+            const items = shuffle(pool).slice(0, Math.min(itemCount, pool.length));
+            totalMatches = items.length;
+
+            const itemsContainer = document.getElementById('happinessItems');
+            const zonesContainer = document.getElementById('happinessZones');
+            itemsContainer.innerHTML = '';
+            zonesContainer.innerHTML = '';
+
+            items.forEach(item => {
+                const draggable = document.createElement('div');
+                draggable.className = 'draggable-item';
+                draggable.textContent = item.card;
+                draggable.dataset.match = item.id;
+                draggable.dataset.value = item.card;
+                draggable.dataset.speak = item.speak;
+                draggable.onclick = () => {
+                    initAudio();
+                    speak(item.speak);
+                };
+                itemsContainer.appendChild(draggable);
+            });
+
+            shuffle([...items]).forEach(item => {
+                const zone = document.createElement('div');
+                zone.className = 'drop-zone';
+                zone.innerHTML = `<strong>💛</strong><br>${item.expl}`;
+                zone.dataset.match = item.id;
+                zone.dataset.text = `<strong>💛</strong><br>${item.expl}`;
+                zonesContainer.appendChild(zone);
+            });
+        }
+
+        function setupSuccessGame(level, itemCount) {
+            const pool = [...gameData.success[level]];
+            const items = shuffle(pool).slice(0, Math.min(itemCount, pool.length));
+            totalMatches = items.length;
+
+            const itemsContainer = document.getElementById('successItems');
+            const zonesContainer = document.getElementById('successZones');
+            itemsContainer.innerHTML = '';
+            zonesContainer.innerHTML = '';
+
+            items.forEach(item => {
+                const draggable = document.createElement('div');
+                draggable.className = 'draggable-item';
+                draggable.textContent = item.card;
+                draggable.dataset.match = item.id;
+                draggable.dataset.value = item.card;
+                draggable.dataset.speak = item.speak;
+                draggable.onclick = () => {
+                    initAudio();
+                    speak(item.speak);
+                };
+                itemsContainer.appendChild(draggable);
+            });
+
+            shuffle([...items]).forEach(item => {
+                const zone = document.createElement('div');
+                zone.className = 'drop-zone';
+                zone.innerHTML = `<strong>🏆</strong><br>${item.expl}`;
+                zone.dataset.match = item.id;
+                zone.dataset.text = `<strong>🏆</strong><br>${item.expl}`;
+                zonesContainer.appendChild(zone);
+            });
+        }
+
+        function setupGratitudeGame(level, itemCount) {
+            const pool = [...gameData.gratitude[level]];
+            const items = shuffle(pool).slice(0, Math.min(itemCount, pool.length));
+            totalMatches = items.length;
+
+            const itemsContainer = document.getElementById('gratitudeItems');
+            const zonesContainer = document.getElementById('gratitudeZones');
+            itemsContainer.innerHTML = '';
+            zonesContainer.innerHTML = '';
+
+            items.forEach(item => {
+                const draggable = document.createElement('div');
+                draggable.className = 'draggable-item';
+                draggable.textContent = item.card;
+                draggable.dataset.match = item.id;
+                draggable.dataset.value = item.card;
+                draggable.dataset.speak = item.speak;
+                draggable.onclick = () => {
+                    initAudio();
+                    speak(item.speak);
+                };
+                itemsContainer.appendChild(draggable);
+            });
+
+            shuffle([...items]).forEach(item => {
+                const zone = document.createElement('div');
+                zone.className = 'drop-zone';
+                zone.innerHTML = `<strong>🌱</strong><br>${item.expl}`;
+                zone.dataset.match = item.id;
+                zone.dataset.text = `<strong>🌱</strong><br>${item.expl}`;
+                zonesContainer.appendChild(zone);
+            });
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function nextLevel() {
+            document.getElementById('levelComplete').style.display = 'none';
+
+            if (currentLevel === 'easy') {
+                selectLevel('medium');
+            } else if (currentLevel === 'medium') {
+                selectLevel('hard');
+            } else {
+                const games = ['happiness', 'success', 'gratitude'];
+                const currentIndex = games.indexOf(currentGame);
+                const nextGame = games[(currentIndex + 1) % games.length];
+                currentLevel = 'easy';
+                selectGame(nextGame);
+                selectLevel('easy');
+            }
+        }
+
+        function giveHint() {
+            const items = document.querySelectorAll('.draggable-item:not(.matched)');
+            if (items.length > 0) {
+                const item = items[0];
+                const matchValue = item.dataset.match;
+                const targetZone = document.querySelector(`.drop-zone[data-match="${matchValue}"]:not(.correct)`);
+
+                if (targetZone) {
+                    item.style.animation = 'celebrate 0.5s ease 3';
+                    targetZone.style.animation = 'celebrate 0.5s ease 3';
+
+                    setTimeout(() => {
+                        item.style.animation = '';
+                        targetZone.style.animation = '';
+                    }, 1500);
+
+                    speak('Try matching this card with its happy message.');
+                }
+            }
+        }
+
+        // ==================== MOUSE FALLBACK ====================
+        let mouseMode = false;
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'm' || e.key === 'M') {
+                mouseMode = !mouseMode;
+                alert('Mouse mode: ' + (mouseMode ? 'ON' : 'OFF'));
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!mouseMode) return;
+
+            handPosition.x = e.clientX;
+            handPosition.y = e.clientY;
+
+            handCursor.style.display = 'block';
+            handCursor.style.left = (handPosition.x - 30) + 'px';
+            handCursor.style.top = (handPosition.y - 30) + 'px';
+
+            if (isDragging && draggedItem) {
+                draggedItem.style.left = (handPosition.x - 60) + 'px';
+                draggedItem.style.top = (handPosition.y - 60) + 'px';
+                highlightDropZones(document.elementsFromPoint(handPosition.x, handPosition.y));
+            }
+        });
+
+        document.addEventListener('mousedown', () => {
+            if (!mouseMode) return;
+
+            isPinching = true;
+            previousPinchState = false;
+            handCursor.classList.remove('open');
+            handCursor.classList.add('closed');
+
+            handleDragDrop();
+            previousPinchState = true;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (!mouseMode) return;
+
+            isPinching = false;
+            handCursor.classList.remove('closed');
+            handCursor.classList.add('open');
+
+            if (isDragging) {
+                endDrag(document.elementsFromPoint(handPosition.x, handPosition.y));
+            }
+        });
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeNavigation();
+            setupCamera();
+            updateLevelButtons();
+            setupGame('happiness', 'easy');
+
+            document.addEventListener('click', () => {
+                initAudio();
+            });
+        });
+
+        const HAND_CONNECTIONS = [
+            [0, 1], [1, 2], [2, 3], [3, 4],
+            [0, 5], [5, 6], [6, 7], [7, 8],
+            [0, 9], [9, 10], [10, 11], [11, 12],
+            [0, 13], [13, 14], [14, 15], [15, 16],
+            [0, 17], [17, 18], [18, 19], [19, 20],
+            [5, 9], [9, 13], [13, 17]
+        ];
+    </script>
+</body>
+</html>
