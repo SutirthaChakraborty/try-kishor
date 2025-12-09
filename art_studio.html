@@ -120,59 +120,36 @@
             75% { transform: translate(20px, 20px) scale(1.05); }
         }
 
-        /* Navigation Bar */
-        .nav-bar {
-            position: sticky;
-            top: 0;
-            z-index: 500;
+        /* Home Button */
+        .home-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            padding: 12px 24px;
             background: linear-gradient(135deg, var(--accent-pink) 0%, var(--accent-purple) 100%);
-            padding: 15px 20px;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             box-shadow: 0 4px 30px rgba(233, 69, 96, 0.4);
         }
 
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
+        .home-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 40px rgba(233, 69, 96, 0.6);
         }
 
-        .nav-title {
-            font-family: 'Pacifico', cursive;
-            font-size: 1.5rem;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .nav-link {
-            padding: 10px 20px;
-            background: rgba(255,255,255,0.15);
-            color: white;
-            border: 2px solid rgba(255,255,255,0.5);
-            border-radius: 25px;
-            font-size: 0.95rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-        }
-
-        .nav-link:hover {
-            background: rgba(255,255,255,0.3);
-            transform: translateY(-2px);
-        }
-
-        .nav-link.active {
-            background: white;
-            color: var(--accent-pink);
+        .home-button:active {
+            transform: translateY(-1px);
         }
 
         /* Main Container */
@@ -777,20 +754,10 @@
         <div class="paint-splatter"></div>
     </div>
 
-    <!-- Navigation -->
-    <nav class="nav-bar">
-        <div class="nav-container">
-            <div class="nav-title">🎨 Learning Games</div>
-            <div class="nav-menu">
-                <a href="index.html" class="nav-link">🔤 Letters</a>
-                <a href="maths_adventure.html" class="nav-link">🔢 Maths</a>
-                <a href="science_explorer.html" class="nav-link">🔬 Science</a>
-                <a href="english_quest.html" class="nav-link">📚 English</a>
-                <a href="art_studio.html" class="nav-link active">🎨 Art</a>
-                <a href="fun_facts.html" class="nav-link">🌟 Fun Facts</a>
-            </div>
-        </div>
-    </nav>
+    <!-- Home Button -->
+    <a href="index.html" class="home-button">
+        🏠 Home
+    </a>
 
     <!-- Hand Cursor -->
     <div class="hand-cursor" id="handCursor"></div>

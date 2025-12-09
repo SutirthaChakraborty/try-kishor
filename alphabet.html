@@ -1,0 +1,2096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔤 Alphabet & Spelling Adventure - Learn Letters, Sounds & Words!</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+
+    <!-- MediaPipe Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0a0a1a;
+            --bg-secondary: #121228;
+            --bg-card: #1a1a3e;
+            --text-primary: #ffffff;
+            --text-secondary: #b8b8d0;
+            --accent-gold: #ffd700;
+            --accent-cyan: #00f5ff;
+            --accent-magenta: #ff00ff;
+            --accent-lime: #00ff88;
+            --accent-coral: #ff6b6b;
+            --accent-violet: #8b5cf6;
+            --accent-orange: #ff9500;
+            --gradient-rainbow: linear-gradient(135deg, #ff6b6b, #ffd700, #00ff88, #00f5ff, #8b5cf6, #ff00ff);
+            --shadow: 0 10px 40px rgba(0, 245, 255, 0.2);
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Quicksand', 'OpenDyslexic', sans-serif;
+            background: var(--bg-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.8;
+            letter-spacing: 0.04em;
+            color: var(--text-primary);
+        }
+
+        /* Animated Background */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .floating-letter {
+            position: absolute;
+            font-family: 'Fredoka One', cursive;
+            font-size: 3rem;
+            opacity: 0.1;
+            animation: floatLetter 20s infinite ease-in-out;
+        }
+
+        @keyframes floatLetter {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-50px) rotate(10deg); }
+            50% { transform: translateY(0) rotate(0deg); }
+            75% { transform: translateY(50px) rotate(-10deg); }
+        }
+
+        /* Home Button */
+        .home-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, var(--accent-violet) 0%, var(--accent-magenta) 100%);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 30px rgba(139, 92, 246, 0.4);
+        }
+
+        .home-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 40px rgba(139, 92, 246, 0.6);
+        }
+
+        .home-button:active {
+            transform: translateY(-1px);
+        }
+
+        /* Main Container */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(255, 0, 255, 0.2) 100%);
+            border-radius: var(--radius);
+            margin-bottom: 30px;
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.8rem;
+            background: var(--gradient-rainbow);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            animation: rainbowShift 5s infinite linear;
+            background-size: 200% 200%;
+        }
+
+        @keyframes rainbowShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .header p {
+            font-size: 1.3rem;
+            color: var(--text-secondary);
+        }
+
+        /* Mode Selection */
+        .mode-selection {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .mode-btn {
+            padding: 18px 45px;
+            font-size: 1.3rem;
+            font-family: inherit;
+            font-weight: 700;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .mode-btn.learn {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-lime));
+            color: var(--bg-primary);
+        }
+
+        .mode-btn.quiz {
+            background: linear-gradient(135deg, var(--accent-coral), var(--accent-orange));
+            color: white;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .mode-btn.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 40px currentColor;
+        }
+
+        /* Topic Selection */
+        .topic-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .topic-card {
+            background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .topic-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 10px 30px rgba(0, 245, 255, 0.3);
+        }
+
+        .topic-card.active {
+            border-color: var(--accent-gold);
+            background: linear-gradient(145deg, rgba(255, 215, 0, 0.2), rgba(139, 92, 246, 0.2));
+        }
+
+        .topic-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .topic-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        /* Game Area */
+        .game-area {
+            background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+            border-radius: var(--radius);
+            padding: 35px;
+            min-height: 500px;
+            border: 2px solid rgba(0, 245, 255, 0.2);
+            position: relative;
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .stat-item.score { color: var(--accent-gold); }
+        .stat-item.streak { color: var(--accent-orange); }
+        .stat-item.lives { color: var(--accent-coral); }
+        .stat-item.progress { color: var(--accent-cyan); }
+
+        /* Progress Bar */
+        .progress-container {
+            width: 100%;
+            height: 12px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: var(--gradient-rainbow);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite linear;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Learn Container */
+        .learn-container {
+            display: none;
+        }
+
+        .learn-container.active {
+            display: block;
+        }
+
+        .learn-card {
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+            border-radius: var(--radius);
+            padding: 30px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--accent-cyan);
+            transition: all 0.3s ease;
+        }
+
+        .learn-card:hover {
+            transform: translateX(8px);
+            border-left-color: var(--accent-gold);
+        }
+
+        .learn-card h3 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.5rem;
+            color: var(--accent-gold);
+            margin-bottom: 15px;
+        }
+
+        .learn-card p {
+            font-size: 1.15rem;
+            color: var(--text-primary);
+            line-height: 1.9;
+            margin-bottom: 15px;
+        }
+
+        .learn-card .examples {
+            background: rgba(0, 245, 255, 0.1);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+        }
+
+        .learn-card .examples h4 {
+            color: var(--accent-cyan);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .learn-card .example-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .example-item {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .example-item:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            transform: scale(1.05);
+        }
+
+        .learn-card .fun-fact {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 12px;
+            font-style: italic;
+            color: var(--accent-gold);
+            border-left: 3px solid var(--accent-gold);
+        }
+
+        .learn-card .tip {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 12px;
+            color: var(--accent-lime);
+            border-left: 3px solid var(--accent-lime);
+        }
+
+        .learn-nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .learn-nav-btn {
+            padding: 14px 32px;
+            font-size: 1.1rem;
+            font-family: inherit;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-violet), var(--accent-magenta));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .learn-nav-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .learn-nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Letter Display */
+        .letter-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .big-letter {
+            font-family: 'Fredoka One', cursive;
+            font-size: 8rem;
+            background: var(--gradient-rainbow);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: none;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .big-letter:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .letter-info {
+            text-align: left;
+        }
+
+        .letter-info .letter-name {
+            font-size: 1.5rem;
+            color: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        .letter-info .letter-sound {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+        }
+
+        /* Word Building Area */
+        .word-builder {
+            background: rgba(0,0,0,0.3);
+            border-radius: var(--radius);
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .word-slots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .word-slot {
+            width: 70px;
+            height: 80px;
+            background: rgba(255,255,255,0.1);
+            border: 3px dashed rgba(255,255,255,0.3);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.5rem;
+            color: var(--accent-cyan);
+            transition: all 0.3s ease;
+        }
+
+        .word-slot.filled {
+            border-style: solid;
+            border-color: var(--accent-lime);
+            background: rgba(0, 255, 136, 0.2);
+        }
+
+        .word-slot.highlight {
+            border-color: var(--accent-gold);
+            background: rgba(255, 215, 0, 0.2);
+            animation: pulse 0.5s ease infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .letter-choices {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .letter-choice {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--accent-violet), var(--accent-magenta));
+            border: none;
+            border-radius: 12px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 1.8rem;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .letter-choice:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 25px rgba(139, 92, 246, 0.5);
+        }
+
+        .letter-choice.used {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Syllable Display */
+        .syllable-display {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .syllable-part {
+            padding: 15px 25px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-lime));
+            border-radius: 15px;
+            font-family: 'Fredoka One', cursive;
+            font-size: 2rem;
+            color: var(--bg-primary);
+            position: relative;
+        }
+
+        .syllable-part::after {
+            content: '•';
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent-gold);
+            font-size: 1.5rem;
+        }
+
+        .syllable-part:last-child::after {
+            display: none;
+        }
+
+        /* Quiz Container */
+        .quiz-container {
+            display: none;
+        }
+
+        .quiz-container.active {
+            display: block;
+        }
+
+        .question-display {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .question-number {
+            font-size: 0.95rem;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .question-visual {
+            margin: 25px 0;
+        }
+
+        .question-emoji {
+            font-size: 5rem;
+            display: block;
+        }
+
+        .question-word {
+            font-family: 'Fredoka One', cursive;
+            font-size: 4rem;
+            background: var(--gradient-rainbow);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.1em;
+        }
+
+        .question-word .highlight {
+            background: var(--accent-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-decoration: underline;
+        }
+
+        .question-word .blank {
+            background: none;
+            -webkit-text-fill-color: var(--accent-coral);
+            border-bottom: 4px solid var(--accent-coral);
+            margin: 0 5px;
+        }
+
+        /* Answers Grid */
+        .answers-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 18px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .answer-btn {
+            padding: 22px;
+            font-size: 1.25rem;
+            font-family: inherit;
+            font-weight: 600;
+            background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            color: var(--text-primary);
+            border: 3px solid rgba(255,255,255,0.2);
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .answer-btn:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 245, 255, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .answer-btn.correct {
+            background: linear-gradient(135deg, var(--accent-lime), #2ecc71) !important;
+            border-color: var(--accent-lime) !important;
+            animation: correctPulse 0.5s ease;
+        }
+
+        .answer-btn.incorrect {
+            background: linear-gradient(135deg, var(--accent-coral), #c0392b) !important;
+            border-color: var(--accent-coral) !important;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes correctPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.03); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        /* Interactive Spelling */
+        .spelling-input {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .spell-letter-slot {
+            width: 55px;
+            height: 65px;
+            background: rgba(255,255,255,0.1);
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Fredoka One', cursive;
+            font-size: 2rem;
+            color: var(--accent-cyan);
+            text-transform: uppercase;
+        }
+
+        .spell-letter-slot.current {
+            border-color: var(--accent-gold);
+            animation: pulse 1s ease infinite;
+        }
+
+        .spell-letter-slot.correct-letter {
+            border-color: var(--accent-lime);
+            background: rgba(0, 255, 136, 0.2);
+        }
+
+        .spell-letter-slot.wrong-letter {
+            border-color: var(--accent-coral);
+            background: rgba(255, 107, 107, 0.2);
+        }
+
+        /* Results Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(145deg, var(--bg-card), var(--bg-secondary));
+            border-radius: var(--radius);
+            padding: 45px;
+            text-align: center;
+            max-width: 500px;
+            border: 3px solid var(--accent-gold);
+            animation: modalPop 0.5s ease;
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0) rotate(-10deg); }
+            100% { transform: scale(1) rotate(0); }
+        }
+
+        .modal-content h2 {
+            font-family: 'Fredoka One', cursive;
+            font-size: 2.3rem;
+            color: var(--accent-gold);
+            margin-bottom: 20px;
+        }
+
+        .modal-stars {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .modal-score {
+            font-size: 1.4rem;
+            color: var(--text-primary);
+            margin-bottom: 25px;
+        }
+
+        .modal-btn {
+            padding: 16px 38px;
+            font-size: 1.2rem;
+            font-family: inherit;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-coral), var(--accent-orange));
+            color: white;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 8px;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Camera Preview */
+        .camera-preview {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 200px;
+            height: 150px;
+            border-radius: var(--radius);
+            overflow: hidden;
+            border: 4px solid var(--accent-violet);
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.5);
+            z-index: 100;
+            background: #000;
+        }
+
+        .camera-preview video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        .camera-preview canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 5px 10px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 10px;
+            font-size: 0.75rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e74c3c;
+        }
+
+        .status-dot.active {
+            background: #2ecc71;
+            animation: dotPulse 1.5s infinite;
+        }
+
+        @keyframes dotPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Hand Cursor */
+        .hand-cursor {
+            position: fixed;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            transition: transform 0.1s ease-out;
+        }
+
+        .hand-cursor.open {
+            background: radial-gradient(circle, var(--accent-cyan) 0%, transparent 70%);
+            border: 3px solid var(--accent-cyan);
+        }
+
+        .hand-cursor.closed {
+            background: radial-gradient(circle, var(--accent-magenta) 0%, transparent 70%);
+            border: 3px solid var(--accent-magenta);
+            transform: scale(0.7);
+        }
+
+        /* Sound Button */
+        .sound-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-violet), var(--accent-magenta));
+            border: none;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(139, 92, 246, 0.4);
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+
+        .sound-btn:hover {
+            transform: scale(1.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .topic-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .answers-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .game-area {
+                padding: 20px;
+            }
+
+            .question-text {
+                font-size: 1.3rem;
+            }
+
+            .big-letter {
+                font-size: 5rem;
+            }
+
+            .camera-preview {
+                width: 150px;
+                height: 112px;
+                bottom: 80px;
+            }
+
+            .mode-btn {
+                padding: 14px 28px;
+                font-size: 1.1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .topic-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .topic-icon {
+                font-size: 2.2rem;
+            }
+
+            .topic-name {
+                font-size: 0.85rem;
+            }
+
+            .stats-bar {
+                justify-content: center;
+            }
+
+            .stat-item {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+
+            .camera-preview {
+                width: 120px;
+                height: 90px;
+            }
+
+            .big-letter {
+                font-size: 4rem;
+            }
+
+            .word-slot {
+                width: 50px;
+                height: 60px;
+                font-size: 1.8rem;
+            }
+
+            .letter-choice {
+                width: 45px;
+                height: 45px;
+                font-size: 1.4rem;
+            }
+        }
+
+        /* Confetti */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            top: -10px;
+            z-index: 3000;
+            animation: confettiFall 3s linear forwards;
+        }
+
+        @keyframes confettiFall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg" id="animatedBg"></div>
+
+    <!-- Home Button -->
+    <a href="index.html" class="home-button">
+        🏠 Home
+    </a>
+
+    <!-- Hand Cursor -->
+    <div class="hand-cursor" id="handCursor"></div>
+
+    <!-- Results Modal -->
+    <div class="modal-overlay" id="resultsModal">
+        <div class="modal-content">
+            <h2>🎉 Amazing Work! 🎉</h2>
+            <div class="modal-stars" id="modalStars">⭐⭐⭐</div>
+            <div class="modal-score" id="modalScore">You scored 80 points!</div>
+            <button class="modal-btn" onclick="restartQuiz()">Try Again 🔄</button>
+            <button class="modal-btn" onclick="selectTopic(null)">New Topic 🎯</button>
+        </div>
+    </div>
+
+    <!-- Camera Preview -->
+    <div class="camera-preview" id="cameraPreview">
+        <video id="videoElement" autoplay playsinline></video>
+        <canvas id="canvasOverlay"></canvas>
+        <div class="camera-status">
+            <div class="status-dot" id="statusDot"></div>
+            <span>Camera</span>
+        </div>
+    </div>
+
+    <!-- Sound Button -->
+    <button class="sound-btn" id="soundBtn" onclick="toggleSound()">🔊</button>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1>✏️ Alphabet & Spelling Adventure 📖</h1>
+            <p>Master letters, sounds, syllables, and spelling!</p>
+        </header>
+
+        <!-- Mode Selection -->
+        <div class="mode-selection">
+            <button class="mode-btn learn active" onclick="setMode('learn')">
+                📖 Learn Mode
+            </button>
+            <button class="mode-btn quiz" onclick="setMode('quiz')">
+                🎯 Quiz Mode
+            </button>
+        </div>
+
+        <!-- Topic Selection -->
+        <div class="topic-grid" id="topicGrid">
+            <div class="topic-card active" data-topic="alphabet" onclick="selectTopic('alphabet')">
+                <span class="topic-icon">🔤</span>
+                <div class="topic-name">Alphabet Basics</div>
+            </div>
+            <div class="topic-card" data-topic="phonics" onclick="selectTopic('phonics')">
+                <span class="topic-icon">🔊</span>
+                <div class="topic-name">Letter Sounds</div>
+            </div>
+            <div class="topic-card" data-topic="vowels" onclick="selectTopic('vowels')">
+                <span class="topic-icon">🅰️</span>
+                <div class="topic-name">Vowels</div>
+            </div>
+            <div class="topic-card" data-topic="syllables" onclick="selectTopic('syllables')">
+                <span class="topic-icon">👏</span>
+                <div class="topic-name">Syllables</div>
+            </div>
+            <div class="topic-card" data-topic="wordbuilding" onclick="selectTopic('wordbuilding')">
+                <span class="topic-icon">🧱</span>
+                <div class="topic-name">Word Building</div>
+            </div>
+            <div class="topic-card" data-topic="spelling" onclick="selectTopic('spelling')">
+                <span class="topic-icon">✍️</span>
+                <div class="topic-name">Spelling Rules</div>
+            </div>
+            <div class="topic-card" data-topic="blends" onclick="selectTopic('blends')">
+                <span class="topic-icon">🔗</span>
+                <div class="topic-name">Blends & Digraphs</div>
+            </div>
+            <div class="topic-card" data-topic="sightwords" onclick="selectTopic('sightwords')">
+                <span class="topic-icon">👀</span>
+                <div class="topic-name">Sight Words</div>
+            </div>
+        </div>
+
+        <!-- Game Area -->
+        <div class="game-area">
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-item score">⭐ Score: <span id="scoreValue">0</span></div>
+                <div class="stat-item streak">🔥 Streak: <span id="streakValue">0</span></div>
+                <div class="stat-item lives">❤️ Lives: <span id="livesValue">3</span></div>
+                <div class="stat-item progress">📊 <span id="progressText">0/10</span></div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar" style="width: 0%"></div>
+            </div>
+
+            <!-- Learn Container -->
+            <div class="learn-container active" id="learnContainer">
+                <div id="learnContent"></div>
+                <div class="learn-nav">
+                    <button class="learn-nav-btn" id="prevBtn" onclick="prevLesson()">← Previous</button>
+                    <button class="learn-nav-btn" id="nextBtn" onclick="nextLesson()">Next →</button>
+                </div>
+            </div>
+
+            <!-- Quiz Container -->
+            <div class="quiz-container" id="quizContainer">
+                <div class="question-display">
+                    <div class="question-number" id="questionNumber">Question 1 of 10</div>
+                    <div class="question-text" id="questionText">Loading question...</div>
+                    <div class="question-visual" id="questionVisual"></div>
+                </div>
+                <div class="answers-grid" id="answersGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== CONFIGURATION ====================
+        const CONFIG = {
+            pinchThreshold: 0.08,
+            smoothingFactor: 0.3,
+            soundEnabled: true,
+            questionsPerQuiz: 10
+        };
+
+        // ==================== GAME STATE ====================
+        let currentMode = 'learn';
+        let currentTopic = 'alphabet';
+        let currentLessonIndex = 0;
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let streak = 0;
+        let lives = 3;
+        let currentQuizQuestions = [];
+        let isAnswering = false;
+
+        // Hand tracking
+        let handPosition = { x: 0, y: 0 };
+        let isPinching = false;
+        let previousPinchState = false;
+
+        // ==================== LEARNING CONTENT ====================
+        const learnContent = {
+            alphabet: [
+                {
+                    title: "🔤 The Alphabet - 26 Letters",
+                    content: "The English alphabet has 26 letters. They go in a special order: A B C D E F G H I J K L M N O P Q R S T U V W X Y Z. Each letter has an UPPERCASE (big) and lowercase (small) version.",
+                    examples: { title: "See the difference:", items: ["Aa", "Bb", "Cc", "Dd", "Ee", "Ff", "Gg", "Hh"] },
+                    funFact: "🎵 Fun fact: The alphabet song uses the same tune as 'Twinkle Twinkle Little Star'!",
+                    tip: "💡 Tip: Practice writing each letter every day. Start with uppercase, then lowercase!"
+                },
+                {
+                    title: "🅰️ Vowels - The Special 5",
+                    content: "Five letters are special - they're called VOWELS: A, E, I, O, U. Every word needs at least one vowel! Without vowels, we couldn't make any words. They are the 'voice' of words.",
+                    examples: { title: "Words with each vowel:", items: ["Apple 🍎", "Egg 🥚", "Ice 🧊", "Orange 🍊", "Umbrella ☂️"] },
+                    funFact: "🌟 Fun fact: The letter Y can sometimes act like a vowel too, like in 'sky' or 'gym'!",
+                    tip: "💡 Tip: Remember: A-E-I-O-U - these letters make words come through!"
+                },
+                {
+                    title: "📝 Consonants - The Other 21",
+                    content: "The other 21 letters are CONSONANTS: B, C, D, F, G, H, J, K, L, M, N, P, Q, R, S, T, V, W, X, Y, Z. They need vowels to make sounds in words. Consonants and vowels work as a team!",
+                    examples: { title: "Consonant sounds:", items: ["B-ball 🏀", "C-cat 🐱", "D-dog 🐕", "F-fish 🐟", "G-goat 🐐", "H-hat 🎩"] },
+                    funFact: "🔊 Fun fact: Some consonants are 'quiet' in words, like the K in 'knee' or the W in 'write'!",
+                    tip: "💡 Tip: Put your hand on your throat - you'll feel vibrations with some consonants!"
+                },
+                {
+                    title: "📖 Uppercase vs Lowercase",
+                    content: "UPPERCASE letters are big (capital) letters. We use them at the start of sentences, for names, and for places. lowercase letters are small and used for most writing.",
+                    examples: { title: "When to use UPPERCASE:", items: ["Start of sentence", "Names (Tom)", "Places (London)", "Days (Monday)", "Months (July)", "I (always big!)"] },
+                    funFact: "📜 Fun fact: In old times, printers kept capital letters in the UPPER case (box) and small letters in the lower case!",
+                    tip: "💡 Tip: Every sentence starts with a capital letter and ends with a period, question mark, or exclamation mark!"
+                },
+                {
+                    title: "✏️ Letter Formation",
+                    content: "Each letter is written in a special way. Some have straight lines (like E, F, H, I, L, T), some have curves (like C, O, S), and some have both (like B, D, G, P, R)!",
+                    examples: { title: "Letter shapes:", items: ["Straight: E F H I L T", "Curved: C O S", "Both: B D G P R", "Diagonal: A K M N V W X Y Z"] },
+                    funFact: "✍️ Fun fact: Learning to write letters helps your brain remember them better!",
+                    tip: "💡 Tip: Start at the top and work your way down. Don't lift your pencil too much!"
+                }
+            ],
+            phonics: [
+                {
+                    title: "🔊 What Are Letter Sounds?",
+                    content: "Every letter makes a sound (or sometimes more than one!). PHONICS is learning these sounds. When we know letter sounds, we can 'sound out' new words by saying each letter's sound together.",
+                    examples: { title: "Sound out 'cat':", items: ["C says /k/", "A says /a/", "T says /t/", "/k/-/a/-/t/ = CAT! 🐱"] },
+                    funFact: "🗣️ Fun fact: English has about 44 different sounds, but only 26 letters!",
+                    tip: "💡 Tip: When you see a new word, try sounding out each letter slowly, then blend them together!"
+                },
+                {
+                    title: "🅱️ Consonant Sounds",
+                    content: "Most consonants make ONE main sound. B says /b/ like 'ball', D says /d/ like 'dog', F says /f/ like 'fish'. Some are tricky - C can say /k/ (cat) or /s/ (city)!",
+                    examples: { title: "Consonant sounds:", items: ["B /b/ - bed 🛏️", "D /d/ - duck 🦆", "F /f/ - frog 🐸", "G /g/ - goat 🐐", "H /h/ - house 🏠", "J /j/ - jam 🫙"] },
+                    funFact: "🤔 Fun fact: The letter X makes two sounds together: /k/ + /s/ = /ks/ like in 'fox'!",
+                    tip: "💡 Tip: Put your hand in front of your mouth - some sounds have air puffs (p, t), some don't (b, d)!"
+                },
+                {
+                    title: "🅰️ Short Vowel Sounds",
+                    content: "Vowels can make SHORT sounds. These are quick sounds: A like 'apple', E like 'egg', I like 'igloo', O like 'octopus', U like 'umbrella'. These are the basic vowel sounds!",
+                    examples: { title: "Short vowels:", items: ["ă - cat, hat, bat 🦇", "ĕ - bed, red, leg 🦵", "ĭ - pig, big, dig 🐷", "ŏ - dog, hot, pot 🫕", "ŭ - bug, cup, sun ☀️"] },
+                    funFact: "📏 Fun fact: Short vowels usually appear in small words with a consonant at the end!",
+                    tip: "💡 Tip: Short vowels say their SOUND, not their name. The 'a' in 'cat' says /a/, not 'ay'!"
+                },
+                {
+                    title: "📢 Long Vowel Sounds",
+                    content: "Vowels can also make LONG sounds - they say their NAME! A says 'ay' like 'cake', E says 'ee' like 'tree', I says 'eye' like 'kite', O says 'oh' like 'bone', U says 'you' like 'cute'.",
+                    examples: { title: "Long vowels:", items: ["ā - cake, make, lake 🎂", "ē - tree, bee, me 🌳", "ī - kite, bike, like 🪁", "ō - bone, home, nose 🦴", "ū - cube, tube, cute 🧊"] },
+                    funFact: "🎭 Fun fact: Magic E at the end makes the vowel say its name! 'cap' becomes 'cape'!",
+                    tip: "💡 Tip: Long vowels often have a silent E at the end, or two vowels together!"
+                },
+                {
+                    title: "🔄 Hard & Soft C and G",
+                    content: "C and G are tricky! They have HARD and SOFT sounds. C is HARD (/k/) before a, o, u: cat, cot, cup. C is SOFT (/s/) before e, i, y: cent, city, cycle. Same pattern for G!",
+                    examples: { title: "Hard vs Soft:", items: ["Hard C: cat, come, cup", "Soft C: cent, city, cycle", "Hard G: go, game, gum", "Soft G: gem, giant, gym"] },
+                    funFact: "🔑 Fun fact: This pattern comes from Latin and French languages that influenced English!",
+                    tip: "💡 Tip: Look at the letter AFTER c or g - if it's e, i, or y, the sound is usually soft!"
+                }
+            ],
+            vowels: [
+                {
+                    title: "🌟 The Vowel Team: A E I O U",
+                    content: "Vowels are the heart of every word! A, E, I, O, U are the five vowels. Every syllable needs at least one vowel sound. Without vowels, we would just have consonants like 'brthrh' - impossible to say!",
+                    examples: { title: "Try saying these without vowels:", items: ["Cat → Ct (impossible!)", "Dog → Dg (nope!)", "Tree → Tr (can't!)", "House → Hs (no way!)"] },
+                    funFact: "🦸 Fun fact: Vowels are like superheroes - every word needs them to work!",
+                    tip: "💡 Tip: When spelling, always check: 'Does this word have a vowel?' If not, you might be missing something!"
+                },
+                {
+                    title: "⚡ Short Vowels In Action",
+                    content: "SHORT vowels make quick sounds in the middle of words. They usually appear in CVC words (Consonant-Vowel-Consonant) like cat, bed, pig, dog, cup. The vowel is 'closed in' by consonants.",
+                    examples: { title: "CVC words with short vowels:", items: ["cat 🐱", "bed 🛏️", "pig 🐷", "dog 🐕", "cup ☕", "hat 🎩", "pen ✒️", "sit 🪑"] },
+                    funFact: "📦 Fun fact: Think of short vowels as being 'trapped' between consonants - they can only make a short sound!",
+                    tip: "💡 Tip: If a vowel is followed by a consonant and the word ends, it's usually short!"
+                },
+                {
+                    title: "✨ Long Vowels In Action",
+                    content: "LONG vowels say their own name! They often happen with Magic E (make, bike), two vowels together (boat, rain), or at the end of syllables (be, go). The vowel is 'free' to say its name!",
+                    examples: { title: "Long vowel patterns:", items: ["Magic E: cake, bike, home", "Two vowels: rain, boat, meat", "Open syllable: be, go, me", "Y as vowel: fly, baby, sky"] },
+                    funFact: "🪄 Fun fact: 'When two vowels go walking, the first one does the talking!' (It says its name!)",
+                    tip: "💡 Tip: If you see two vowels together, try the long sound of the first vowel first!"
+                },
+                {
+                    title: "🪄 The Magic E Rule",
+                    content: "When a word ends in E, it often makes the vowel before it say its NAME (long sound)! This is called 'Magic E' or 'Silent E'. The E is silent but changes the vowel's sound!",
+                    examples: { title: "Magic E transformations:", items: ["cap → cape", "kit → kite", "hop → hope", "cub → cube", "tap → tape", "pin → pine"] },
+                    funFact: "🎩 Fun fact: Magic E is like a wizard - silent but powerful! It changes everything!",
+                    tip: "💡 Tip: Cover the E with your finger and read the word. Then uncover it - hear the difference!"
+                },
+                {
+                    title: "👯 Vowel Teams",
+                    content: "Sometimes TWO vowels work together to make ONE sound! These are called vowel teams or vowel pairs. Examples: 'ai' in rain, 'ea' in meat, 'oa' in boat, 'ee' in tree, 'oo' in moon.",
+                    examples: { title: "Common vowel teams:", items: ["ai = rain ☔", "ea = eat 🍽️", "ee = tree 🌳", "oa = boat ⛵", "oo = moon 🌙", "ie = pie 🥧", "ue = blue 💙"] },
+                    funFact: "🤝 Fun fact: Vowel teams are best friends - they stick together and make one sound!",
+                    tip: "💡 Tip: Learn the common vowel teams - they appear in SO many words!"
+                },
+                {
+                    title: "🎵 Y as a Vowel",
+                    content: "Y is usually a consonant (yes, you), but at the END of words, it acts like a vowel! In short words, Y sounds like 'i' (fly, my, sky). In longer words, Y sounds like 'ee' (baby, happy, funny).",
+                    examples: { title: "Y as a vowel:", items: ["Y = long i: fly, my, sky, cry, try", "Y = long e: baby, happy, funny, sunny, puppy"] },
+                    funFact: "🦸‍♂️ Fun fact: Y is a 'sometimes' letter - sometimes consonant, sometimes vowel!",
+                    tip: "💡 Tip: Is Y at the START of a word? It's a consonant. At the END? It's a vowel!"
+                }
+            ],
+            syllables: [
+                {
+                    title: "👏 What Is a Syllable?",
+                    content: "A SYLLABLE is a beat in a word! Every syllable has ONE vowel sound. You can count syllables by clapping, tapping, or putting your hand under your chin (it drops for each syllable!).",
+                    examples: { title: "Count the syllables:", items: ["cat = 1 👏", "tiger = 2 👏👏", "elephant = 3 👏👏👏", "caterpillar = 4 👏👏👏👏"] },
+                    funFact: "🥁 Fun fact: Syllables are like drum beats in music - they give words their rhythm!",
+                    tip: "💡 Tip: Say a word slowly and clap for each 'beat' - that's how many syllables it has!"
+                },
+                {
+                    title: "1️⃣ One-Syllable Words",
+                    content: "One-syllable words have just ONE vowel sound. They're usually short: cat, dog, run, jump, big, red. These are great for learning to read because they're simple to sound out!",
+                    examples: { title: "One-syllable words:", items: ["cat 🐱", "dog 🐕", "sun ☀️", "moon 🌙", "book 📖", "tree 🌳", "fish 🐟", "bird 🐦"] },
+                    funFact: "⚡ Fun fact: Most of the words we use every day are one-syllable words!",
+                    tip: "💡 Tip: Practice reading lots of one-syllable words - they're the building blocks of reading!"
+                },
+                {
+                    title: "2️⃣ Two-Syllable Words",
+                    content: "Two-syllable words have TWO vowel sounds and TWO beats. Examples: ti-ger, ap-ple, hap-py, mon-key. Breaking words into syllables makes them easier to read and spell!",
+                    examples: { title: "Two-syllable words:", items: ["ti•ger 🐯", "ap•ple 🍎", "hap•py 😊", "mon•key 🐵", "wa•ter 💧", "sis•ter 👧", "win•ter ❄️"] },
+                    funFact: "➗ Fun fact: 'Divide and conquer!' - splitting words into syllables makes big words small!",
+                    tip: "💡 Tip: Find the vowels in a word - each vowel sound usually means a new syllable!"
+                },
+                {
+                    title: "3️⃣ Three+ Syllable Words",
+                    content: "Bigger words have more syllables! el-e-phant (3), cat-er-pil-lar (4), hip-po-pot-a-mus (5)! Don't be scared of big words - just break them into smaller parts!",
+                    examples: { title: "Multi-syllable words:", items: ["el•e•phant 🐘 (3)", "beau•ti•ful 🌺 (3)", "cat•er•pil•lar 🐛 (4)", "re•frig•er•a•tor 🧊 (5)"] },
+                    funFact: "🏆 Fun fact: The longest English word has 45 letters and 19 syllables! (pneumonoultramicroscopicsilicovolcanoconiosis)",
+                    tip: "💡 Tip: For big words, cover up parts and read one syllable at a time, then put them together!"
+                },
+                {
+                    title: "📐 Syllable Division Rules",
+                    content: "There are patterns for splitting words! VCCV: Split between consonants (nap•kin, kit•ten). VCV: Usually split before the consonant (ti•ger, pa•per). These rules help with spelling!",
+                    examples: { title: "Division patterns:", items: ["VCCV: nap•kin, kit•ten, bas•ket", "VCV: ti•ger, pa•per, ro•bot", "Double consonants: hap•py, kit•ten, yel•low"] },
+                    funFact: "🔍 Fun fact: Knowing syllable rules helps you pronounce new words correctly!",
+                    tip: "💡 Tip: When two consonants are in the middle, split between them!"
+                },
+                {
+                    title: "🎭 Open vs Closed Syllables",
+                    content: "CLOSED syllables end in a consonant - the vowel is 'trapped' and makes a SHORT sound (cat, pin). OPEN syllables end in a vowel - the vowel is 'free' and makes a LONG sound (me, go, ti-ger).",
+                    examples: { title: "Open vs Closed:", items: ["Closed (short): cat, pin, hot, bed", "Open (long): me, go, she, he", "Mixed: ti•ger (open + closed)", "Mixed: ro•bot (open + closed)"] },
+                    funFact: "🚪 Fun fact: Think of it like a door - closed keeps the vowel short, open lets it be long!",
+                    tip: "💡 Tip: Does the syllable end in a vowel? It's open (long). End in a consonant? It's closed (short)!"
+                }
+            ],
+            wordbuilding: [
+                {
+                    title: "🧱 CVC Words - Building Blocks",
+                    content: "CVC means Consonant-Vowel-Consonant. These simple words are the foundation of reading! Examples: cat, dog, pig, bed, cup. Learn to read and spell these first!",
+                    examples: { title: "CVC word families:", items: ["-at: cat, bat, hat, rat, mat", "-en: pen, hen, ten, men, den", "-ig: pig, big, dig, wig, fig", "-op: hop, top, mop, pop, stop"] },
+                    funFact: "🏗️ Fun fact: Once you know CVC patterns, you can read hundreds of words!",
+                    tip: "💡 Tip: Word families share the same ending - learn one and you know them all!"
+                },
+                {
+                    title: "🔗 CVCC and CCVC Words",
+                    content: "Ready for more? CVCC words have two consonants at the end: jump, lamp, nest. CCVC words have two consonants at the start: stop, grab, flip. These add consonant blends!",
+                    examples: { title: "Extended patterns:", items: ["CVCC: jump, lamp, nest, gift, hand", "CCVC: stop, grab, flip, drum, frog", "CCVCC: stamp, blend, frost, trunk"] },
+                    funFact: "➕ Fun fact: Adding consonants makes words longer but uses the same building rules!",
+                    tip: "💡 Tip: Sound out each letter, even the blends - /s/-/t/-/o/-/p/ = stop!"
+                },
+                {
+                    title: "🎨 Word Families",
+                    content: "Word families are groups of words that share the same ending pattern. If you can read 'cat', you can read 'bat, hat, mat, rat, sat'! Just change the first sound!",
+                    examples: { title: "Popular word families:", items: ["-ake: cake, make, lake, bake, take", "-ight: light, night, right, sight, bright", "-ell: bell, tell, well, sell, spell", "-unk: junk, trunk, skunk, bunk"] },
+                    funFact: "👨‍👩‍👧‍👦 Fun fact: There are about 37 word families that cover 500 commonly used words!",
+                    tip: "💡 Tip: When you learn a word family, you're really learning many words at once!"
+                },
+                {
+                    title: "🔀 Compound Words",
+                    content: "Compound words are made of TWO smaller words joined together! sun + flower = sunflower, cup + cake = cupcake. If you know both small words, you can read the big word!",
+                    examples: { title: "Compound words:", items: ["sun + flower = sunflower 🌻", "cup + cake = cupcake 🧁", "rain + bow = rainbow 🌈", "tooth + brush = toothbrush 🪥", "snow + man = snowman ⛄"] },
+                    funFact: "🔗 Fun fact: 'Compound' means 'put together' - like a chemical compound!",
+                    tip: "💡 Tip: Look for the two words hiding inside a compound word - cover one, read the other!"
+                },
+                {
+                    title: "📎 Prefixes - Word Beginnings",
+                    content: "A PREFIX is a group of letters added to the BEGINNING of a word to change its meaning! 'un-' means not: happy → unhappy. 're-' means again: read → reread!",
+                    examples: { title: "Common prefixes:", items: ["un- (not): unhappy, unkind, unfair", "re- (again): redo, replay, reread", "pre- (before): preview, prepay, preheat", "dis- (not): disagree, dislike, disobey"] },
+                    funFact: "🧩 Fun fact: Learning just 4 prefixes (un-, re-, in-, dis-) helps you understand 58% of all prefixed words!",
+                    tip: "💡 Tip: Cover the prefix, read the root word, then add the prefix meaning!"
+                },
+                {
+                    title: "📝 Suffixes - Word Endings",
+                    content: "A SUFFIX is added to the END of a word to change its meaning! '-ing' shows action happening: run → running. '-ed' shows past tense: walk → walked. '-er' compares: big → bigger!",
+                    examples: { title: "Common suffixes:", items: ["-ing: running, jumping, playing", "-ed: walked, jumped, played", "-er: bigger, faster, smaller", "-est: biggest, fastest, smallest", "-ly: quickly, slowly, happily", "-ful: helpful, beautiful, careful"] },
+                    funFact: "🔧 Fun fact: Suffixes are like tools that modify words!",
+                    tip: "💡 Tip: Find the base word first, then see what the suffix adds to its meaning!"
+                }
+            ],
+            spelling: [
+                {
+                    title: "📜 Rule 1: I Before E",
+                    content: "'I before E, except after C, or when sounding like A, as in neighbor and weigh!' This helps spell words like 'believe', 'receive', and 'eight'. There are exceptions, but this helps a lot!",
+                    examples: { title: "I before E examples:", items: ["I before E: believe, friend, piece", "Except after C: receive, ceiling, deceit", "Sounds like A: eight, weigh, neighbor", "Exceptions: weird, seize, their"] },
+                    funFact: "📚 Fun fact: This rule was created to help students remember spelling patterns in the 1800s!",
+                    tip: "💡 Tip: Say the rhyme when you're not sure: 'I before E, except after C'!"
+                },
+                {
+                    title: "📜 Rule 2: Drop the E",
+                    content: "When adding a suffix that starts with a VOWEL (-ing, -ed, -er), DROP the silent E! make → making, hope → hoping, write → writing. But KEEP the E if the suffix starts with a consonant: hope → hopeful.",
+                    examples: { title: "Drop the E:", items: ["make + ing = making", "hope + ed = hoped", "write + er = writer", "KEEP E: hope + ful = hopeful", "KEEP E: care + less = careless"] },
+                    funFact: "✂️ Fun fact: We drop the E because we don't need it anymore - the suffix vowel does its job!",
+                    tip: "💡 Tip: Look at the suffix - does it start with a vowel? Drop the E. Consonant? Keep the E!"
+                },
+                {
+                    title: "📜 Rule 3: Double the Consonant",
+                    content: "In short words with ONE vowel and ONE consonant at the end, DOUBLE the consonant before adding -ing, -ed, -er! run → running, hop → hopping, big → bigger. This keeps the vowel SHORT!",
+                    examples: { title: "Double consonant:", items: ["run + ning = running", "hop + ping = hopping", "big + ger = bigger", "swim + ming = swimming", "sit + ting = sitting"] },
+                    funFact: "✖️2️⃣ Fun fact: We double the consonant to 'protect' the short vowel sound!",
+                    tip: "💡 Tip: 1 syllable + 1 vowel + 1 consonant = double it! (1-1-1 rule)"
+                },
+                {
+                    title: "📜 Rule 4: Change Y to I",
+                    content: "When a word ends in consonant + Y, change Y to I before adding suffixes (except -ing)! happy → happiness, carry → carried. But keep Y before -ing: carrying, studying!",
+                    examples: { title: "Change Y to I:", items: ["happy + ness = happiness", "carry + ed = carried", "easy + er = easier", "KEEP Y: carry + ing = carrying", "KEEP Y: study + ing = studying"] },
+                    funFact: "🔄 Fun fact: Y to I doesn't happen with -ing because we'd have 'ii' which looks weird!",
+                    tip: "💡 Tip: Look at what's BEFORE the Y - if it's a consonant, change Y to I!"
+                },
+                {
+                    title: "📜 Rule 5: Adding -S or -ES",
+                    content: "To make plurals, add -S to most words: cat → cats. But add -ES if the word ends in s, x, z, ch, or sh (words that HISS!): bus → buses, box → boxes, church → churches.",
+                    examples: { title: "Adding S or ES:", items: ["Most words: cats, dogs, trees", "Ends in S: bus → buses, glass → glasses", "Ends in X: box → boxes, fox → foxes", "Ends in CH: church → churches", "Ends in SH: brush → brushes"] },
+                    funFact: "🐍 Fun fact: We add -ES to 'hissing' sounds because it's easier to pronounce!",
+                    tip: "💡 Tip: Say the word with just -S. Hard to pronounce? You need -ES!"
+                },
+                {
+                    title: "📜 Rule 6: Q Always Has U",
+                    content: "In English, Q is ALWAYS followed by U! queen, quick, quiet, question. They work as a team and make the /kw/ sound. You'll never see Q alone in English words!",
+                    examples: { title: "QU words:", items: ["queen 👑", "quick ⚡", "quiet 🤫", "question ❓", "quilt 🛏️", "quarter 🪙", "squirrel 🐿️"] },
+                    funFact: "👑 Fun fact: Q and U are like a royal couple - Q never appears without U in English!",
+                    tip: "💡 Tip: If you hear /kw/, you know it's spelled QU!"
+                }
+            ],
+            blends: [
+                {
+                    title: "🔗 What Are Consonant Blends?",
+                    content: "BLENDS are two or three consonants that work together, but you hear EACH sound! In 'stop', you hear both /s/ and /t/. In 'blend', you hear /b/ and /l/. The sounds blend smoothly together!",
+                    examples: { title: "Common blends:", items: ["BL: blue, black, blend", "BR: brown, bread, bring", "CL: clap, cloud, clean", "CR: crab, crown, cry", "DR: drum, drop, drive"] },
+                    funFact: "🎺 Fun fact: Blends are like musical chords - multiple sounds playing together!",
+                    tip: "💡 Tip: Say each sound in the blend slowly, then faster and faster until they flow together!"
+                },
+                {
+                    title: "🅱️ Beginning Blends",
+                    content: "Beginning blends come at the START of words. L-blends: bl, cl, fl, gl, pl, sl. R-blends: br, cr, dr, fr, gr, pr, tr. S-blends: sc, sk, sl, sm, sn, sp, st, sw!",
+                    examples: { title: "Beginning blends:", items: ["L-blends: black, clock, flag, glass, plane", "R-blends: brown, green, train, frog", "S-blends: stop, skip, swim, snow, spin"] },
+                    funFact: "🏁 Fun fact: Many action words start with blends: run, stop, swim, jump, climb!",
+                    tip: "💡 Tip: Practice blend 'families' - all BL words, all ST words, etc.!"
+                },
+                {
+                    title: "🔚 Ending Blends",
+                    content: "Ending blends come at the END of words. Common ones: -nd (hand), -nk (think), -nt (went), -mp (jump), -ft (left), -lt (belt), -st (fast)!",
+                    examples: { title: "Ending blends:", items: ["-nd: hand, sand, pond", "-nk: think, drink, pink", "-nt: went, plant, front", "-mp: jump, stamp, lamp", "-st: fast, best, list"] },
+                    funFact: "🔔 Fun fact: Many ending blends have a 'silent' quality - they close the word firmly!",
+                    tip: "💡 Tip: Don't forget the blend at the end - say 'han-d', not just 'han'!"
+                },
+                {
+                    title: "🔤 Three-Letter Blends",
+                    content: "Some blends have THREE letters! SCR (scream), SPL (splash), SPR (spring), STR (string), THR (three), SQU (square). You hear all three sounds blended together!",
+                    examples: { title: "3-letter blends:", items: ["SCR: scream, scratch, screen", "SPL: splash, split, splat", "SPR: spring, spray, spread", "STR: string, strong, street", "SQU: square, squash, squeeze"] },
+                    funFact: "🏋️ Fun fact: 3-letter blends are like blend 'power-ups' - stronger combinations!",
+                    tip: "💡 Tip: Break it down: S-T-R, then say it faster: 'str'... 'string'!"
+                },
+                {
+                    title: "🤝 What Are Digraphs?",
+                    content: "DIGRAPHS are two letters that make ONE new sound! Unlike blends where you hear both sounds, digraphs create something new. CH, SH, TH, WH, PH, NG, CK are common digraphs!",
+                    examples: { title: "Digraphs:", items: ["CH: cheese 🧀, chair, chicken", "SH: ship 🚢, shoe, shell", "TH: think 🤔, this, three", "WH: what, when, why, where", "PH: phone 📱, photo, elephant"] },
+                    funFact: "🎭 Fun fact: Digraphs are like costume parties - two letters dress up as one new sound!",
+                    tip: "💡 Tip: Digraphs = two letters, ONE sound. Blends = two letters, TWO sounds!"
+                },
+                {
+                    title: "📞 PH says /F/ and More!",
+                    content: "PH makes the /f/ sound! phone, elephant, photograph. Also, GH can be silent (night) or say /f/ (laugh). KN starts with silent K (know, knee). WR starts with silent W (write, wrong)!",
+                    examples: { title: "Tricky digraphs:", items: ["PH = /f/: phone, photo, elephant", "Silent GH: night, light, thought", "GH = /f/: laugh, cough, enough", "Silent K: know, knee, knife, knock", "Silent W: write, wrong, wrist, wrap"] },
+                    funFact: "🔇 Fun fact: Silent letters are leftovers from Old English when they WERE pronounced!",
+                    tip: "💡 Tip: These are tricky - make flashcards and practice often!"
+                }
+            ],
+            sightwords: [
+                {
+                    title: "👀 What Are Sight Words?",
+                    content: "SIGHT WORDS are common words that appear SO often, we should recognize them instantly 'by sight'! Many don't follow phonics rules: 'the', 'said', 'was'. We just memorize how they look!",
+                    examples: { title: "Common sight words:", items: ["the, a, is, it, in", "and, to, was, he, she", "you, they, we, are, have", "said, what, where, there", "come, some, one, two"] },
+                    funFact: "📊 Fun fact: Just 100 sight words make up about 50% of all written text!",
+                    tip: "💡 Tip: Practice sight words every day - flashcards, games, reading - until they're automatic!"
+                },
+                {
+                    title: "📝 Dolch Sight Words",
+                    content: "The DOLCH list has 220 important sight words for learning to read. They're grouped by level: Pre-K, Kindergarten, 1st, 2nd, and 3rd grade. These words appear in almost everything we read!",
+                    examples: { title: "By grade level:", items: ["Pre-K: a, and, big, blue, can, go, I", "K: all, am, are, at, ate, be, but", "1st: after, again, an, ask, by, could", "2nd: always, around, because, before", "3rd: about, better, bring, carry, clean"] },
+                    funFact: "👨‍🏫 Fun fact: Dr. Edward William Dolch created this list in 1936 and it's still used today!",
+                    tip: "💡 Tip: Try to learn 5 new sight words each week - that's over 250 in a year!"
+                },
+                {
+                    title: "🌟 Most Common Words",
+                    content: "Some words appear more than others! 'THE' is #1 - it appears in almost every sentence! The top 10 are: the, of, and, a, to, in, is, you, that, it. Master these first!",
+                    examples: { title: "Top 25 words:", items: ["1-5: the, of, and, a, to", "6-10: in, is, you, that, it", "11-15: he, was, for, on, are", "16-20: as, with, his, they, I", "21-25: at, be, this, have, from"] },
+                    funFact: "🏆 Fun fact: 'The' is used about 7% of the time in English - that's 1 in every 14 words!",
+                    tip: "💡 Tip: These words are everywhere - once you know them, reading gets MUCH easier!"
+                },
+                {
+                    title: "🚫 Tricky Sight Words",
+                    content: "Some sight words are tricky because they don't follow rules! 'Said' doesn't sound like 'maid'. 'Was' doesn't rhyme with 'has'. 'One' sounds like 'won'. We just have to memorize these!",
+                    examples: { title: "Tricky words:", items: ["said (not like 'maid')", "was (not like 'has')", "one (sounds like 'won')", "two (sounds like 'too')", "four (sounds like 'for')", "there/their/they're", "to/too/two", "your/you're"] },
+                    funFact: "🤯 Fun fact: English has borrowed words from so many languages, spelling gets crazy!",
+                    tip: "💡 Tip: Make silly sentences: 'One won a fun bun!' to remember tricky words!"
+                },
+                {
+                    title: "🎮 Ways to Practice",
+                    content: "Practice sight words by: 1) Flashcards, 2) Writing them 3 times, 3) Finding them in books, 4) Spelling them out loud, 5) Making sentences, 6) Playing word games, 7) Typing them!",
+                    examples: { title: "Practice activities:", items: ["🃏 Flashcard games", "✍️ Rainbow writing (different colors)", "📖 Word hunt in books", "🗣️ Spell out loud", "✏️ Write sentences", "🎲 Word bingo", "⌨️ Type and spell"] },
+                    funFact: "🧠 Fun fact: You need to see a sight word about 40 times before it becomes automatic!",
+                    tip: "💡 Tip: Mix up your practice - variety helps your brain remember better!"
+                }
+            ]
+        };
+
+        // ==================== QUIZ QUESTIONS ====================
+        const quizData = {
+            alphabet: [
+                { q: "How many letters are in the English alphabet?", a: "26", wrong: ["24", "25", "27"], visual: "🔤" },
+                { q: "What are the 5 vowels?", a: "A, E, I, O, U", wrong: ["A, B, C, D, E", "E, I, O, U, Y", "A, E, I, O, P"], visual: "🅰️" },
+                { q: "Which letter comes after M?", a: "N", wrong: ["L", "O", "P"], visual: "M → ?" },
+                { q: "Which letter comes before G?", a: "F", wrong: ["H", "E", "D"], visual: "? → G" },
+                { q: "How many consonants are there?", a: "21", wrong: ["20", "22", "26"], visual: "📝" },
+                { q: "When do we use UPPERCASE letters?", a: "Start of sentences & names", wrong: ["Never", "All the time", "Only for vowels"], visual: "Aa" },
+                { q: "Which is the first letter of the alphabet?", a: "A", wrong: ["Z", "B", "C"], visual: "1️⃣" },
+                { q: "Which is the last letter of the alphabet?", a: "Z", wrong: ["Y", "A", "X"], visual: "🔚" },
+                { q: "What type of letter is 'B'?", a: "Consonant", wrong: ["Vowel", "Number", "Symbol"], visual: "B" },
+                { q: "What type of letter is 'E'?", a: "Vowel", wrong: ["Consonant", "Number", "Symbol"], visual: "E" },
+                { q: "Which letter can sometimes be a vowel?", a: "Y", wrong: ["W", "R", "L"], visual: "🤔" },
+                { q: "What tune is the alphabet song?", a: "Twinkle Twinkle", wrong: ["Happy Birthday", "Row Your Boat", "London Bridge"], visual: "🎵" },
+                { q: "Which word starts with a vowel?", a: "Apple", wrong: ["Banana", "Cat", "Dog"], visual: "🍎" },
+                { q: "Which word starts with a consonant?", a: "Ball", wrong: ["Apple", "Orange", "Umbrella"], visual: "🏀" },
+                { q: "Every word needs at least one...", a: "Vowel", wrong: ["Consonant", "Number", "Capital"], visual: "✨" },
+                { q: "What letter comes between D and F?", a: "E", wrong: ["C", "G", "D"], visual: "D_F" },
+                { q: "BIRD starts with which letter?", a: "B", wrong: ["D", "P", "R"], visual: "🐦" },
+                { q: "How do you spell the number 3?", a: "THREE", wrong: ["TREE", "THRE", "THREE"], visual: "3️⃣" },
+                { q: "'I' is always written as...", a: "Uppercase", wrong: ["Lowercase", "Either way", "Underlined"], visual: "I" },
+                { q: "Which letters have only straight lines?", a: "E, F, H, I, L, T", wrong: ["A, B, C", "O, S, C", "B, D, P"], visual: "📏" }
+            ],
+            phonics: [
+                { q: "What sound does the letter 'B' make?", a: "/b/ like ball", wrong: ["/d/ like dog", "/p/ like pig", "/m/ like mom"], visual: "🅱️" },
+                { q: "What is the SHORT sound of 'A'?", a: "/a/ like cat", wrong: ["/ay/ like cake", "/ah/ like car", "/aw/ like saw"], visual: "🐱" },
+                { q: "What is the LONG sound of 'A'?", a: "/ay/ like cake", wrong: ["/a/ like cat", "/ah/ like car", "/aw/ like saw"], visual: "🎂" },
+                { q: "C makes a SOFT sound before...", a: "E, I, Y", wrong: ["A, O, U", "B, D, F", "Any letter"], visual: "🔊" },
+                { q: "What makes the vowel say its NAME?", a: "Magic E", wrong: ["Magic A", "Two consonants", "Nothing"], visual: "🪄" },
+                { q: "In 'KITE', is the I short or long?", a: "Long (says its name)", wrong: ["Short", "Silent", "Neither"], visual: "🪁" },
+                { q: "In 'CAT', is the A short or long?", a: "Short", wrong: ["Long", "Silent", "Neither"], visual: "🐱" },
+                { q: "What sound does 'PH' make?", a: "/f/ like phone", wrong: ["/p/ like pig", "/h/ like hat", "/ph/ (both sounds)"], visual: "📱" },
+                { q: "'SHIP' starts with what sound?", a: "/sh/", wrong: ["/s/", "/ch/", "/h/"], visual: "🚢" },
+                { q: "What two sounds does X make?", a: "/k/ + /s/", wrong: ["/z/", "/x/", "/ks/"], visual: "📦" },
+                { q: "The 'K' in 'KNEE' is...", a: "Silent", wrong: ["Loud", "Long", "Short"], visual: "🦵" },
+                { q: "What sound does 'TH' make in 'THINK'?", a: "/th/ (voiceless)", wrong: ["/t/", "/h/", "/f/"], visual: "🤔" },
+                { q: "In 'HOPE', what does the E do?", a: "Makes O say its name", wrong: ["Says /e/", "Nothing", "Makes O short"], visual: "🙏" },
+                { q: "What is the vowel sound in 'BED'?", a: "Short E", wrong: ["Long E", "Short A", "Long A"], visual: "🛏️" },
+                { q: "G makes a HARD sound in...", a: "GO", wrong: ["GEM", "GIANT", "GYM"], visual: "🏃" },
+                { q: "Two vowels together often make...", a: "The first vowel's long sound", wrong: ["Both sounds", "No sound", "A new sound"], visual: "🤝" },
+                { q: "What sound does 'NG' make?", a: "/ng/ like ring", wrong: ["/n/ + /g/", "/n/", "/g/"], visual: "💍" },
+                { q: "The 'W' in 'WRITE' is...", a: "Silent", wrong: ["Loud", "Long", "Short"], visual: "✍️" },
+                { q: "CK makes what sound?", a: "/k/", wrong: ["/c/ + /k/", "/ck/", "/ch/"], visual: "🐤" },
+                { q: "'CHEESE' has what beginning sound?", a: "/ch/", wrong: ["/c/", "/s/", "/k/"], visual: "🧀" }
+            ],
+            vowels: [
+                { q: "What are the 5 vowels?", a: "A, E, I, O, U", wrong: ["A, B, C, D, E", "B, C, D, F, G", "A, E, I, O, Y"], visual: "🅰️" },
+                { q: "Short A sounds like the A in...", a: "CAT", wrong: ["CAKE", "CAR", "CALL"], visual: "🐱" },
+                { q: "Long E sounds like the E in...", a: "TREE", wrong: ["BED", "HER", "THE"], visual: "🌳" },
+                { q: "What makes a vowel LONG?", a: "It says its name", wrong: ["It's quick", "It's silent", "It's loud"], visual: "📏" },
+                { q: "'Silent E' does what?", a: "Makes the vowel long", wrong: ["Says /e/", "Nothing", "Makes sound short"], visual: "🤫" },
+                { q: "In 'RAIN', what vowel sound do you hear?", a: "Long A", wrong: ["Short A", "Long I", "Short I"], visual: "☔" },
+                { q: "In 'MOON', what vowel team do you see?", a: "OO", wrong: ["OU", "OA", "OE"], visual: "🌙" },
+                { q: "Y acts as a vowel at the...", a: "End of words", wrong: ["Beginning", "Middle always", "Never"], visual: "✨" },
+                { q: "In 'FLY', Y sounds like...", a: "Long I", wrong: ["Long E", "Short I", "Short E"], visual: "🪰" },
+                { q: "In 'HAPPY', Y sounds like...", a: "Long E", wrong: ["Long I", "Short I", "Short E"], visual: "😊" },
+                { q: "What vowel team is in 'BOAT'?", a: "OA", wrong: ["OO", "OU", "OE"], visual: "⛵" },
+                { q: "What vowel team is in 'PIE'?", a: "IE", wrong: ["EA", "EI", "AI"], visual: "🥧" },
+                { q: "A CLOSED syllable has...", a: "Short vowel sound", wrong: ["Long vowel sound", "No vowel", "Two vowels"], visual: "🚪" },
+                { q: "An OPEN syllable has...", a: "Long vowel sound", wrong: ["Short vowel sound", "No vowel", "Consonant ending"], visual: "🚪" },
+                { q: "'PIG' has what type of vowel?", a: "Short I", wrong: ["Long I", "Short A", "Long A"], visual: "🐷" },
+                { q: "'KITE' has what type of vowel?", a: "Long I (Magic E)", wrong: ["Short I", "Long A", "Short A"], visual: "🪁" },
+                { q: "The rule 'When two vowels go walking...' means", a: "First vowel says its name", wrong: ["Both are silent", "Second talks", "Neither talks"], visual: "🚶" },
+                { q: "What vowel sound is in 'CUP'?", a: "Short U", wrong: ["Long U", "Short O", "Long O"], visual: "☕" },
+                { q: "What vowel sound is in 'CUTE'?", a: "Long U", wrong: ["Short U", "Long O", "Short O"], visual: "😊" },
+                { q: "Every syllable needs at least one...", a: "Vowel sound", wrong: ["Consonant", "Blend", "Digraph"], visual: "⭐" }
+            ],
+            syllables: [
+                { q: "How many syllables in 'CAT'?", a: "1", wrong: ["2", "3", "0"], visual: "🐱" },
+                { q: "How many syllables in 'TIGER'?", a: "2", wrong: ["1", "3", "4"], visual: "🐯" },
+                { q: "How many syllables in 'ELEPHANT'?", a: "3", wrong: ["2", "4", "5"], visual: "🐘" },
+                { q: "How many syllables in 'CATERPILLAR'?", a: "4", wrong: ["3", "5", "6"], visual: "🐛" },
+                { q: "A syllable must have...", a: "At least one vowel sound", wrong: ["Two consonants", "Three letters", "No vowels"], visual: "📏" },
+                { q: "How can you count syllables?", a: "Clap for each beat", wrong: ["Count letters", "Count consonants", "Count spaces"], visual: "👏" },
+                { q: "How many syllables in 'BANANA'?", a: "3", wrong: ["2", "4", "5"], visual: "🍌" },
+                { q: "How many syllables in 'DOG'?", a: "1", wrong: ["2", "3", "0"], visual: "🐕" },
+                { q: "How many syllables in 'BUTTERFLY'?", a: "3", wrong: ["2", "4", "5"], visual: "🦋" },
+                { q: "Where do you split 'HAP-PY'?", a: "Between the two P's", wrong: ["After A", "Before Y", "No split"], visual: "😊" },
+                { q: "A CLOSED syllable ends in a...", a: "Consonant", wrong: ["Vowel", "Silent E", "Blend"], visual: "🔒" },
+                { q: "An OPEN syllable ends in a...", a: "Vowel", wrong: ["Consonant", "Blend", "Digraph"], visual: "🔓" },
+                { q: "How many syllables in 'UMBRELLA'?", a: "3", wrong: ["2", "4", "5"], visual: "☂️" },
+                { q: "In 'TI-GER', the first syllable is...", a: "Open (TI)", wrong: ["Closed", "Silent", "Magic E"], visual: "🐯" },
+                { q: "How many syllables in 'COMPUTER'?", a: "3", wrong: ["2", "4", "5"], visual: "💻" },
+                { q: "The word 'A' has how many syllables?", a: "1", wrong: ["0", "2", "None"], visual: "🅰️" },
+                { q: "How many syllables in 'HIPPOPOTAMUS'?", a: "5", wrong: ["4", "6", "7"], visual: "🦛" },
+                { q: "Split this: BASKET", a: "BAS-KET", wrong: ["BA-SKET", "BASK-ET", "B-ASKET"], visual: "🧺" },
+                { q: "How many syllables in 'CROCODILE'?", a: "3", wrong: ["2", "4", "5"], visual: "🐊" },
+                { q: "VCCV words split...", a: "Between the consonants", wrong: ["After the vowel", "Before the vowel", "No split"], visual: "✂️" }
+            ],
+            wordbuilding: [
+                { q: "CVC stands for...", a: "Consonant-Vowel-Consonant", wrong: ["Cat-Very-Cute", "Consonant-Vowel-Cat", "Can-Very-Come"], visual: "🧱" },
+                { q: "Which is a CVC word?", a: "CAT", wrong: ["STOP", "TREE", "PLAY"], visual: "🐱" },
+                { q: "What word family is 'CAT, BAT, HAT'?", a: "-AT family", wrong: ["-AN family", "-AP family", "-AG family"], visual: "🎩" },
+                { q: "SUN + FLOWER = ?", a: "SUNFLOWER", wrong: ["SUNSHINE", "SUNLIGHT", "SUNBURN"], visual: "🌻" },
+                { q: "What is a COMPOUND word?", a: "Two words joined together", wrong: ["A long word", "A hard word", "A short word"], visual: "🔗" },
+                { q: "The prefix 'UN-' means...", a: "Not", wrong: ["Again", "Before", "After"], visual: "🚫" },
+                { q: "The prefix 'RE-' means...", a: "Again", wrong: ["Not", "Before", "After"], visual: "🔄" },
+                { q: "HAPPY + UN = ?", a: "UNHAPPY", wrong: ["HAPPYUN", "REHAPPY", "PREHAPPY"], visual: "😢" },
+                { q: "The suffix '-ING' shows...", a: "Action happening now", wrong: ["Past action", "Future action", "No action"], visual: "🏃" },
+                { q: "RUN + ING = ?", a: "RUNNING", wrong: ["RUNING", "RUNEING", "RUNNING"], visual: "🏃" },
+                { q: "Which is a compound word?", a: "RAINBOW", wrong: ["RUNNING", "QUICKLY", "UNHAPPY"], visual: "🌈" },
+                { q: "TOOTH + BRUSH = ?", a: "TOOTHBRUSH", wrong: ["BRUSHTEETH", "TEETHBRUSH", "TOOTHBRUSHING"], visual: "🪥" },
+                { q: "The suffix '-ED' shows...", a: "Past tense", wrong: ["Present tense", "Future tense", "No tense"], visual: "⏮️" },
+                { q: "JUMP + ED = ?", a: "JUMPED", wrong: ["JUMPD", "JUMPPED", "JUMPING"], visual: "🦘" },
+                { q: "The suffix '-ER' can mean...", a: "More (bigger) or person (teacher)", wrong: ["Less", "Not", "Before"], visual: "📈" },
+                { q: "BIG + ER = ?", a: "BIGGER", wrong: ["BIGER", "BIGEST", "BIGGING"], visual: "📐" },
+                { q: "Which word has a prefix?", a: "REDO", wrong: ["DOING", "PLAYED", "CATS"], visual: "🔍" },
+                { q: "Which word has a suffix?", a: "JUMPING", wrong: ["UNDO", "PREPAY", "RETELL"], visual: "🔍" },
+                { q: "CUP + CAKE = ?", a: "CUPCAKE", wrong: ["CAPCUKE", "CAKECUP", "CUPSCAKE"], visual: "🧁" },
+                { q: "What's the base word in RUNNING?", a: "RUN", wrong: ["RUNN", "NING", "RUNNING"], visual: "🎯" }
+            ],
+            spelling: [
+                { q: "I before E except after...", a: "C", wrong: ["G", "K", "S"], visual: "📜" },
+                { q: "Which is spelled correctly?", a: "BELIEVE", wrong: ["BELEIVE", "BELEEVE", "BELIVE"], visual: "✅" },
+                { q: "Which is spelled correctly?", a: "RECEIVE", wrong: ["RECIEVE", "RECEVE", "RECEEVE"], visual: "✅" },
+                { q: "When adding -ING to MAKE, you...", a: "Drop the E (making)", wrong: ["Keep the E", "Add another E", "Double the K"], visual: "✂️" },
+                { q: "HOPE + ING = ?", a: "HOPING", wrong: ["HOPEING", "HOPPING", "HOPPPING"], visual: "🙏" },
+                { q: "HOP + ING = ?", a: "HOPPING", wrong: ["HOPING", "HOPING", "HPPING"], visual: "🐰" },
+                { q: "When adding -ING to HOP, you...", a: "Double the P", wrong: ["Drop the O", "Add E", "Do nothing"], visual: "✖️2️⃣" },
+                { q: "RUN + ING = ?", a: "RUNNING", wrong: ["RUNING", "RUNEING", "RUNNNING"], visual: "🏃" },
+                { q: "HAPPY + NESS = ?", a: "HAPPINESS", wrong: ["HAPPYNESS", "HAPPNESS", "HAPPIYNESS"], visual: "😊" },
+                { q: "Q is always followed by...", a: "U", wrong: ["A", "E", "I"], visual: "👑" },
+                { q: "BUS + ES = ?", a: "BUSES", wrong: ["BUSS", "BUSSES", "BUS'S"], visual: "🚌" },
+                { q: "BOX + ES = ?", a: "BOXES", wrong: ["BOXS", "BOXIS", "BOX'S"], visual: "📦" },
+                { q: "Which needs -ES (not just -S)?", a: "CHURCH", wrong: ["CAT", "DOG", "TREE"], visual: "⛪" },
+                { q: "CARRY + ED = ?", a: "CARRIED", wrong: ["CARRYED", "CARREID", "CARRYIED"], visual: "🎒" },
+                { q: "Which is spelled correctly?", a: "FRIEND", wrong: ["FREIND", "FREND", "FREEND"], visual: "👫" },
+                { q: "Which is spelled correctly?", a: "THEIR", wrong: ["THIER", "THER", "THEER"], visual: "👥" },
+                { q: "WRITE + ING = ?", a: "WRITING", wrong: ["WRITEING", "WRITTING", "WRITENG"], visual: "✍️" },
+                { q: "SIT + ING = ?", a: "SITTING", wrong: ["SITING", "SITEING", "SITTTING"], visual: "🪑" },
+                { q: "Which spelling rule: COP → COPPING?", a: "Double the consonant", wrong: ["Drop the E", "Change Y to I", "Add ES"], visual: "📋" },
+                { q: "EASY + ER = ?", a: "EASIER", wrong: ["EASYER", "EASYIER", "EASIR"], visual: "😌" }
+            ],
+            blends: [
+                { q: "What is a BLEND?", a: "2-3 consonants you hear separately", wrong: ["2 letters making 1 sound", "Silent letters", "Vowel pairs"], visual: "🔗" },
+                { q: "What is a DIGRAPH?", a: "2 letters making 1 new sound", wrong: ["2 sounds blended", "Silent letters", "Vowel pairs"], visual: "🤝" },
+                { q: "Which is a BLEND?", a: "BL in BLUE", wrong: ["SH in SHIP", "CH in CHEESE", "TH in THINK"], visual: "💙" },
+                { q: "Which is a DIGRAPH?", a: "SH in SHIP", wrong: ["BL in BLUE", "ST in STOP", "GR in GREEN"], visual: "🚢" },
+                { q: "What blend starts STOP?", a: "ST", wrong: ["SP", "SN", "SK"], visual: "🛑" },
+                { q: "What blend starts FROG?", a: "FR", wrong: ["FL", "GR", "BR"], visual: "🐸" },
+                { q: "What digraph is in CHEESE?", a: "CH", wrong: ["SH", "TH", "WH"], visual: "🧀" },
+                { q: "What digraph is in THINK?", a: "TH", wrong: ["CH", "SH", "WH"], visual: "🤔" },
+                { q: "What blend ends JUMP?", a: "MP", wrong: ["ND", "NK", "NT"], visual: "🦘" },
+                { q: "What blend ends HAND?", a: "ND", wrong: ["MP", "NK", "NT"], visual: "✋" },
+                { q: "PH makes what sound?", a: "/f/ like PHONE", wrong: ["/p/", "/h/", "/ph/"], visual: "📱" },
+                { q: "What 3-letter blend starts STRING?", a: "STR", wrong: ["SCR", "SPR", "SPL"], visual: "🧵" },
+                { q: "What 3-letter blend starts SPLASH?", a: "SPL", wrong: ["STR", "SCR", "SPR"], visual: "💦" },
+                { q: "The K in KNEE is...", a: "Silent", wrong: ["Loud", "A blend", "A digraph"], visual: "🦵" },
+                { q: "The W in WRITE is...", a: "Silent", wrong: ["Loud", "A blend", "A digraph"], visual: "✍️" },
+                { q: "What blend starts DRUM?", a: "DR", wrong: ["GR", "BR", "TR"], visual: "🥁" },
+                { q: "What digraph ends RING?", a: "NG", wrong: ["NK", "ND", "NP"], visual: "💍" },
+                { q: "Which word has the blend 'CR'?", a: "CRAB", wrong: ["CHAIR", "SHIP", "PHONE"], visual: "🦀" },
+                { q: "GH can be silent or sound like...", a: "/f/ (laugh)", wrong: ["/g/", "/h/", "/gh/"], visual: "😂" },
+                { q: "CK makes what sound?", a: "/k/", wrong: ["/ck/", "/c/ and /k/", "/ch/"], visual: "🐤" }
+            ],
+            sightwords: [
+                { q: "What is the most common English word?", a: "THE", wrong: ["A", "AND", "IS"], visual: "🏆" },
+                { q: "Which word doesn't follow phonics rules?", a: "SAID", wrong: ["CAT", "DOG", "SIT"], visual: "🤔" },
+                { q: "How do you spell the number 1?", a: "ONE", wrong: ["WON", "ONN", "UN"], visual: "1️⃣" },
+                { q: "How do you spell the number 2?", a: "TWO", wrong: ["TOO", "TO", "TU"], visual: "2️⃣" },
+                { q: "Which is correct: THERE, THEIR, or THEY'RE for 'they are'?", a: "THEY'RE", wrong: ["THERE", "THEIR", "THIER"], visual: "👥" },
+                { q: "Which is correct for 'belonging to them'?", a: "THEIR", wrong: ["THERE", "THEY'RE", "THIER"], visual: "🏠" },
+                { q: "Which is correct for 'that place'?", a: "THERE", wrong: ["THEIR", "THEY'RE", "THIER"], visual: "📍" },
+                { q: "How many times should you see a sight word to memorize it?", a: "About 40 times", wrong: ["Once", "5 times", "10 times"], visual: "🔢" },
+                { q: "How do you spell the number 4?", a: "FOUR", wrong: ["FOR", "FORE", "FORR"], visual: "4️⃣" },
+                { q: "Which sight word means 'also'?", a: "TOO", wrong: ["TO", "TWO", "TU"], visual: "➕" },
+                { q: "Sight words are words we recognize...", a: "By sight instantly", wrong: ["By sounding out", "By guessing", "By context"], visual: "👀" },
+                { q: "How do you spell the number 8?", a: "EIGHT", wrong: ["ATE", "EIGT", "AIGHT"], visual: "8️⃣" },
+                { q: "Which is the correct 'YOU ARE'?", a: "YOU'RE", wrong: ["YOUR", "YOURE", "UR"], visual: "👉" },
+                { q: "Which means 'belonging to you'?", a: "YOUR", wrong: ["YOU'RE", "YOURE", "UR"], visual: "🎁" },
+                { q: "How do you spell WERE (past of are)?", a: "WERE", wrong: ["WHERE", "WE'RE", "WEAR"], visual: "⏮️" },
+                { q: "How many words do the top 100 sight words cover?", a: "About 50% of all text", wrong: ["10%", "25%", "75%"], visual: "📊" },
+                { q: "Which is spelled correctly?", a: "BECAUSE", wrong: ["BECUZ", "BECAUS", "BECOUSE"], visual: "🔤" },
+                { q: "Which is spelled correctly?", a: "FRIEND", wrong: ["FREIND", "FREND", "FRIND"], visual: "👫" },
+                { q: "WHAT, WHEN, WHERE all start with...", a: "WH (digraph)", wrong: ["W only", "H only", "QU"], visual: "❓" },
+                { q: "Who created the Dolch sight word list?", a: "Dr. Edward Dolch", wrong: ["Dr. Seuss", "Noah Webster", "William Shakespeare"], visual: "👨‍🏫" }
+            ]
+        };
+
+        // ==================== AUDIO SYSTEM ====================
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        let audioCtx = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new AudioContext();
+            }
+        }
+
+        function playTone(frequency, duration = 0.2, type = 'sine') {
+            if (!CONFIG.soundEnabled || !audioCtx) return;
+
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+
+            gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + duration);
+        }
+
+        function playCorrectSound() {
+            playTone(523.25, 0.15);
+            setTimeout(() => playTone(659.25, 0.15), 100);
+            setTimeout(() => playTone(783.99, 0.3), 200);
+        }
+
+        function playWrongSound() {
+            playTone(200, 0.3, 'square');
+        }
+
+        function speak(text) {
+            if (!CONFIG.soundEnabled) return;
+            speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.85;
+            utterance.pitch = 1.1;
+            speechSynthesis.speak(utterance);
+        }
+
+        function toggleSound() {
+            CONFIG.soundEnabled = !CONFIG.soundEnabled;
+            document.getElementById('soundBtn').textContent = CONFIG.soundEnabled ? '🔊' : '🔇';
+        }
+
+        // ==================== GAME FUNCTIONS ====================
+        function setMode(mode) {
+            currentMode = mode;
+
+            document.querySelectorAll('.mode-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.mode-btn.${mode}`).classList.add('active');
+
+            if (mode === 'learn') {
+                document.getElementById('learnContainer').classList.add('active');
+                document.getElementById('quizContainer').classList.remove('active');
+                currentLessonIndex = 0;
+                showLesson();
+            } else {
+                document.getElementById('learnContainer').classList.remove('active');
+                document.getElementById('quizContainer').classList.add('active');
+                startQuiz();
+            }
+        }
+
+        function selectTopic(topic) {
+            if (topic) currentTopic = topic;
+
+            document.querySelectorAll('.topic-card').forEach(card => {
+                card.classList.remove('active');
+                if (card.dataset.topic === currentTopic) {
+                    card.classList.add('active');
+                }
+            });
+
+            currentLessonIndex = 0;
+            currentQuestionIndex = 0;
+
+            if (currentMode === 'learn') {
+                showLesson();
+            } else {
+                startQuiz();
+            }
+        }
+
+        // ==================== LEARN MODE ====================
+        function showLesson() {
+            const lessons = learnContent[currentTopic];
+            const lesson = lessons[currentLessonIndex];
+
+            let examplesHTML = '';
+            if (lesson.examples) {
+                examplesHTML = `
+                    <div class="examples">
+                        <h4>${lesson.examples.title}</h4>
+                        <div class="example-items">
+                            ${lesson.examples.items.map(item => `<span class="example-item" onclick="speakItem('${item}')">${item}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            const container = document.getElementById('learnContent');
+            container.innerHTML = `
+                <div class="learn-card">
+                    <h3>${lesson.title}</h3>
+                    <p>${lesson.content}</p>
+                    ${examplesHTML}
+                    ${lesson.funFact ? `<div class="fun-fact">${lesson.funFact}</div>` : ''}
+                    ${lesson.tip ? `<div class="tip">${lesson.tip}</div>` : ''}
+                </div>
+            `;
+
+            document.getElementById('prevBtn').disabled = currentLessonIndex === 0;
+            document.getElementById('nextBtn').disabled = currentLessonIndex === lessons.length - 1;
+
+            const progress = ((currentLessonIndex + 1) / lessons.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent = `${currentLessonIndex + 1}/${lessons.length}`;
+
+            speak(lesson.title.replace(/[^\w\s]/g, '') + '. ' + lesson.content);
+        }
+
+        function speakItem(item) {
+            initAudio();
+            playTone(440, 0.1);
+            speak(item);
+        }
+
+        function nextLesson() {
+            initAudio();
+            if (currentLessonIndex < learnContent[currentTopic].length - 1) {
+                currentLessonIndex++;
+                showLesson();
+                playTone(440, 0.1);
+            }
+        }
+
+        function prevLesson() {
+            initAudio();
+            if (currentLessonIndex > 0) {
+                currentLessonIndex--;
+                showLesson();
+                playTone(330, 0.1);
+            }
+        }
+
+        // ==================== QUIZ MODE ====================
+        function startQuiz() {
+            score = 0;
+            streak = 0;
+            lives = 3;
+            currentQuestionIndex = 0;
+            isAnswering = false;
+
+            const allQuestions = [...quizData[currentTopic]];
+            shuffleArray(allQuestions);
+            currentQuizQuestions = allQuestions.slice(0, CONFIG.questionsPerQuiz);
+
+            updateStats();
+            showQuestion();
+        }
+
+        function showQuestion() {
+            if (currentQuestionIndex >= currentQuizQuestions.length || lives <= 0) {
+                showResults();
+                return;
+            }
+
+            const question = currentQuizQuestions[currentQuestionIndex];
+
+            document.getElementById('questionNumber').textContent = `Question ${currentQuestionIndex + 1} of ${currentQuizQuestions.length}`;
+            document.getElementById('questionText').textContent = question.q;
+
+            const visualContainer = document.getElementById('questionVisual');
+            if (question.visual.length <= 4) {
+                visualContainer.innerHTML = `<span class="question-emoji">${question.visual}</span>`;
+            } else {
+                visualContainer.innerHTML = `<span class="question-word">${question.visual}</span>`;
+            }
+
+            const answers = [question.a, ...question.wrong];
+            shuffleArray(answers);
+
+            const grid = document.getElementById('answersGrid');
+            grid.innerHTML = '';
+
+            answers.forEach(answer => {
+                const btn = document.createElement('button');
+                btn.className = 'answer-btn';
+                btn.textContent = answer;
+                btn.onclick = () => checkAnswer(answer, question.a, btn);
+                grid.appendChild(btn);
+            });
+
+            const progress = (currentQuestionIndex / currentQuizQuestions.length) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+
+            speak(question.q);
+        }
+
+        function checkAnswer(selected, correct, btn) {
+            if (isAnswering) return;
+            isAnswering = true;
+            initAudio();
+
+            const buttons = document.querySelectorAll('.answer-btn');
+
+            if (selected === correct) {
+                btn.classList.add('correct');
+                playCorrectSound();
+                streak++;
+                score += 10 + (streak * 2);
+                speak('Correct! ' + correct);
+            } else {
+                btn.classList.add('incorrect');
+                buttons.forEach(b => {
+                    if (b.textContent === correct) b.classList.add('correct');
+                });
+                playWrongSound();
+                streak = 0;
+                lives--;
+                speak('The answer was ' + correct);
+            }
+
+            updateStats();
+
+            setTimeout(() => {
+                currentQuestionIndex++;
+                isAnswering = false;
+                showQuestion();
+            }, 2000);
+        }
+
+        function updateStats() {
+            document.getElementById('scoreValue').textContent = score;
+            document.getElementById('streakValue').textContent = streak;
+            document.getElementById('livesValue').textContent = lives;
+            document.getElementById('progressText').textContent = `${currentQuestionIndex}/${CONFIG.questionsPerQuiz}`;
+        }
+
+        function showResults() {
+            const total = currentQuizQuestions.length;
+            const percentage = (score / (total * 12)) * 100;
+
+            let stars = '⭐';
+            if (percentage >= 60) stars = '⭐⭐';
+            if (percentage >= 85) stars = '⭐⭐⭐';
+
+            document.getElementById('modalStars').textContent = stars;
+            document.getElementById('modalScore').textContent = `You scored ${score} points!`;
+            document.getElementById('resultsModal').classList.add('active');
+
+            if (percentage >= 60) {
+                createConfetti();
+                playCorrectSound();
+                speak('Great job! You did amazing!');
+            } else {
+                speak('Good try! Keep practicing!');
+            }
+        }
+
+        function restartQuiz() {
+            document.getElementById('resultsModal').classList.remove('active');
+            startQuiz();
+        }
+
+        function createConfetti() {
+            const colors = ['#ffd700', '#00f5ff', '#ff00ff', '#00ff88', '#ff6b6b', '#8b5cf6'];
+
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                document.body.appendChild(confetti);
+
+                setTimeout(() => confetti.remove(), 4000);
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // ==================== BACKGROUND ANIMATION ====================
+        function createFloatingLetters() {
+            const container = document.getElementById('animatedBg');
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const colors = ['#ffd700', '#00f5ff', '#ff00ff', '#00ff88', '#ff6b6b', '#8b5cf6'];
+
+            for (let i = 0; i < 15; i++) {
+                const letter = document.createElement('div');
+                letter.className = 'floating-letter';
+                letter.textContent = letters[Math.floor(Math.random() * letters.length)];
+                letter.style.left = Math.random() * 100 + '%';
+                letter.style.top = Math.random() * 100 + '%';
+                letter.style.color = colors[Math.floor(Math.random() * colors.length)];
+                letter.style.animationDelay = Math.random() * 10 + 's';
+                letter.style.fontSize = (2 + Math.random() * 3) + 'rem';
+                container.appendChild(letter);
+            }
+        }
+
+        // ==================== MEDIAPIPE SETUP ====================
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('canvasOverlay');
+        const canvasCtx = canvasElement.getContext('2d');
+        const handCursor = document.getElementById('handCursor');
+        const statusDot = document.getElementById('statusDot');
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.5
+        });
+
+        hands.onResults(onResults);
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: 'user' }
+                });
+                videoElement.srcObject = stream;
+
+                videoElement.onloadedmetadata = () => {
+                    canvasElement.width = videoElement.videoWidth;
+                    canvasElement.height = videoElement.videoHeight;
+                    statusDot.classList.add('active');
+                    detectLoop();
+                };
+            } catch (err) {
+                console.error('Camera error:', err);
+            }
+        }
+
+        async function detectLoop() {
+            if (videoElement.readyState >= 2) {
+                await hands.send({ image: videoElement });
+            }
+            requestAnimationFrame(detectLoop);
+        }
+
+        function onResults(results) {
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+
+                drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, { color: '#8b5cf6', lineWidth: 2 });
+                drawLandmarks(canvasCtx, landmarks, { color: '#00f5ff', lineWidth: 1, radius: 3 });
+
+                processHand(landmarks);
+            } else {
+                handCursor.style.display = 'none';
+            }
+        }
+
+        function processHand(landmarks) {
+            const indexTip = landmarks[8];
+            const thumbTip = landmarks[4];
+
+            const rawX = (1 - indexTip.x) * window.innerWidth;
+            const rawY = indexTip.y * window.innerHeight;
+
+            handPosition.x += (rawX - handPosition.x) * CONFIG.smoothingFactor;
+            handPosition.y += (rawY - handPosition.y) * CONFIG.smoothingFactor;
+
+            handCursor.style.display = 'block';
+            handCursor.style.left = (handPosition.x - 30) + 'px';
+            handCursor.style.top = (handPosition.y - 30) + 'px';
+
+            const pinchDistance = Math.sqrt(
+                Math.pow(indexTip.x - thumbTip.x, 2) +
+                Math.pow(indexTip.y - thumbTip.y, 2)
+            );
+
+            isPinching = pinchDistance < CONFIG.pinchThreshold;
+
+            handCursor.classList.toggle('open', !isPinching);
+            handCursor.classList.toggle('closed', isPinching);
+
+            if (isPinching && !previousPinchState) {
+                const elements = document.elementsFromPoint(handPosition.x, handPosition.y);
+                for (const el of elements) {
+                    if (el.onclick || el.tagName === 'BUTTON' || el.tagName === 'A' || el.classList.contains('topic-card') || el.classList.contains('answer-btn') || el.classList.contains('example-item')) {
+                        el.click();
+                        break;
+                    }
+                }
+            }
+
+            previousPinchState = isPinching;
+        }
+
+        const HAND_CONNECTIONS = [
+            [0, 1], [1, 2], [2, 3], [3, 4],
+            [0, 5], [5, 6], [6, 7], [7, 8],
+            [0, 9], [9, 10], [10, 11], [11, 12],
+            [0, 13], [13, 14], [14, 15], [15, 16],
+            [0, 17], [17, 18], [18, 19], [19, 20],
+            [5, 9], [9, 13], [13, 17]
+        ];
+
+        // ==================== INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            createFloatingLetters();
+            setupCamera();
+            selectTopic('alphabet');
+            setMode('learn');
+        });
+    </script>
+</body>
+</html>

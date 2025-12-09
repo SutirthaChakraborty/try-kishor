@@ -118,66 +118,36 @@
             padding: 20px;
         }
 
-        /* Dynamic Navigation Bar */
-        .nav-bar {
-            position: sticky;
-            top: 0;
-            z-index: 500;
+        /* Home Button */
+        .home-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            padding: 12px 24px;
             background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            border-radius: 0 0 var(--radius) var(--radius);
-            box-shadow: var(--shadow);
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .nav-title {
-            font-size: 1.3rem;
-            font-weight: bold;
             color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-            white-space: nowrap;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .nav-link {
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid white;
-            border-radius: 25px;
-            font-size: 1rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: inherit;
             text-decoration: none;
-            display: inline-block;
-        }
-
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .nav-link.active {
-            background: white;
-            color: var(--accent-blue);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .home-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .home-button:active {
+            transform: translateY(-1px);
         }
 
         /* Header */
@@ -940,13 +910,10 @@
     </style>
 </head>
 <body>
-    <!-- Dynamic Navigation Bar -->
-    <div class="nav-bar">
-        <div class="nav-container">
-            <div class="nav-title">📜 Gita for Kids</div>
-            <div class="nav-menu" id="navMenu"></div>
-        </div>
-    </div>
+    <!-- Home Button -->
+    <a href="index.html" class="home-button">
+        🏠 Home
+    </a>
 
     <!-- Background Shapes -->
     <div class="bg-shapes">
@@ -1063,31 +1030,6 @@
     </div>
 
     <script>
-        // ==================== SIMPLE NAV (OPTIONAL MULTI-PAGE) ====================
-        const GAMES_CONFIG = {
-            'gita_kids.html': { name: '📜 Gita for Kids', description: 'Study + Quiz game with hand control' }
-        };
-
-        function initializeNavigation() {
-            const navMenu = document.getElementById('navMenu');
-            const currentFile = window.location.pathname.split('/').pop() || 'gita_kids.html';
-
-            navMenu.innerHTML = '';
-
-            for (const [file, config] of Object.entries(GAMES_CONFIG)) {
-                const link = document.createElement('a');
-                link.className = 'nav-link';
-                link.href = file;
-                link.textContent = config.name;
-                link.title = config.description;
-
-                if (currentFile === file) {
-                    link.classList.add('active');
-                }
-                navMenu.appendChild(link);
-            }
-        }
-
         // ==================== CONFIG & STATE ====================
         const CONFIG = {
             pinchThreshold: 0.08,
@@ -1864,7 +1806,6 @@
 
         // ==================== INITIALIZATION ====================
         document.addEventListener('DOMContentLoaded', () => {
-            initializeNavigation();
             setupCamera();
             setupStudyCards();
             setupQuizGame('easy');

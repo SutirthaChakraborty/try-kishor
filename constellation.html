@@ -29,6 +29,38 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* Home Button */
+    .home-button {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 1000;
+      padding: 12px 24px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      color: white;
+      border: none;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: inherit;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+
+    .home-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+    }
+
+    .home-button:active {
+      transform: translateY(-1px);
+    }
+
     body {
       font-family: 'OpenDyslexic', system-ui, sans-serif;
       background: radial-gradient(circle at top, #1b2845 0%, #050816 50%, #02010f 100%);
@@ -372,6 +404,11 @@
   </style>
 </head>
 <body>
+  <!-- Home Button -->
+  <a href="index.html" class="home-button">
+    🏠 Home
+  </a>
+
   <!-- Hand cursor overlay -->
   <div class="hand-cursor" id="handCursor"></div>
 

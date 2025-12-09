@@ -137,33 +137,36 @@
             padding: 20px;
         }
 
-        /* Nav Bar (simple) */
-        .nav-bar {
-            position: sticky;
-            top: 0;
-            z-index: 10;
+        /* Home Button */
+        .home-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            padding: 12px 24px;
             background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
-            padding: 12px 20px;
-            margin-bottom: 20px;
-            border-radius: 0 0 var(--radius) var(--radius);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             box-shadow: var(--shadow);
         }
 
-        .nav-inner {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: wrap;
+        .home-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
 
-        .nav-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        .home-button:active {
+            transform: translateY(-1px);
         }
 
         /* Header */
@@ -666,12 +669,10 @@
         <p><span>⌨️</span> Press M for mouse mode</p>
     </div>
 
-    <!-- Simple Nav -->
-    <div class="nav-bar">
-        <div class="nav-inner">
-            <div class="nav-title">🌙 Islamic Good Thoughts for Kids</div>
-        </div>
-    </div>
+    <!-- Home Button -->
+    <a href="index.html" class="home-button">
+        🏠 Home
+    </a>
 
     <div class="app-container">
         <!-- Header -->

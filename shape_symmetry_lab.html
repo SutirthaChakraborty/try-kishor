@@ -151,66 +151,36 @@
             color: var(--text-secondary);
         }
 
-        /* Dynamic Navigation Bar */
-        .nav-bar {
-            position: sticky;
-            top: 0;
-            z-index: 500;
+        /* Home Button */
+        .home-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            padding: 12px 24px;
             background: linear-gradient(135deg, var(--accent-blue) 0%, var(--accent-purple) 100%);
-            padding: 15px 20px;
-            margin-bottom: 20px;
-            border-radius: 0 0 var(--radius) var(--radius);
-            box-shadow: var(--shadow);
-        }
-
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .nav-title {
-            font-size: 1.3rem;
-            font-weight: bold;
             color: white;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-            white-space: nowrap;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-
-        .nav-link {
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid white;
-            border-radius: 25px;
-            font-size: 1rem;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s ease;
             font-family: inherit;
             text-decoration: none;
-            display: inline-block;
-        }
-
-        .nav-link:hover {
-            background: rgba(255, 255, 255, 0.4);
-            transform: translateY(-2px);
-        }
-
-        .nav-link.active {
-            background: white;
-            color: var(--accent-blue);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .home-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .home-button:active {
+            transform: translateY(-1px);
         }
 
         /* Camera Preview */
@@ -725,13 +695,10 @@
     </style>
 </head>
 <body>
-    <!-- Dynamic Navigation Bar -->
-    <div class="nav-bar">
-        <div class="nav-container">
-            <div class="nav-title">📚 Learning Games</div>
-            <div class="nav-menu" id="navMenu"></div>
-        </div>
-    </div>
+    <!-- Home Button -->
+    <a href="index.html" class="home-button">
+        🏠 Home
+    </a>
 
     <!-- Animated Background -->
     <div class="bg-animation" id="bgAnimation"></div>
@@ -846,36 +813,6 @@
     </div>
 
     <script>
-        // ==================== DYNAMIC NAVIGATION ====================
-        const GAMES_CONFIG = {
-            'index.html':            { name: '🔤 Alphabet & Colors', description: 'Learn letters and colors with drag & drop' },
-            'planets.html':          { name: '🪐 Planets', description: 'Explore our solar system' },
-            'exploring_body.html':   { name: '🧬 Body Explorer', description: 'Learn about human body parts' },
-            'frost_discovery.html':  { name: '❄️ Frost Discovery', description: 'Reveal and learn hidden items' },
-            'hand_music.html':       { name: '🎵 Music Hands', description: 'Learn music with hand gestures' },
-            'melt_the_ice.html':     { name: '🌈 Melt the Ice', description: 'Melt ice to discover pictures' },
-            'science-lab.html':      { name: '🧪 Science Lab', description: 'Perform fun experiments' },
-            'rhythm_conductor.html': { name: '🥁 Rhythm Conductor', description: 'Move to the beat & learn tempo' },
-            'recycling_sorter.html': { name: '♻️ Recycling Sorter', description: 'Sort rubbish into the correct bin' },
-            'shape_symmetry_lab.html': { name: '🔷 Shape & Symmetry Lab', description: 'Draw shapes with a magic mirror' }
-        };
-
-        function initializeNavigation() {
-            const navMenu = document.getElementById('navMenu');
-            const currentFile = window.location.pathname.split('/').pop() || 'index.html';
-            navMenu.innerHTML = '';
-
-            for (const [file, config] of Object.entries(GAMES_CONFIG)) {
-                const link = document.createElement('a');
-                link.className = 'nav-link';
-                link.href = file;
-                link.textContent = config.name;
-                link.title = config.description;
-                if (currentFile === file) link.classList.add('active');
-                navMenu.appendChild(link);
-            }
-        }
-
         // ==================== CONFIG & STATE ====================
         const CONFIG = {
             pinchThreshold: 0.07,
@@ -1693,7 +1630,6 @@
 
         // ==================== INIT ====================
         document.addEventListener('DOMContentLoaded', () => {
-            initializeNavigation();
             createMusicNotes();
             setupCamera();
             resizeCanvas();

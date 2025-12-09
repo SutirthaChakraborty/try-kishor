@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎓 Learning Games Hub - Interactive Educational Adventures</title>
+
+    <!-- OpenDyslexic Font for better readability -->
+    <link href="https://fonts.cdnfonts.com/css/opendyslexic" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-primary: #FFF8E7;
+            --bg-secondary: #FFE4C4;
+            --text-primary: #2D3436;
+            --text-secondary: #636E72;
+            --accent-blue: #74B9FF;
+            --accent-green: #55EFC4;
+            --accent-yellow: #FFEAA7;
+            --accent-pink: #FD79A8;
+            --accent-purple: #A29BFE;
+            --accent-orange: #FAB1A0;
+            --accent-red: #FF7675;
+            --shadow: 0 8px 32px rgba(0,0,0,0.1);
+            --radius: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'OpenDyslexic', 'Nunito', 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #FFF8E7 0%, #FFE4C4 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.8;
+            letter-spacing: 0.05em;
+            word-spacing: 0.1em;
+            padding: 20px;
+        }
+
+        /* Floating Background Shapes */
+        .bg-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .bg-shape:nth-child(1) {
+            width: 300px;
+            height: 300px;
+            background: var(--accent-blue);
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .bg-shape:nth-child(2) {
+            width: 200px;
+            height: 200px;
+            background: var(--accent-pink);
+            top: 60%;
+            right: 10%;
+            animation-delay: 5s;
+        }
+
+        .bg-shape:nth-child(3) {
+            width: 250px;
+            height: 250px;
+            background: var(--accent-green);
+            bottom: 10%;
+            left: 50%;
+            animation-delay: 10s;
+        }
+
+        .bg-shape:nth-child(4) {
+            width: 180px;
+            height: 180px;
+            background: var(--accent-yellow);
+            top: 30%;
+            right: 30%;
+            animation-delay: 15s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0) scale(1);
+            }
+            33% {
+                transform: translate(30px, -30px) scale(1.1);
+            }
+            66% {
+                transform: translate(-20px, 20px) scale(0.9);
+            }
+        }
+
+        /* Header */
+        .header {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            margin-bottom: 50px;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header h1 {
+            font-size: clamp(2.5rem, 5vw, 4rem);
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.1);
+            font-weight: 800;
+        }
+
+        .header p {
+            font-size: clamp(1.1rem, 2vw, 1.4rem);
+            color: var(--text-secondary);
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* Games Grid */
+        .games-container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            padding: 20px;
+        }
+
+        .game-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 30px;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            display: block;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.6s ease-out backwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-pink), var(--accent-green));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .game-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .game-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+        }
+
+        .game-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            display: block;
+            text-align: center;
+        }
+
+        .game-title {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .game-description {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        /* Loading State */
+        .loading {
+            text-align: center;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            padding: 50px;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        /* Footer */
+        .footer {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            margin-top: 60px;
+            padding: 30px;
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .games-container {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 20px;
+                padding: 10px;
+            }
+
+            .game-card {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background Shapes -->
+    <div class="bg-shapes">
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <h1>🎓 Learning Games Hub</h1>
+        <p>Discover fun and interactive educational adventures! Click any game to start learning.</p>
+    </div>
+
+    <!-- Games Grid -->
+    <div class="games-container" id="gamesContainer">
+        <div class="loading">Loading games</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>✨ Interactive Learning • Hand Gesture Controls • Dyslexia Friendly ✨</p>
+    </div>
+
+    <script>
+        // Game metadata with icons and descriptions
+        const gameMetadata = {
+            'art_studio.html': { icon: '🎨', name: 'Art Studio', description: 'Creative drawing and painting adventures' },
+            'constellation.html': { icon: '⭐', name: 'Constellation Explorer', description: 'Discover stars and constellations' },
+            'demo_quiz.html': { icon: '❓', name: 'Interactive Quiz', description: 'Test your knowledge with fun quizzes' },
+            'english_subjects.html': { icon: '📚', name: 'English Learning', description: 'Master language and grammar' },
+            'exploring_body.html': { icon: '🫀', name: 'Explore Human Body', description: 'Learn about anatomy and health' },
+            'frost_discovery.html': { icon: '❄️', name: 'Frost Discovery', description: 'Explore winter science' },
+            'geeta.html': { icon: '🕉️', name: 'Bhagavad Geeta', description: 'Ancient wisdom and philosophy' },
+            'hand_music.html': { icon: '🎵', name: 'Hand Music', description: 'Create music with gestures' },
+            'happiness_success.html': { icon: '😊', name: 'Happiness & Success', description: 'Life skills and positive thinking' },
+            'islam.html': { icon: '☪️', name: 'Islamic Studies', description: 'Learn about Islamic culture' },
+            'maths_subject.html': { icon: '🔢', name: 'Maths Adventure', description: 'Fun with numbers and calculations' },
+            'melt_the_ice.html': { icon: '🧊', name: 'Melt the Ice', description: 'Interactive ice melting science' },
+            'pizza_cut.html': { icon: '🍕', name: 'Pizza Fractions', description: 'Learn fractions by cutting pizza' },
+            'planets.html': { icon: '🪐', name: 'Planets Explorer', description: 'Journey through our solar system' },
+            'recycling_sorter.html': { icon: '♻️', name: 'Recycling Sorter', description: 'Learn about sustainability' },
+            'rhythm-conductor.html': { icon: '🎼', name: 'Rhythm Conductor', description: 'Conduct music with your hands' },
+            'science_subjects.html': { icon: '🔬', name: 'Science Explorer', description: 'Exciting scientific experiments' },
+            'science-lab.html': { icon: '🧪', name: 'Science Lab', description: 'Virtual laboratory experiments' },
+            'shape_symmetry_lab.html': { icon: '🔷', name: 'Shape & Symmetry', description: 'Explore geometry and patterns' },
+            'alphabets.html': { icon: '🔤', name: 'Alphabet Learning', description: 'Learn letters and sounds' }
+        };
+
+        // Color palette for cards
+        const colors = [
+            'var(--accent-blue)',
+            'var(--accent-green)',
+            'var(--accent-yellow)',
+            'var(--accent-pink)',
+            'var(--accent-purple)',
+            'var(--accent-orange)'
+        ];
+
+        // Get friendly name from filename
+        function getFriendlyName(filename) {
+            return filename
+                .replace('.html', '')
+                .split(/[-_]/)
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        // Generate random icon if not in metadata
+        function getRandomIcon() {
+            const icons = ['🎮', '🎯', '🎪', '🎭', '🎨', '🎬', '🎤', '🎧', '🎸', '🎹', '🎺', '🎻', '🎲', '🎰', '🎳'];
+            return icons[Math.floor(Math.random() * icons.length)];
+        }
+
+        // Load and display all HTML files
+        async function loadGames() {
+            const container = document.getElementById('gamesContainer');
+
+            // Get all HTML files in the directory
+            try {
+                const response = await fetch('.');
+                const text = await response.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(text, 'text/html');
+                const links = Array.from(doc.querySelectorAll('a'));
+
+                const htmlFiles = links
+                    .map(a => a.getAttribute('href'))
+                    .filter(href => href && href.endsWith('.html') && href !== 'index.html')
+                    .sort();
+
+                if (htmlFiles.length === 0) {
+                    // Fallback: use predefined list if directory listing is not available
+                    displayGames(Object.keys(gameMetadata));
+                } else {
+                    displayGames(htmlFiles);
+                }
+            } catch (error) {
+                console.log('Directory listing not available, using predefined games list');
+                // Fallback to predefined list
+                displayGames(Object.keys(gameMetadata));
+            }
+        }
+
+        // Display games in the grid
+        function displayGames(files) {
+            const container = document.getElementById('gamesContainer');
+            container.innerHTML = '';
+
+            files.forEach((file, index) => {
+                const metadata = gameMetadata[file] || {
+                    icon: getRandomIcon(),
+                    name: getFriendlyName(file),
+                    description: 'Interactive learning experience'
+                };
+
+                const card = document.createElement('a');
+                card.href = file;
+                card.className = 'game-card';
+                card.style.animationDelay = `${index * 0.1}s`;
+
+                card.innerHTML = `
+                    <span class="game-icon">${metadata.icon}</span>
+                    <h2 class="game-title">${metadata.name}</h2>
+                    <p class="game-description">${metadata.description}</p>
+                `;
+
+                // Add hover color effect
+                const color = colors[index % colors.length];
+                card.addEventListener('mouseenter', () => {
+                    card.style.borderTop = `5px solid ${color}`;
+                });
+                card.addEventListener('mouseleave', () => {
+                    card.style.borderTop = 'none';
+                });
+
+                container.appendChild(card);
+            });
+        }
+
+        // Initialize on page load
+        loadGames();
+    </script>
+</body>
+</html>
